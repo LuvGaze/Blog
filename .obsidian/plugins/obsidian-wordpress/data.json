@@ -1,0 +1,34 @@
+{
+  "lang": "auto",
+  "profiles": [
+    {
+      "name": "芯创客",
+      "apiType": "xml-rpc",
+      "endpoint": "https://xn--6kr80q03bo90b372bfia.xn--6qq986b3xl/",
+      "xmlRpcPath": "/xmlrpc.php",
+      "saveUsername": true,
+      "savePassword": true,
+      "isDefault": true,
+      "lastSelectedCategories": [
+        2
+      ],
+      "username": "LuvGaze",
+      "encryptedPassword": {
+        "key": "{\"alg\":\"A256GCM\",\"ext\":true,\"k\":\"3QeR5a_aDB5Ne29u5mK1znf2ffyheWTydJiv5HYsypo\",\"key_ops\":[\"encrypt\",\"decrypt\"],\"kty\":\"oct\"}",
+        "vector": "4sDtJcO9UK5+alcG",
+        "encrypted": "VMqiCSGYhbK/EShZVY3y0kNJA1VKOrZ6z57IZ6U="
+      }
+    }
+  ],
+  "showRibbonIcon": true,
+  "defaultPostStatus": "draft",
+  "defaultCommentStatus": "open",
+  "rememberLastSelectedCategories": true,
+  "showWordPressEditConfirm": true,
+  "mathJaxOutputType": "svg",
+  "commentConvertMode": "ignore",
+  "enableHtml": false,
+  "replaceMediaLinks": true,
+  "version": "2",
+  "defaultPostType": "post"
+}
