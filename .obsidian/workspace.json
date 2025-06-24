@@ -16,14 +16,10 @@
                 "id": "45068091dd432c95",
                 "type": "leaf",
                 "state": {
-                  "type": "markdown",
-                  "state": {
-                    "file": "✨ Markdown 写作指南（升级版）.md",
-                    "mode": "source",
-                    "source": false
-                  },
+                  "type": "empty",
+                  "state": {},
                   "icon": "lucide-file",
-                  "title": "✨ Markdown 写作指南（升级版）"
+                  "title": "新标签页"
                 }
               }
             ]
@@ -31,7 +27,7 @@
           {
             "id": "9527a45ba064a6c5",
             "type": "tabs",
-            "dimension": 23.29721362229102,
+            "dimension": 23.297213622291018,
             "children": [
               {
                 "id": "d040c98fe6a9891c",
@@ -39,13 +35,12 @@
                 "state": {
                   "type": "outline",
                   "state": {
-                    "file": "✨ Markdown 写作指南（升级版）.md",
                     "followCursor": false,
                     "showSearch": false,
                     "searchQuery": ""
                   },
                   "icon": "lucide-list",
-                  "title": "✨ Markdown 写作指南（升级版） 的大纲"
+                  "title": "大纲"
                 }
               }
             ]
