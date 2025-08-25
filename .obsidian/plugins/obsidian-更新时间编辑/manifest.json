@@ -1,0 +1,11 @@
+{
+	"id": "update-time-on-edit",
+	"name": "编辑时更新时间",
+	"version": "2.4.0",
+	"minAppVersion": "1.4.4",
+	"description": "使前面的内容与上次编辑时间保持同步",
+	"author": "@beaussan",
+	"authorUrl": "https://github.com/beaussan",
+	"isDesktopOnly": false,
+	"二创":"LuvGaze"
+}

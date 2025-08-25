@@ -1,0 +1,12 @@
+{
+  "types": {
+    "aliases": "aliases",
+    "cssclasses": "multitext",
+    "tags": "tags",
+    "作者": "text",
+    "profileName": "text",
+    "profileNa": "datetime",
+    "时间": "datetime",
+    "更新时间": "datetime"
+  }
+}

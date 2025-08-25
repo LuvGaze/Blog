@@ -1,0 +1,22 @@
+{
+  "dateFormat": "yyyy年MM月dd日　HH:mm",
+  "enableNumberProperties": true,
+  "enableCreateTime": false,
+  "headerUpdated": "更新时间",
+  "headerCreated": "创建时间",
+  "minMinutesBetweenSaves": 5,
+  "ignoreGlobalFolder": [
+    "实验室文化墙建设",
+    "MarkDown教程",
+    "♣ 梅花落 ♣",
+    "测试笔记"
+  ],
+  "ignoreCreatedFolder": [],
+  "enableExperimentalHash": true,
+  "fileHashMap": {
+    "小程序/任务列表.md": "f1121c6767831302f244223eabc881bba8403bd389ffe8b5d49a50b93cf35be3",
+    "小程序/❀ 等风听雨 ︱ 梅花落 ❀.md": "ecc7439df8141aa5c6a0bf1b802c2b79e6fb08dee79b98882430ce2aee392c36",
+    "wordpress讲解.md": "0431d776e4c9088ca329358059e5a3f6934765a1efc1d4ac28738db1720fe184",
+    "吉他/清单.md": "1c90b9b49ea75d68bbb9a82759a83975e5077b4934693d968dd9f341a51ec352"
+  }
+}

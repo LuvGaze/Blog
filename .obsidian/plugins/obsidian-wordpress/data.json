@@ -8,15 +8,33 @@
       "xmlRpcPath": "/xmlrpc.php",
       "saveUsername": true,
       "savePassword": true,
-      "isDefault": true,
+      "isDefault": false,
       "lastSelectedCategories": [
         2
       ],
       "username": "LuvGaze",
       "encryptedPassword": {
-        "key": "{\"alg\":\"A256GCM\",\"ext\":true,\"k\":\"3QeR5a_aDB5Ne29u5mK1znf2ffyheWTydJiv5HYsypo\",\"key_ops\":[\"encrypt\",\"decrypt\"],\"kty\":\"oct\"}",
-        "vector": "4sDtJcO9UK5+alcG",
-        "encrypted": "VMqiCSGYhbK/EShZVY3y0kNJA1VKOrZ6z57IZ6U="
+        "key": "{\"alg\":\"A256GCM\",\"ext\":true,\"k\":\"qaW2Wdoz8L-sxAsrmvZPzD8km97L_ZMCv5eqy9nOz8g\",\"key_ops\":[\"encrypt\",\"decrypt\"],\"kty\":\"oct\"}",
+        "vector": "4qw22EV31+sy1KUs",
+        "encrypted": "pLJF+Qjn7T+qiXb1qHmVhie2ytRqB2lOeHYJfM8="
+      }
+    },
+    {
+      "name": "梅花落",
+      "apiType": "xml-rpc",
+      "endpoint": "https://xn--1iu713bnjl.xn--6qq986b3xl/",
+      "xmlRpcPath": "/xmlrpc.php",
+      "saveUsername": true,
+      "savePassword": true,
+      "isDefault": true,
+      "lastSelectedCategories": [
+        20
+      ],
+      "username": "LuvGaze",
+      "encryptedPassword": {
+        "key": "{\"alg\":\"A256GCM\",\"ext\":true,\"k\":\"GE5tVvebGarG-DTO4BNEjHK_baSd0rNo8TnvR_Fely8\",\"key_ops\":[\"encrypt\",\"decrypt\"],\"kty\":\"oct\"}",
+        "vector": "dXk7SMRQomydrE9R",
+        "encrypted": "SG/56jgbPOULCKk3+floAync7gaLie96MsOc8rk="
       }
     }
   ],
