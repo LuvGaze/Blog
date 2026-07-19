@@ -44,14 +44,14 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 6. 【核心提速】使用 rsync 增量同步（只传变动文件）
+      # 6. 使用 rsync 增量同步
       - name: Sync files via Rsync
         uses: burnett01/rsync-deployments@7.0.0
         with:
           switches: -avzr --delete --exclude='.git' --exclude='node_modules'
           path: ./dist/
           remote_path: /www/wwwroot/Funny/
-          remote_host: ${{ secrets.SERVER_HOST }}
+          remote_host: ${{ secrets.SERVER_HOST }}      # 读取服务器用户
           remote_user: root
-          remote_port: ${{ secrets.SERVER_PORT }}      # 读取你的 91 端口
-          remote_key: ${{ secrets.SERVER_PASSWORD }}   # 读取你的 SSH 密钥
+          remote_port: ${{ secrets.SERVER_PORT }}      # 读取端口
+          remote_key: ${{ secrets.SERVER_PASSWORD }}   # 读取SSH 密钥
