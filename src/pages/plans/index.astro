@@ -1,0 +1,263 @@
+---
+import { getCollection, render } from "astro:content";
+import { Icon } from "astro-icon/components";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const routinesEntries = await getCollection("routines");
+
+const filteredEntries = routinesEntries.filter(
+	(entry) => !entry.id.toLowerCase().includes("readme"),
+);
+
+const sortedEntries = [...filteredEntries].sort((a, b) => {
+	const aOrder = a.data.order || 999;
+	const bOrder = b.data.order || 999;
+	if (aOrder !== bOrder) {
+		return aOrder - bOrder;
+	}
+	const aTime = a.data.updatedAt?.getTime() || 0;
+	const bTime = b.data.updatedAt?.getTime() || 0;
+	return bTime - aTime;
+});
+
+const lastUpdated = filteredEntries
+	.map((e) => e.data.updatedAt)
+	.filter((t): t is Date => !!t)
+	.reduce((latest, current) => current.getTime() > latest.getTime() ? current : latest, new Date(0));
+
+const entriesWithContent = await Promise.all(
+	sortedEntries.map(async (entry) => {
+		const { Content } = await render(entry);
+		return {
+			...entry,
+			Content,
+			name: entry.data.name || "未命名",
+			time: entry.data.time || "",
+			description: entry.data.description || "",
+			icon: entry.data.icon || "📋",
+			color: entry.data.color || "var(--primary)",
+		};
+	}),
+);
+
+const totalEntries = entriesWithContent.length;
+---
+
+<MainGridLayout title={i18n(I18nKey.routinesTitle)} description={i18n(I18nKey.routinesDescription)}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+			<div class="mb-6">
+				<div class="flex items-center gap-3 mb-3">
+					<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+						<Icon is:inline name="material-symbols:checklist" class="text-[1.5rem]" />
+					</div>
+					<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+						{i18n(I18nKey.routinesTitle)}
+					</div>
+				</div>
+				<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+					{i18n(I18nKey.routinesDescription)}
+				</p>
+			</div>
+
+			<div class="flex flex-wrap gap-3 mb-6">
+				<div class="stat-pill">
+					<span class="font-semibold text-(--deep-text)">{totalEntries}</span>
+					<span class="text-(--content-meta)">项规划</span>
+				</div>
+				<div class="stat-pill">
+					<span class="font-semibold text-(--deep-text)">
+						{lastUpdated?.toLocaleDateString("zh-CN") || "暂无"}
+					</span>
+					<span class="text-(--content-meta)">最后更新</span>
+				</div>
+			</div>
+
+			<div>
+				{totalEntries === 0 ? (
+					<div class="w-full p-12 text-center">
+						<Icon name="material-symbols:checklist" class="text-5xl text-(--content-meta)/50 mb-4" />
+						<p class="text-(--content-meta)">{i18n(I18nKey.routinesNoData)}</p>
+					</div>
+				) : (
+					<div class="routines-grid">
+						{entriesWithContent.map((entry) => (
+							<article class="routine-card">
+								<div class="routine-card-header">
+									<div class="routine-icon-wrap">
+										<span class="text-xl">{entry.icon}</span>
+									</div>
+									<div class="flex-1 min-w-0">
+										<div class="flex items-center gap-2 flex-wrap">
+											<h2 class="routine-title">{entry.name}</h2>
+											{entry.time && <span class="routine-time">{entry.time}</span>}
+										</div>
+										{entry.description && (
+											<p class="routine-desc">{entry.description}</p>
+										)}
+									</div>
+								</div>
+								<div class="routine-card-body">
+									<div class="routine-content">
+										<entry.Content />
+									</div>
+								</div>
+							</article>
+						))}
+					</div>
+				)}
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.stat-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 14px;
+		border: 1px solid var(--line-divider);
+		border-radius: 50px;
+		font-size: 13px;
+		color: var(--deep-text);
+		background: var(--card-bg);
+	}
+
+	.routines-grid {
+		display: flex;
+		flex-direction: column;
+		gap: 1.25rem;
+	}
+
+	.routine-card {
+		border: 1px solid var(--line-divider);
+		border-radius: var(--radius-large);
+		overflow: hidden;
+		background: var(--card-bg);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+	.routine-card:hover {
+		border-color: var(--primary);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	}
+
+	.routine-card-header {
+		display: flex;
+		align-items: flex-start;
+		gap: 1rem;
+		padding: 1.25rem 1.25rem 0;
+	}
+
+	.routine-icon-wrap {
+		width: 44px;
+		height: 44px;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		border-radius: 12px;
+		background: var(--btn-plain-bg-hover);
+		flex-shrink: 0;
+	}
+
+	.routine-title {
+		font-size: 1.125rem;
+		font-weight: 700;
+		color: var(--deep-text);
+		margin: 0;
+	}
+
+	.routine-time {
+		display: inline-block;
+		padding: 1px 10px;
+		border-radius: 9999px;
+		background: var(--btn-plain-bg-hover);
+		color: var(--primary);
+		font-size: 0.7rem;
+		font-weight: 600;
+		letter-spacing: 0.03em;
+	}
+	:root.dark .routine-time {
+		background: oklch(0.18 0 0);
+	}
+
+	.routine-desc {
+		margin: 0.25rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--content-meta);
+		line-height: 1.5;
+	}
+
+	.routine-card-body {
+		padding: 1rem 1.25rem 1.5rem;
+		border-top: 1px solid var(--line-divider);
+		margin-top: 0.75rem;
+	}
+
+	.routine-content {
+		color: var(--deep-text);
+		line-height: 1.8;
+		font-size: 0.9375rem;
+	}
+
+	.routine-content :global(h1),
+	.routine-content :global(h2),
+	.routine-content :global(h3) {
+		color: var(--deep-text);
+		font-weight: 600;
+		margin-top: 1.5em;
+		margin-bottom: 0.5em;
+	}
+	.routine-content :global(h1) {
+		font-size: 1.15rem;
+	}
+	.routine-content :global(h2) {
+		font-size: 1.05rem;
+	}
+	.routine-content :global(h3) {
+		font-size: 0.95rem;
+	}
+
+	.routine-content :global(p) {
+		margin-bottom: 0.75em;
+	}
+
+	.routine-content :global(ul),
+	.routine-content :global(ol) {
+		padding-left: 1.25em;
+		margin-bottom: 0.75em;
+	}
+
+	.routine-content :global(li) {
+		margin-bottom: 0.375em;
+	}
+
+	.routine-content :global(strong) {
+		color: var(--primary);
+		font-weight: 600;
+	}
+
+	.routine-content :global(blockquote) {
+		border-left: 3px solid var(--primary);
+		padding-left: 1em;
+		margin-left: 0;
+		color: var(--content-meta);
+	}
+
+	.routine-content :global(hr) {
+		border: none;
+		border-top: 1px solid var(--line-divider);
+		margin: 1.25em 0;
+	}
+
+	@media (max-width: 640px) {
+		.routine-card-header {
+			padding: 1rem 1rem 0;
+		}
+		.routine-card-body {
+			padding: 0.75rem 1rem 1.25rem;
+		}
+	}
+</style>

@@ -1,0 +1,87 @@
+---
+import BookCard from "./BookCard.astro";
+
+interface BookData {
+	title: string;
+	coverImage: string;
+	link: string;
+	status: number;
+	score: number;
+}
+
+interface Props {
+	books: BookData[];
+	statusMap?: Record<number, string>;
+}
+
+const { books, statusMap } = Astro.props;
+---
+
+<div class="bookshelf">
+	{books.length > 0 ? (
+		<div class="shelf-grid">
+			{books.map((book, index) => {
+				const statusKey = statusMap ? statusMap[book.status] || "unknown" : "unknown";
+				return (
+					<div class="book-item" data-book-status={statusKey}>
+						<BookCard
+							title={book.title}
+							coverImage={book.coverImage}
+							link={book.link}
+							status={book.status}
+							score={book.score}
+							index={index}
+						/>
+					</div>
+				);
+			})}
+		</div>
+	) : (
+		<div class="flex flex-col items-center justify-center py-16 text-center">
+			<p class="text-sm text-[var(--content-meta)]">书架上还没有书籍</p>
+		</div>
+	)}
+</div>
+
+<style>
+	.bookshelf {
+		padding: 24px 16px 8px;
+		border: 2px solid var(--line-divider);
+		border-radius: var(--radius-large);
+		background: var(--card-bg);
+	}
+
+	.shelf-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 20px 16px;
+		padding: 0 4px;
+	}
+
+	@media (min-width: 640px) {
+		.shelf-grid {
+			grid-template-columns: repeat(4, 1fr);
+		}
+	}
+
+	@media (min-width: 768px) {
+		.shelf-grid {
+			grid-template-columns: repeat(5, 1fr);
+		}
+	}
+
+	@media (min-width: 1024px) {
+		.shelf-grid {
+			grid-template-columns: repeat(6, 1fr);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.bookshelf {
+			padding: 8px 2px 2px;
+		}
+		.shelf-grid {
+			gap: 18px 8px;
+		}
+	}
+</style>

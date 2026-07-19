@@ -1,0 +1,192 @@
+---
+import { getCollection, render } from "astro:content";
+import { Icon } from "astro-icon/components";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+export async function getStaticPaths() {
+	const entries = await getCollection("travel", ({ id }) => 
+		!id.toLowerCase().includes("readme")
+	);
+	return entries.map((entry) => ({
+		params: { slug: entry.id.replace(/\.md$/, "") },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const dateStr = entry.data.date instanceof Date 
+	? entry.data.date.toISOString().split("T")[0] 
+	: typeof entry.data.date === "string" 
+		? entry.data.date 
+		: "";
+---
+
+<MainGridLayout
+	title={`${entry.data.province || "未知"}${entry.data.city ? " · " + entry.data.city : ""}`}
+	description={entry.data.experience || ""}
+>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
+		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<div class="onload-animation">
+				<div class="flex items-center gap-3 mb-4">
+					<div class="w-10 h-10 rounded-xl bg-(--primary) flex items-center justify-center">
+						<Icon name="material-symbols:location-city" class="text-white text-lg" />
+					</div>
+					<div>
+						<h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-2xl font-bold text-(--deep-text)">
+							{entry.data.province || "未知省份"}
+						</h1>
+						{entry.data.city && (
+							<p class="text-sm text-(--content-meta)">{entry.data.city}{entry.data.district ? " · " + entry.data.district : ""}</p>
+						)}
+					</div>
+				</div>
+
+				<div class="flex flex-wrap gap-3 mb-6">
+					<div class="stat-pill">
+						<Icon name="material-symbols:pin-drop" class="text-sm" />
+						<span class="font-semibold text-(--deep-text)">{entry.data.visitCount || 1}</span>
+						<span class="text-(--content-meta)">到访次数</span>
+					</div>
+					{dateStr && (
+						<div class="stat-pill">
+							<Icon name="material-symbols:calendar-today" class="text-sm" />
+							<span class="text-(--content-meta)">{dateStr}</span>
+						</div>
+					)}
+				</div>
+
+				{entry.data.experience && (
+					<div class="bg-(--card-bg) p-4 rounded-xl border border-(--line-divider) mb-6">
+						<h3 class="text-sm font-semibold text-(--deep-text) mb-2">旅行体验</h3>
+						<p class="text-sm text-(--content-meta) leading-relaxed">{entry.data.experience}</p>
+					</div>
+				)}
+
+				{entry.body && (
+					<article class="place-content mb-6">
+						<Content />
+					</article>
+				)}
+
+				<div class="mt-6 flex items-center gap-4">
+					<a
+						href="/travel/"
+						class="flex items-center gap-2 text-sm text-(--content-meta) hover:text-(--primary) transition-colors"
+					>
+						<Icon name="material-symbols:arrow-back" class="w-4 h-4" />
+						返回足迹
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.stat-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 14px;
+		border: 1px solid var(--line-divider);
+		border-radius: 50px;
+		font-size: 13px;
+		color: var(--deep-text);
+		background: var(--card-bg);
+	}
+
+	.stat-pill :global(svg) {
+		color: var(--primary);
+	}
+
+	.place-content {
+		font-size: 0.95rem;
+		line-height: 1.8;
+		color: var(--deep-text);
+	}
+
+	.place-content :global(p) {
+		margin-bottom: 1rem;
+		color: var(--deep-text);
+	}
+
+	.place-content :global(h1),
+	.place-content :global(h2),
+	.place-content :global(h3),
+	.place-content :global(h4),
+	.place-content :global(h5),
+	.place-content :global(h6) {
+		color: var(--deep-text);
+		font-weight: 600;
+		margin-top: 1.5rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.place-content :global(strong),
+	.place-content :global(b) {
+		color: var(--deep-text);
+	}
+
+	.place-content :global(em),
+	.place-content :global(i) {
+		color: var(--deep-text);
+	}
+
+	.place-content :global(a) {
+		color: var(--primary);
+		text-decoration: underline;
+	}
+
+	.place-content :global(ul),
+	.place-content :global(ol) {
+		padding-left: 1.5rem;
+		margin-bottom: 1rem;
+		color: var(--deep-text);
+	}
+
+	.place-content :global(li) {
+		margin-bottom: 0.5rem;
+		color: var(--deep-text);
+	}
+
+	.place-content :global(blockquote) {
+		border-left: 3px solid var(--primary);
+		padding-left: 1rem;
+		margin-left: 0;
+		margin-bottom: 1rem;
+		color: var(--content-meta);
+		font-style: italic;
+	}
+
+	.place-content :global(code) {
+		background: var(--btn-regular-bg);
+		padding: 0.125rem 0.375rem;
+		border-radius: 4px;
+		font-size: 0.875em;
+		color: var(--deep-text);
+	}
+
+	.place-content :global(pre) {
+		background: var(--btn-regular-bg);
+		padding: 1rem;
+		border-radius: var(--radius-md);
+		overflow-x: auto;
+		margin-bottom: 1rem;
+	}
+
+	.place-content :global(pre code) {
+		background: transparent;
+		padding: 0;
+	}
+
+	.place-content :global(img) {
+		max-width: 100%;
+		border-radius: var(--radius-md);
+		margin-bottom: 1rem;
+	}
+</style>

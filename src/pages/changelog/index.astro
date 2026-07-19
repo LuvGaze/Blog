@@ -1,0 +1,431 @@
+---
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+if (!siteConfig.pages.changelog) {
+	return Astro.redirect("/404/");
+}
+
+const entries = await getCollection("changelog");
+
+const sorted = entries.sort((a, b) => {
+	const dateA = a.data.date.getTime();
+	const dateB = b.data.date.getTime();
+	if (dateA !== dateB) {
+		return dateB - dateA;
+	}
+	const timeA = a.data.time || "00:00";
+	const timeB = b.data.time || "00:00";
+	return timeB.localeCompare(timeA);
+});
+
+const typeCounts: Record<string, number> = {};
+for (const entry of entries) {
+	typeCounts[entry.data.type] = (typeCounts[entry.data.type] || 0) + 1;
+}
+
+const typeConfig = {
+	feature: {
+		label: i18n(I18nKey.changelogFeature),
+		icon: "material-symbols:rocket-launch",
+		cls: "cl-feature",
+	},
+	improvement: {
+		label: i18n(I18nKey.changelogImprovement),
+		icon: "material-symbols:build",
+		cls: "cl-improvement",
+	},
+	fix: {
+		label: i18n(I18nKey.changelogFix),
+		icon: "material-symbols:bug-report",
+		cls: "cl-fix",
+	},
+	removal: {
+		label: i18n(I18nKey.changelogRemoval),
+		icon: "material-symbols:delete",
+		cls: "cl-removal",
+	},
+};
+
+const displayTitle = i18n(I18nKey.changelogTitle);
+const displaySubtitle = i18n(I18nKey.changelogSubtitle);
+const displayAll = i18n(I18nKey.all);
+---
+
+<MainGridLayout title={displayTitle} description={displaySubtitle}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+			<!-- 头部 -->
+			<div class="mb-6">
+				<div class="flex items-center gap-3 mb-3">
+					<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+						<Icon is:inline name="material-symbols:history" class="text-[1.5rem]" />
+					</div>
+					<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+						{displayTitle}
+					</div>
+				</div>
+				<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+					{displaySubtitle}
+				</p>
+			</div>
+
+			<!-- 分类筛选胶囊 -->
+			<div class="cl-filter-bar" id="cl-filter-bar">
+				<div class="tools-tab-pill" data-cl-tab-nav>
+					<div class="tools-tab-indicator" data-cl-tab-indicator></div>
+					<button data-cl-tab="all" class="tools-tab-btn tools-tab-btn-active">
+						{i18n(I18nKey.all)}
+						<span class="tools-tab-badge">{sorted.length}</span>
+					</button>
+					{Object.entries(typeConfig).map(([key, cfg]) => {
+						const count = typeCounts[key] || 0;
+						if (count === 0) return null;
+						return (
+							<button data-cl-tab={key} class="tools-tab-btn tools-tab-btn-inactive">
+								<Icon name={cfg.icon} class="text-sm" />
+								<span>{cfg.label}</span>
+								<span class="tools-tab-badge">{count}</span>
+							</button>
+						);
+					})}
+				</div>
+			</div>
+
+			<!-- 时间线 -->
+			<div class="cl-timeline" id="cl-timeline">
+				{sorted.length > 0 ? (
+					sorted.map((entry) => {
+						const t = typeConfig[entry.data.type];
+						const dateStr = entry.data.date.toISOString().slice(0, 10);
+						return (
+							<article class={`cl-entry ${t.cls}`} data-type={entry.data.type}>
+								<div class="cl-entry-dot"></div>
+								<div class="cl-entry-body">
+									<div class="cl-entry-meta">
+										<time datetime={dateStr}>
+											{dateStr}{entry.data.time ? " · " + entry.data.time : ""}
+										</time>
+										<span class="cl-entry-version">{entry.data.version}</span>
+									</div>
+									<div class="cl-entry-card">
+										<p class="cl-entry-text">{entry.data.description}</p>
+									</div>
+								</div>
+							</article>
+						);
+					})
+				) : (
+					<div class="text-center py-16">
+						<Icon name="material-symbols:history" class="text-5xl text-(--content-meta)/50 mb-4" />
+						<p class="text-(--content-meta)">
+							{i18n(I18nKey.changelogNoData)}
+						</p>
+					</div>
+				)}
+			</div>
+		</div>
+	</div>
+
+	<script is:inline>
+		(function () {
+			function initChangelogTabs() {
+				var tabNav = document.querySelector("[data-cl-tab-nav]");
+				var tabButtons = document.querySelectorAll("[data-cl-tab]");
+				var indicator = document.querySelector("[data-cl-tab-indicator]");
+				if (!tabNav || !tabButtons.length || !indicator) return;
+
+				var newNav = tabNav.cloneNode(true);
+				if (tabNav.parentNode) tabNav.parentNode.replaceChild(newNav, tabNav);
+				tabNav = newNav;
+				tabButtons = tabNav.querySelectorAll("[data-cl-tab]");
+				indicator = tabNav.querySelector("[data-cl-tab-indicator]");
+
+				function updateIndicator(targetBtn) {
+					if (!indicator || !targetBtn) return;
+					indicator.style.left = targetBtn.offsetLeft + "px";
+					indicator.style.top = targetBtn.offsetTop + "px";
+					indicator.style.width = targetBtn.offsetWidth + "px";
+					indicator.style.height = targetBtn.offsetHeight + "px";
+					indicator.style.opacity = "1";
+				}
+
+				function activateTab(targetTab) {
+					if (!targetTab) return;
+					var targetButton = Array.from(tabButtons).find(function (btn) {
+						return btn.dataset.clTab === targetTab;
+					});
+					if (!targetButton) return;
+
+					tabButtons.forEach(function (btn) {
+						btn.classList.remove("tools-tab-btn-active");
+						btn.classList.add("tools-tab-btn-inactive");
+						btn.disabled = false;
+					});
+					targetButton.classList.remove("tools-tab-btn-inactive");
+					targetButton.classList.add("tools-tab-btn-active");
+					targetButton.disabled = true;
+
+					requestAnimationFrame(function () {
+						updateIndicator(targetButton);
+					});
+
+					var entries = document.querySelectorAll(".cl-entry");
+					entries.forEach(function (entry) {
+						if (targetTab === "all" || entry.getAttribute("data-type") === targetTab) {
+							entry.classList.remove("hidden");
+						} else {
+							entry.classList.add("hidden");
+						}
+					});
+				}
+
+				tabButtons.forEach(function (button) {
+					button.addEventListener("click", function () {
+						var targetTab = button.dataset.clTab;
+						if (targetTab) activateTab(targetTab);
+					});
+				});
+
+				var activeBtn = tabNav.querySelector(".tools-tab-btn-active");
+				if (activeBtn) {
+					requestAnimationFrame(function () {
+						updateIndicator(activeBtn);
+					});
+				}
+
+				window.addEventListener("resize", function () {
+					var act = tabNav.querySelector(".tools-tab-btn-active");
+					if (act) updateIndicator(act);
+				});
+			}
+
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", initChangelogTabs);
+			} else {
+				initChangelogTabs();
+			}
+
+			document.addEventListener("astro:page-load", initChangelogTabs);
+			document.addEventListener("swup:contentReplaced", initChangelogTabs);
+		})();
+	</script>
+</MainGridLayout>
+
+<style>
+	.cl-filter-bar {
+		margin-bottom: 1.5rem;
+	}
+
+	.tools-tab-pill {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		padding: 0.375rem;
+		border-radius: var(--radius-large);
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+	}
+
+	.tools-tab-indicator {
+		position: absolute;
+		border-radius: 9999px;
+		background: var(--primary);
+		transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+			height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.tools-tab-btn {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.875rem;
+		border: none;
+		border-radius: 9999px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		white-space: nowrap;
+		cursor: pointer;
+		background: transparent;
+		transition: color 0.2s;
+		flex-shrink: 0;
+		font-family: inherit;
+		color: var(--deep-text);
+	}
+
+	.tools-tab-btn-active {
+		color: #fff;
+		cursor: default;
+	}
+
+	.tools-tab-btn-inactive:hover {
+		color: var(--primary);
+	}
+
+	.tools-tab-badge {
+		font-size: 0.65rem;
+		padding: 0.0625rem 0.375rem;
+		border-radius: 9999px;
+		background: var(--btn-regular-bg);
+		color: var(--btn-content);
+		line-height: 1.4;
+	}
+
+	.tools-tab-btn-active .tools-tab-badge {
+		background: rgba(255, 255, 255, 0.25);
+		color: #fff;
+	}
+
+	.cl-timeline {
+		position: relative;
+		padding-left: 2rem;
+	}
+	.cl-timeline::before {
+		content: "";
+		position: absolute;
+		left: 6px;
+		top: 0;
+		bottom: 0;
+		width: 2px;
+		background: var(--line-divider);
+	}
+
+
+	.cl-entry {
+		position: relative;
+		margin-bottom: 1.25rem;
+		display: flex;
+		gap: 1rem;
+		animation: clFadeUp 0.4s ease backwards;
+	}
+	.cl-entry:nth-child(1) {
+		animation-delay: 0.05s;
+	}
+	.cl-entry:nth-child(2) {
+		animation-delay: 0.10s;
+	}
+	.cl-entry:nth-child(3) {
+		animation-delay: 0.15s;
+	}
+	.cl-entry:nth-child(4) {
+		animation-delay: 0.20s;
+	}
+	.cl-entry:nth-child(5) {
+		animation-delay: 0.25s;
+	}
+	.cl-entry:nth-child(6) {
+		animation-delay: 0.30s;
+	}
+	.cl-entry:nth-child(7) {
+		animation-delay: 0.35s;
+	}
+	.cl-entry:nth-child(8) {
+		animation-delay: 0.40s;
+	}
+	.cl-entry:nth-child(9) {
+		animation-delay: 0.45s;
+	}
+	.cl-entry:nth-child(10) {
+		animation-delay: 0.50s;
+	}
+
+	.cl-entry.hidden {
+		display: none;
+	}
+
+	.cl-entry-dot {
+		width: 14px;
+		height: 14px;
+		border-radius: 50%;
+		background: var(--deep-text);
+		border: 3px solid var(--deep-text);
+		flex-shrink: 0;
+		margin-top: 0.35rem;
+		margin-left: -1.5rem;
+		z-index: 2;
+		transition: border-color 0.25s;
+	}
+
+	.cl-entry-body {
+		flex: 1;
+		min-width: 0;
+	}
+
+	.cl-entry-meta {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		margin-bottom: 0.375rem;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+
+	.cl-entry-version {
+		display: inline-block;
+		font-size: 0.65rem;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		color: var(--deep-text);
+		background: var(--btn-plain-bg-hover);
+		padding: 1px 8px;
+		border-radius: 4px;
+	}
+
+	.cl-entry-card {
+		background: var(--card-bg);
+		border: 1px solid var(--line-divider);
+		border-radius: var(--radius-large);
+		padding: 0.75rem 1rem;
+		transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+	}
+
+	.cl-entry-card:hover {
+		transform: translateY(-1px);
+		border-color: var(--primary);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	}
+
+	.cl-entry-text {
+		font-size: 0.875rem;
+		color: var(--deep-text);
+		margin: 0;
+		line-height: 1.6;
+	}
+
+	@keyframes clFadeUp {
+		from {
+			opacity: 0;
+			transform: translateY(16px);
+		}
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.cl-timeline {
+			padding-left: 1.75rem;
+		}
+		.cl-entry-dot {
+			width: 12px;
+			height: 12px;
+			margin-left: -1.5rem;
+		}
+		.cl-entry-card {
+			padding: 0.625rem 0.875rem;
+		}
+	}
+</style>

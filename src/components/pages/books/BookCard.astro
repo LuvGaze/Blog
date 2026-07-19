@@ -1,0 +1,208 @@
+---
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+
+interface Props {
+	title: string;
+	coverImage: string;
+	link: string;
+	status: number;
+	score: number;
+	index: number;
+}
+
+const { title, coverImage, link, status, score } = Astro.props;
+
+const statusConfig: Record<number, { color: string; label: string }> = {
+	1: { color: "#5bc0de", label: i18n(I18nKey.bookshelfWantRead) },
+	2: { color: "#5cb85c", label: i18n(I18nKey.bookshelfRead) },
+	3: { color: "#f0ad4e", label: i18n(I18nKey.bookshelfReading) },
+	4: { color: "#9b8ec4", label: i18n(I18nKey.bangumiStatusOnHold) },
+	5: { color: "#d9534f", label: i18n(I18nKey.bangumiStatusDropped) },
+};
+
+const sc = statusConfig[status] || { color: "#999", label: "" };
+const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
+---
+
+<a href={link} class="book-card group">
+	<div class="book-cover-wrap">
+		<img
+			src={coverImage}
+			alt={title}
+			class="book-cover-img"
+			loading="lazy"
+		/>
+
+		<span class="book-status-tag" style={`background: ${sc.color};`}>
+			{sc.label}
+		</span>
+
+		{scoreText && (
+			<span class="book-score-tag">
+				<svg class="book-score-star" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+				{scoreText}
+			</span>
+		)}
+
+		<div class="book-hover-overlay">
+			<span class="book-hover-text">查看详情</span>
+		</div>
+	</div>
+
+	<p class="book-title">{title}</p>
+</a>
+
+<style>
+	.book-card {
+		display: block;
+		text-decoration: none;
+		color: inherit;
+		cursor: pointer;
+		transition: transform 0.2s ease;
+	}
+
+	.book-card:hover {
+		transform: translateY(-4px);
+	}
+	:root.dark .book-card:hover .book-title {
+		color: var(--primary);
+	}
+
+	.book-cover-wrap {
+		position: relative;
+		aspect-ratio: 3/4;
+		border-radius: 6px;
+		overflow: hidden;
+		box-shadow:
+			0 2px 8px rgba(0,0,0,0.10),
+			0 1px 2px rgba(0,0,0,0.06);
+		transition: box-shadow 0.2s ease;
+		background: var(--btn-regular-bg);
+	}
+
+	.book-card:hover .book-cover-wrap {
+		box-shadow:
+			0 8px 25px rgba(0,0,0,0.15),
+			0 2px 6px rgba(0,0,0,0.08);
+	}
+
+	.book-cover-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+		display: block;
+	}
+
+	.book-status-tag {
+		position: absolute;
+		top: 8px;
+		left: 8px;
+		padding: 2px 8px;
+		border-radius: 4px;
+		font-size: 10px;
+		font-weight: 600;
+		color: #fff;
+		z-index: 2;
+		letter-spacing: 0.02em;
+		line-height: 1.6;
+	}
+
+	.book-score-tag {
+		position: absolute;
+		top: 8px;
+		right: 8px;
+		display: flex;
+		align-items: center;
+		gap: 2px;
+		padding: 2px 7px 2px 5px;
+		border-radius: 4px;
+		background: rgba(0,0,0,0.55);
+		font-size: 11px;
+		font-weight: 700;
+		color: #fbbf24;
+		z-index: 2;
+		line-height: 1;
+	}
+	.book-score-star {
+		width: 10px;
+		height: 10px;
+		flex-shrink: 0;
+	}
+
+	.book-hover-overlay {
+		position: absolute;
+		inset: 0;
+		background: rgba(0,0,0,0.5);
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+		z-index: 3;
+	}
+	.book-card:hover .book-hover-overlay {
+		opacity: 1;
+	}
+	.book-hover-text {
+		color: #fff;
+		font-size: 14px;
+		font-weight: 600;
+		padding: 6px 16px;
+		border: 1.5px solid rgba(255,255,255,0.7);
+		border-radius: 20px;
+		letter-spacing: 0.04em;
+	}
+
+	.book-title {
+		margin: 8px 2px 0;
+		font-size: 12px;
+		font-weight: 500;
+		line-height: 1.4;
+		color: var(--deep-text);
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		text-align: center;
+	}
+
+	.book-card:hover .book-title {
+		color: var(--primary);
+	}
+
+	:root.dark .book-cover-wrap {
+		border: 1px solid #3f3f46;
+		box-shadow: 0 2px 8px rgba(255,255,255,0.03);
+	}
+	:root.dark .book-card:hover .book-cover-wrap {
+		border-color: #fff;
+		box-shadow: 0 8px 25px rgba(255,255,255,0.1);
+	}
+
+	@media (max-width: 480px) {
+		.book-status-tag {
+			top: 3px;
+			left: 3px;
+			padding: 1px 5px;
+			font-size: 8px;
+			border-radius: 3px;
+		}
+		.book-score-tag {
+			top: 3px;
+			right: 3px;
+			padding: 1px 4px 1px 3px;
+			font-size: 9px;
+			border-radius: 3px;
+		}
+		.book-score-star {
+			width: 8px;
+			height: 8px;
+		}
+		.book-title {
+			font-size: 11px;
+			margin-top: 6px;
+			-webkit-line-clamp: 1;
+		}
+	}
+</style>

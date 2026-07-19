@@ -1,0 +1,121 @@
+---
+import { getCollection, render } from "astro:content";
+import Markdown from "@/components/common/Markdown.astro";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { formatDateToYYYYMMDD } from "@/utils/date-utils";
+import { removeFileExtension } from "@/utils/url-utils";
+
+export async function getStaticPaths() {
+	const bangumiEntries = await getCollection("bangumi", ({ data }) => {
+		return data.category === "book";
+	});
+	return bangumiEntries.map((entry) => ({
+		params: { slug: removeFileExtension(entry.id) },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+const { Content, headings } = await render(entry);
+
+const bannerPostMeta = {
+	title: entry.data.title,
+	published: entry.data.date || new Date(),
+};
+
+const getStatusText = (status: number) => {
+	switch (status) {
+		case 1:
+			return i18n(I18nKey.bookshelfWantRead);
+		case 2:
+			return i18n(I18nKey.bookshelfRead);
+		case 3:
+			return i18n(I18nKey.bookshelfReading);
+		case 4:
+			return i18n(I18nKey.bangumiStatusOnHold);
+		case 5:
+			return i18n(I18nKey.bangumiStatusDropped);
+		default:
+			return i18n(I18nKey.bangumiStatusUnknown);
+	}
+};
+---
+
+<MainGridLayout
+	title={entry.data.title}
+	description={entry.data.comment || ""}
+>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
+		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<div class="flex flex-col lg:flex-row gap-6">
+				<div class="lg:w-48 flex-shrink-0">
+					<div class="rounded-xl overflow-hidden shadow-lg bg-(--btn-regular-bg)">
+						<img
+							src={typeof entry.data.image === "string" ? entry.data.image : entry.data.image.src}
+							alt={entry.data.title}
+							class="w-full aspect-[2/3] object-cover"
+						/>
+					</div>
+				</div>
+
+				<div class="flex-1">
+					<div class="relative onload-animation">
+						<h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-2xl font-bold text-(--deep-text)">
+							{entry.data.title}
+						</h1>
+					</div>
+
+			<div class="onload-animation mb-6">
+				<div class="flex flex-wrap gap-4 text-sm text-(--content-meta)">
+					{entry.data.date && (
+						<div class="flex items-center gap-1">
+							<span>发布于: {formatDateToYYYYMMDD(entry.data.date)}{entry.data.time ? ` ${entry.data.time}` : ""}</span>
+						</div>
+					)}
+					<div class="flex items-center gap-1">
+						<span>分类: 书籍</span>
+					</div>
+					<div class="flex items-center gap-1">
+						<span>状态: {getStatusText(entry.data.status)}</span>
+					</div>
+					{entry.data.score && entry.data.score > 0 && (
+						<div class="flex items-center gap-1">
+							<span>评分: {entry.data.score}/10</span>
+						</div>
+					)}
+					{entry.data.tags && entry.data.tags.length > 0 && (
+						<div class="flex flex-wrap gap-2">
+							{entry.data.tags.map(tag => (
+								<span class="px-2 py-0.5 bg-(--btn-regular-bg) text-xs text-(--content-meta) rounded-lg">#{tag}</span>
+							))}
+						</div>
+					)}
+				</div>
+			</div>
+
+			{entry.data.comment && (
+				<div class="bg-(--card-bg) p-4 rounded-xl border border-(--line-divider) mb-6">
+					<h3 class="text-sm font-semibold text-(--deep-text) mb-2">我的评价</h3>
+					<p class="text-sm text-(--content-meta)">{entry.data.comment}</p>
+				</div>
+			)}
+
+			<Markdown class="mb-6 markdown-content onload-animation">
+				<Content />
+			</Markdown>
+
+			<div class="mt-6 flex items-center gap-4">
+				<a
+					href="/books/"
+					class="flex items-center gap-2 text-sm text-(--content-meta) hover:text-(--primary) transition-colors"
+				>
+					返回书架
+				</a>
+			</div>
+				</div>
+			</div>
+		</div>
+	</div>
+</MainGridLayout>

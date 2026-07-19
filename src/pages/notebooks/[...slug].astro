@@ -1,0 +1,670 @@
+---
+import { getCollection, render } from "astro:content";
+import * as path from "node:path";
+import Comment from "@/components/comment/index.astro";
+import Markdown from "@/components/common/Markdown.astro";
+import type { ImageMetadata } from "astro";
+import { Icon } from "astro-icon/components";
+import { marked } from "marked";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const notebookImageFiles = import.meta.glob<ImageMetadata>(
+	"../content/notebooks/**/*.{jpg,jpeg,png,webp,avif,gif,svg}",
+	{ import: "default" },
+);
+
+export async function getStaticPaths() {
+	const allEntries = await getCollection("notebooks");
+	const paths = [];
+
+	for (const entry of allEntries) {
+		const normalizedId = entry.id.replace(/\\/g, "/");
+		if (normalizedId === "readme" || normalizedId === "readme.md") continue;
+		const isIndexFile =
+			/\/(_index|_index\.md|_index\.json)?$/.test(normalizedId) &&
+			(normalizedId.endsWith("_index") || normalizedId.includes("/_index."));
+		const isNotebookRoot =
+			normalizedId.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
+			normalizedId.match(/^([^/]+)\/_index$/);
+		if (!isIndexFile || !isNotebookRoot) continue;
+
+		const folderName = isNotebookRoot[1];
+		const folderEntries = allEntries.filter((item) => {
+			const itemId = item.id.replace(/\\/g, "/");
+			return (
+				itemId.startsWith(`${folderName}/`) &&
+				!/^([^/]+)\/(_index|_index\.md|_index\.json)$/.test(itemId) &&
+				itemId !== `${folderName}/_index` &&
+				itemId !== `${folderName}/_index.md` &&
+				itemId !== `${folderName}/_index.json`
+			);
+		});
+		const sortedEntries = [...folderEntries].sort((a, b) => {
+			const aT = a.data.date instanceof Date ? a.data.date.getTime() : 0;
+			const bT = b.data.date instanceof Date ? b.data.date.getTime() : 0;
+			return bT - aT;
+		});
+
+		paths.push({
+			params: { slug: folderName },
+			props: {
+				entry,
+				entries: folderEntries,
+				sortedEntries,
+				isNotebookIndex: true,
+			},
+		});
+		for (const item of folderEntries) {
+			const itemId = item.id.replace(/\\/g, "/");
+			const itemSlug = itemId.split("/").pop()?.replace(/\.md$/, "") || "";
+			paths.push({
+				params: { slug: `${folderName}/${itemSlug}` },
+				props: { entry, item, isNotebookIndex: false },
+			});
+		}
+	}
+	return paths;
+}
+
+const { entry, entries, sortedEntries, item, isNotebookIndex } = Astro.props;
+const notebookContent = !isNotebookIndex ? await render(item) : null;
+const normalizedEntryId = entry.id.replace(/\\/g, "/");
+const isNotebookRootMatch =
+	normalizedEntryId.match(/^([^/]+)\/(_index|_index\.md|_index\.json)$/) ||
+	normalizedEntryId.match(/^([^/]+)\/_index$/);
+const folderName = isNotebookRootMatch
+	? isNotebookRootMatch[1]
+	: normalizedEntryId.split("/")[0];
+
+let coverSrc: string | null = null;
+const rawCover = entry.data.cover as string | undefined;
+if (rawCover) {
+	if (rawCover.startsWith("http://") || rawCover.startsWith("https://")) {
+		coverSrc = rawCover;
+	} else {
+		const imageKey = path
+			.normalize(path.join("../content/notebooks", folderName, rawCover))
+			.replace(/\\/g, "/");
+		const loader = notebookImageFiles[imageKey];
+		if (loader) {
+			try {
+				const img = await loader();
+				coverSrc = img.src;
+			} catch {
+				coverSrc = null;
+			}
+		}
+	}
+}
+
+const notebookCommentPath = !isNotebookIndex
+	? `/notebooks/${item.id.replace(/\\/g, "/").replace(/\.md$/, "")}/`
+	: "";
+
+const sortedEntriesWithImages = isNotebookIndex
+	? await Promise.all(
+			(sortedEntries || []).map(async (noteItem) => {
+				const rawImage = noteItem.data.image as string | string[] | undefined;
+				const imageList: string[] = [];
+				if (rawImage && rawImage !== "") {
+					const rawImages = Array.isArray(rawImage) ? rawImage : [rawImage];
+					const noteItemId = noteItem.id.replace(/\\/g, "/");
+					const noteDir = noteItemId.replace(/\/[^/]+$/, "");
+					for (const ri of rawImages) {
+						if (ri.startsWith("http://") || ri.startsWith("https://")) {
+							imageList.push(ri);
+						} else {
+							const imageKey = path
+								.normalize(path.join("../content/notebooks", noteDir, ri))
+								.replace(/\\/g, "/");
+							const loader = notebookImageFiles[imageKey];
+							if (loader) {
+								try {
+									const img = await loader();
+									imageList.push(img.src);
+								} catch {
+									/* skip */
+								}
+							}
+						}
+					}
+				}
+				return { ...noteItem, images: imageList };
+			}),
+	  )
+	: [];
+---
+
+{isNotebookIndex ? (
+	<MainGridLayout title={entry.data.name || i18n(I18nKey.notebooksTitle)} description={entry.data.summary || i18n(I18nKey.notebooksDescription)}>
+		<div class="diary-entry-page">
+			<section class="notebook-hero" style={coverSrc ? `background-image: url(${coverSrc});` : ""}>
+				<div class="notebook-hero-overlay"></div>
+				<a href="/notebooks/" class="notebook-hero-back">
+					<Icon name="material-symbols:arrow-back-rounded" />
+					<span>日记本列表</span>
+				</a>
+				<div class="notebook-hero-content">
+					<span class="notebook-hero-tag">📔 日记本</span>
+					<h1 class="notebook-hero-title">{entry.data.name || "我的日记本"}</h1>
+					{entry.data.summary && <p class="notebook-hero-desc">{entry.data.summary}</p>}
+					<div class="notebook-hero-stats">
+						<div class="notebook-hero-stat">
+							<Icon name="material-symbols:article-outline" />
+							<span>{entries.length} 篇日记</span>
+						</div>
+						{sortedEntries[0]?.data.date instanceof Date && (
+							<div class="notebook-hero-stat">
+								<Icon name="material-symbols:calendar-today" />
+								<span>最近 {sortedEntries[0].data.date.toISOString().split("T")[0]}</span>
+							</div>
+						)}
+					</div>
+				</div>
+			</section>
+
+			<section class="diary-entries-section">
+				{sortedEntriesWithImages.length === 0 ? (
+					<div class="diary-empty-entries">
+						<div class="text-5xl mb-4">📝</div>
+						<p class="text-[var(--content-meta)]">还没有日记内容</p>
+					</div>
+				) : (
+					<div class="diary-entries-list">
+						{sortedEntriesWithImages.map((noteItem) => {
+							const noteItemId = noteItem.id.replace(/\\/g, "/");
+							const fileName = noteItemId.split("/").pop()?.replace(/\.md$/, "") || "未命名";
+							const itemSlug = fileName;
+							const contentBody = noteItem.body
+								? noteItem.body.split("\n").filter((line: string) => !line.trim().startsWith("---")).join("\n").trim()
+								: "";
+							const htmlPreview = contentBody ? marked.parse(contentBody.slice(0, 500), { mangle: false, headerIds: false }) : "";
+							const previewHtml = htmlPreview
+								.replace(/<\/p>\s*<p>/g, "<br>")
+								.replace(/<\/?p>/g, "")
+								.replace(/<h[1-6][^>]*>/g, "")
+								.replace(/<\/h[1-6]>/g, "<br>")
+								.replace(/<img[^>]*>/g, "")
+								.trim();
+							const preview = previewHtml.slice(0, 300) + (previewHtml.length > 300 ? "..." : "");
+							const noteImages = noteItem.images as string[];
+
+							return (
+								<a href={`/notebooks/${folderName}/${itemSlug}/`} class="diary-entry-card group">
+									<div class="entry-card-inner">
+										<div class="entry-card-text">
+											<span class="entry-card-date">
+												{noteItem.data.date instanceof Date ? noteItem.data.date.toISOString().split("T")[0] : "未填写日期"}
+											</span>
+											{preview && <div class="entry-card-preview-container"><p class="entry-card-preview" set:html={preview} /></div>}
+										</div>
+										{noteImages.length > 0 && (
+											<div class="entry-card-images">
+												{noteImages.map((imgSrc, idx) => (
+													<div class="entry-card-image">
+														<img src={imgSrc} alt={`图${idx + 1}`} class="entry-card-img" loading="lazy" />
+													</div>
+												))}
+											</div>
+										)}
+									</div>
+									<div class="entry-card-arrow">
+										<Icon name="material-symbols:arrow-forward-rounded" />
+									</div>
+								</a>
+							);
+						})}
+					</div>
+				)}
+			</section>
+		</div>
+	</MainGridLayout>
+) : (
+	<MainGridLayout title={item.data.name || item.data.title || "日记"}>
+		<div class="diary-detail-page">
+			<article class="diary-paper">
+				<a href={`/notebooks/${folderName}/`} class="diary-paper-back">
+					<Icon name="material-symbols:arrow-back-rounded" />
+					<span>返回 {entry.data.name || "日记本"}</span>
+				</a>
+
+				<h1 class="diary-paper-title">
+					{item.data.name || item.data.title || item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题"}
+				</h1>
+
+				<div class="diary-paper-content">
+					{notebookContent ? (
+						<Markdown><notebookContent.Content /></Markdown>
+					) : (
+						<p>（无内容）</p>
+					)}
+				</div>
+
+				<div class="diary-paper-footer">
+					{item.data.tags && item.data.tags.length > 0 && (
+						<div class="diary-tags">
+							{item.data.tags.map((tag: string) => <span class="diary-tag">#{tag}</span>)}
+						</div>
+					)}
+					<span class="diary-date-final">
+						{item.data.date instanceof Date
+							? item.data.date.toLocaleDateString("zh-CN", { year: "numeric", month: "long", day: "numeric", weekday: "long" })
+							: "未填写日期"}
+					</span>
+				</div>
+			</article>
+
+			<Comment customPath={notebookCommentPath} />
+		</div>
+	</MainGridLayout>
+)}
+
+<style>
+	.notebook-hero-back {
+		position: absolute;
+		top: 1rem;
+		left: 1.25rem;
+		z-index: 3;
+		display: inline-flex;
+		align-items: center;
+		gap: 0.35rem;
+		padding: 0.4rem 0.8rem;
+		border-radius: 9999px;
+		font-size: 0.78rem;
+		color: #fff;
+		text-decoration: none;
+		background: rgba(0, 0, 0, 0.25);
+		backdrop-filter: blur(6px);
+		transition: background 0.2s;
+	}
+	.notebook-hero-back:hover {
+		background: rgba(0, 0, 0, 0.45);
+	}
+	.notebook-hero:not([style*="background-image"]) .notebook-hero-back {
+		color: var(--content-meta);
+		background: var(--card-bg);
+		border: 1px solid var(--line-divider);
+	}
+	.notebook-hero:not([style*="background-image"]) .notebook-hero-back:hover {
+		color: var(--primary);
+		border-color: var(--primary);
+	}
+
+	.notebook-hero {
+		position: relative;
+		border-radius: var(--radius-2xl);
+		overflow: hidden;
+		background-size: cover;
+		background-position: center;
+		background-color: var(--card-bg);
+		min-height: 280px;
+		display: flex;
+		align-items: flex-end;
+	}
+	.notebook-hero-overlay {
+		position: absolute;
+		inset: 0;
+		z-index: 1;
+		background: linear-gradient(to top, rgba(0, 0, 0, 0.75) 0%, rgba(0, 0, 0, 0.3) 50%, rgba(0, 0, 0, 0.15) 100%);
+	}
+	.notebook-hero-content {
+		position: relative;
+		z-index: 2;
+		padding: 3rem 2.5rem 2rem;
+		width: 100%;
+	}
+	.notebook-hero-tag {
+		display: inline-block;
+		padding: 0.3rem 0.9rem;
+		border-radius: 9999px;
+		font-size: 0.8rem;
+		font-weight: 500;
+		background: rgba(255, 255, 255, 0.15);
+		backdrop-filter: blur(6px);
+		color: #fff;
+		margin-bottom: 1rem;
+	}
+	.notebook-hero-title {
+		font-size: 2.25rem;
+		font-weight: 800;
+		color: #fff;
+		margin: 0 0 0.5rem;
+		line-height: 1.2;
+		text-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+	}
+	.notebook-hero-desc {
+		font-size: 1rem;
+		color: rgba(255, 255, 255, 0.8);
+		margin: 0 0 1.25rem;
+		max-width: 540px;
+		line-height: 1.6;
+	}
+	.notebook-hero-stats {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 1rem;
+	}
+	.notebook-hero-stat {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.85rem;
+		color: rgba(255, 255, 255, 0.75);
+	}
+
+	.notebook-hero:not([style*="background-image"]) {
+		background: linear-gradient(135deg, var(--card-bg) 0%, color-mix(in srgb, var(--primary) 20%, var(--card-bg)) 100%);
+		border: 1px solid var(--line-divider);
+	}
+	.notebook-hero:not([style*="background-image"]) .notebook-hero-title {
+		color: var(--deep-text);
+		text-shadow: none;
+	}
+	.notebook-hero:not([style*="background-image"]) .notebook-hero-desc {
+		color: var(--content-meta);
+	}
+	.notebook-hero:not([style*="background-image"]) .notebook-hero-stat {
+		color: var(--content-meta);
+	}
+	.notebook-hero:not([style*="background-image"]) .notebook-hero-tag {
+		background: color-mix(in srgb, var(--primary) 15%, transparent);
+		color: var(--primary);
+	}
+
+	.diary-entries-section {
+		margin-top: 2rem;
+	}
+	.diary-empty-entries {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		justify-content: center;
+		padding: 3rem;
+		background: var(--card-bg);
+		border: 2px dashed var(--line-divider);
+		border-radius: var(--radius-2xl);
+	}
+	.diary-entries-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.15rem;
+	}
+
+	:global(.diary-entry-card) {
+		display: block;
+		text-decoration: none;
+		background: var(--card-bg);
+		border: 1px solid var(--line-divider);
+		border-radius: var(--radius-large);
+		overflow: hidden;
+		transition: all 0.2s ease;
+		position: relative;
+	}
+	:global(.diary-entry-card:hover) {
+		border-color: var(--primary);
+		background: color-mix(in srgb, var(--primary) 3%, var(--card-bg));
+	}
+	:global(.entry-card-inner) {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+		padding: 1.25rem;
+	}
+	:global(.entry-card-arrow) {
+		position: absolute;
+		right: 0.75rem;
+		bottom: 0.75rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 2rem;
+		height: 2rem;
+		border-radius: 50%;
+		background: var(--btn-regular-bg);
+		color: var(--content-meta);
+		opacity: 0;
+		transform: translateY(4px);
+		transition: all 0.2s ease;
+	}
+	:global(.diary-entry-card:hover .entry-card-arrow) {
+		opacity: 1;
+		transform: translateY(0);
+		color: var(--primary);
+	}
+	:global(.entry-card-text) {
+		flex: 1;
+		min-width: 0;
+	}
+	:global(.entry-card-date) {
+		display: block;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+		margin-bottom: 0.35rem;
+	}
+	:global(.diary-entry-card .entry-card-text) {
+		color: var(--deep-text) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-text) *,
+	:global(.diary-entry-card .entry-card-text) *::marker,
+	:global(.diary-entry-card .entry-card-text) *::before,
+	:global(.diary-entry-card .entry-card-text) *::after {
+		color: var(--deep-text) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container) {
+		font-size: 0.9rem;
+		line-height: 1.7;
+		color: var(--deep-text) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview) {
+		margin: 0;
+		color: var(--deep-text) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview) *,
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview) *::marker,
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview) *::before,
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview) *::after {
+		font-size: inherit;
+		line-height: inherit;
+		color: var(--deep-text) !important;
+		background-color: transparent !important;
+		border-color: var(--line-divider) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview strong),
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview b) {
+		font-weight: 600;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview em),
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview i) {
+		font-style: italic;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview code) {
+		padding: 0.125rem 0.375rem;
+		background: var(--btn-regular-bg) !important;
+		border-radius: 0.25rem;
+		font-size: 0.8em;
+		font-family: var(--font-mono);
+		color: var(--deep-text) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview pre) {
+		background: var(--btn-regular-bg) !important;
+		border-radius: 0.5rem;
+		padding: 0.75rem;
+		overflow-x: auto;
+		font-family: var(--font-mono);
+		font-size: 0.8em;
+		line-height: 1.5;
+		margin: 0.5rem 0;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview pre code) {
+		padding: 0;
+		background: none !important;
+		color: var(--deep-text) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview ul),
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview ol) {
+		padding-left: 1.25rem;
+		margin: 0.5rem 0;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview li) {
+		margin: 0.25rem 0;
+		color: var(--deep-text) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview li::marker) {
+		color: var(--content-meta) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview blockquote) {
+		border-left: 3px solid var(--primary) !important;
+		padding-left: 0.75rem;
+		margin: 0.5rem 0;
+		font-style: italic;
+		color: var(--content-meta) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview blockquote *) {
+		color: var(--content-meta) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview a) {
+		text-decoration: underline;
+		color: var(--primary) !important;
+	}
+
+	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview hr) {
+		border: none;
+		border-top: 1px solid var(--line-divider) !important;
+		margin: 0.75rem 0;
+	}
+
+	.entry-card-images {
+		display: grid;
+		grid-template-columns: repeat(3, 90px);
+		gap: 0.5rem;
+	}
+	.entry-card-image {
+		aspect-ratio: 1 / 1;
+		border-radius: var(--radius-md);
+		overflow: hidden;
+	}
+	.entry-card-img {
+		width: 100%;
+		height: 100%;
+		object-fit: cover;
+	}
+
+	.diary-detail-page {
+		max-width: 48rem;
+		margin: 0 auto;
+	}
+	.diary-paper {
+		background: var(--card-bg);
+		color: var(--deep-text);
+		padding: 2rem 0.75rem;
+		border-radius: var(--radius-large);
+		border: 1px solid var(--line-divider);
+	}
+	@media (min-width: 768px) {
+		.diary-paper {
+			padding: 2rem 1.25rem;
+		}
+	}
+
+	.diary-paper-back {
+		display: inline-flex;
+		align-items: center;
+		gap: 0.4rem;
+		font-size: 0.85rem;
+		color: var(--content-meta);
+		text-decoration: none;
+		margin-bottom: 2rem;
+		transition: color 0.2s;
+	}
+	.diary-paper-back:hover {
+		color: var(--primary);
+	}
+
+	.diary-paper-title {
+		font-size: 1.75rem;
+		font-weight: 700;
+		color: var(--deep-text);
+		margin: 0 0 2rem;
+		line-height: 1.4;
+	}
+
+	.diary-paper-content {
+		font-size: 1rem;
+		line-height: 1.9;
+	}
+	.diary-paper-content :global(p) {
+		margin: 0 0 1.25rem;
+	}
+	.diary-paper-content :global(blockquote) {
+		border-left-color: var(--primary);
+	}
+
+	.diary-paper-content :global(p:has(> img:only-child)) {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.5rem;
+	}
+	.diary-paper-content :global(p:has(> img:only-child):has(img:nth-child(2)):not(:has(img:nth-child(3)))) {
+		grid-template-columns: repeat(2, 1fr);
+	}
+	.diary-paper-content :global(p:has(> img:only-child):not(:has(img:nth-child(2)))) {
+		grid-template-columns: 280px;
+		justify-content: start;
+	}
+	.diary-paper-content :global(img) {
+		border-radius: 0.5rem;
+		max-width: 100%;
+		aspect-ratio: 1 / 1;
+		object-fit: cover;
+		cursor: zoom-in;
+	}
+	.diary-paper-content :global(p:has(> img:only-child)) img {
+		width: 100%;
+		height: 100%;
+	}
+
+	.diary-paper-footer {
+		display: flex;
+		align-items: flex-end;
+		justify-content: space-between;
+		margin-top: 3rem;
+		padding-top: 2rem;
+		border-top: 1px solid var(--line-divider);
+	}
+	.diary-date-final {
+		font-size: 0.85rem;
+		color: var(--content-meta);
+		text-align: right;
+		font-style: italic;
+	}
+
+	.diary-tags {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.5rem;
+	}
+	.diary-tag {
+		padding: 0.25rem 0.75rem;
+		background: var(--btn-regular-bg-hover);
+		border-radius: 9999px;
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
+</style>

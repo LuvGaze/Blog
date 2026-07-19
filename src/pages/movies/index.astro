@@ -1,0 +1,535 @@
+---
+import { getCollection } from "astro:content";
+import Comment from "@/components/comment/index.astro";
+import { Icon } from "astro-icon/components";
+import ClientPagination from "@/components/common/ClientPagination.astro";
+import MovieGameCard from "@/components/pages/movies-games/MovieGameCard.astro";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { formatDateI18nWithTime } from "@/utils/date-utils";
+import { removeFileExtension } from "@/utils/url-utils";
+
+if (!siteConfig.pages.movies) {
+	return Astro.redirect("/404/");
+}
+
+const buildTime = formatDateI18nWithTime(new Date());
+
+const customBangumi = await getCollection("bangumi");
+
+const statusMap: Record<number, string> = {
+	1: "wish",
+	2: "collect",
+	3: "doing",
+	5: "dropped",
+};
+
+interface MgItem {
+	subject_id: number;
+	subject_type: number;
+	rate: number;
+	type: number;
+	comment: string | null;
+	tags: string[];
+	updated_at: string;
+	link: string;
+	_subcategory?: string;
+	subject: {
+		id: number;
+		type: number;
+		name: string;
+		name_cn: string;
+		images: {
+			medium: string;
+			large: string;
+			common: string;
+			small: string;
+			grid: string;
+		};
+		score: number;
+	};
+}
+
+function sortByDateAndTime(a: any, b: any) {
+	const dateA = a.data.date?.getTime() || 0;
+	const dateB = b.data.date?.getTime() || 0;
+	if (dateA !== dateB) {
+		return dateB - dateA;
+	}
+	const timeA = a.data.time || "00:00";
+	const timeB = b.data.time || "00:00";
+	return timeB.localeCompare(timeA);
+}
+
+const mgItems: MgItem[] = customBangumi
+	.filter((item) => ["anime", "real"].includes(item.data.category))
+	.map((item) => {
+		const { data, id } = item;
+		const imageSrc =
+			typeof data.image === "string" ? data.image : data.image.src;
+
+		const finalLink = "/bangumi/" + removeFileExtension(id) + "/";
+
+		const subjectTypeMap: Record<string, number> = {
+			anime: 2,
+			real: 6,
+		};
+
+		const subcategory = (data as any).subcategory as string | undefined;
+
+		return {
+			subject_id: 0,
+			subject_type: subjectTypeMap[data.category] || 2,
+			rate: data.score || 0,
+			type: data.status,
+			comment: data.comment || null,
+			tags: data.tags || [],
+			updated_at: data.date?.toISOString() || new Date().toISOString(),
+			link: finalLink,
+			_subcategory: subcategory,
+			subject: {
+				id: 0,
+				type: subjectTypeMap[data.category] || 2,
+				name: data.title,
+				name_cn: data.name_cn || data.title,
+				images: {
+					medium: imageSrc,
+					large: imageSrc,
+					common: imageSrc,
+					small: imageSrc,
+					grid: imageSrc,
+				},
+				score: data.score || 0,
+			},
+		};
+	})
+	.sort(sortByDateAndTime);
+
+function getItemSubcategory(item: MgItem): string {
+	if (item._subcategory) return item._subcategory;
+	const tags = item.tags || [];
+	if (tags.some((t: string) => t.includes("纪录"))) return "documentary";
+	if (tags.some((t: string) => t.includes("动漫") || t.includes("动画")))
+		return "anime";
+	if (tags.some((t: string) => t.includes("电视剧") || t.includes("剧集")))
+		return "tv";
+	return "movie";
+}
+
+type TabKey = "all" | "movie" | "tv" | "anime" | "documentary";
+
+const tabConfig: { key: TabKey; i18nKey: I18nKey }[] = [
+	{ key: "all", i18nKey: I18nKey.moviesGamesTabAll },
+	{ key: "movie", i18nKey: I18nKey.moviesGamesTabMovie },
+	{ key: "tv", i18nKey: I18nKey.moviesGamesTabTV },
+	{ key: "anime", i18nKey: I18nKey.moviesGamesTabAnime },
+	{ key: "documentary", i18nKey: I18nKey.moviesGamesTabDocumentary },
+];
+
+interface SectionData {
+	tabKey: string;
+	tabName: string;
+	tabCount: number;
+	items: MgItem[];
+	filters: { value: string; label: string; count: number; color: string }[];
+}
+
+const sections: SectionData[] = [];
+
+for (const tc of tabConfig) {
+	const items =
+		tc.key === "all"
+			? mgItems
+			: mgItems.filter((item) => getItemSubcategory(item) === tc.key);
+
+	const statusCounts: Record<string, number> = {};
+	for (const item of items) {
+		const s = statusMap[item.type] || "unknown";
+		statusCounts[s] = (statusCounts[s] || 0) + 1;
+	}
+
+	const filters = [
+		{
+			value: "all",
+			label: i18n(I18nKey.moviesFilterAll),
+			count: items.length,
+			color: "bg-(--primary)",
+		},
+		{
+			value: "doing",
+			label: i18n(I18nKey.moviesFilterWatching),
+			count: statusCounts.doing || 0,
+			color: "bg-emerald-500",
+		},
+		{
+			value: "collect",
+			label: i18n(I18nKey.moviesFilterWatched),
+			count: statusCounts.collect || 0,
+			color: "bg-amber-500",
+		},
+		{
+			value: "wish",
+			label: i18n(I18nKey.moviesFilterWish),
+			count: statusCounts.wish || 0,
+			color: "bg-sky-500",
+		},
+		{
+			value: "dropped",
+			label: i18n(I18nKey.moviesFilterDropped),
+			count: statusCounts.dropped || 0,
+			color: "bg-rose-400",
+		},
+	];
+
+	sections.push({
+		tabKey: tc.key,
+		tabName: i18n(tc.i18nKey),
+		tabCount: items.length,
+		items,
+		filters,
+	});
+}
+
+const activeTab = sections[0]?.tabKey || "all";
+---
+
+<MainGridLayout title={i18n(I18nKey.moviesTitle)} description={i18n(I18nKey.moviesSubtitle)}>
+	<div class="mg-page-wrapper flex w-full overflow-hidden relative min-h-32">
+		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<header class="mg-header relative w-full mb-6">
+				<div class="mb-6">
+					<div class="flex items-center gap-3 mb-3">
+						<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+							<Icon is:inline name="material-symbols:movie-outline-rounded" class="text-[1.5rem]" />
+						</div>
+						<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+							{i18n(I18nKey.moviesTitle)}
+						</div>
+					</div>
+					<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+						{i18n(I18nKey.moviesSubtitle)}
+					</p>
+					<p class="text-xs text-neutral-500 dark:text-neutral-500 mt-2">
+						{i18n(I18nKey.bangumiLastUpdated)} {buildTime}
+					</p>
+				</div>
+			</header>
+
+			{mgItems.length > 0 ? (
+				<>
+					<div class="mb-6 flex flex-col gap-3">
+						<div class="relative">
+							<svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+							<input
+								type="text"
+								id="movies-search-input"
+								placeholder={i18n(I18nKey.moviesSearch)}
+								class="w-full rounded-xl border border-(--line-divider) bg-(--card-bg) py-2.5 pl-10 pr-4 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 outline-none transition-colors focus:border-(--primary)"
+							/>
+						</div>
+						<div class="mg-tabs-wrapper">
+							<nav class="tools-tab-pill" data-mg-tab-nav aria-label="Tabs">
+								<div class="tools-tab-indicator" data-mg-tab-indicator></div>
+								{sections.map((sec) => (
+									<button
+										class:list={[
+											"tools-tab-btn",
+											sec.tabKey === activeTab
+												? "tools-tab-btn-active"
+												: "tools-tab-btn-inactive",
+										]}
+										data-tab={sec.tabKey}
+										type="button"
+									>
+										<span>{sec.tabName}</span>
+										{sec.tabCount > 0 && <span class="tools-tab-badge">{sec.tabCount}</span>}
+									</button>
+								))}
+							</nav>
+						</div>
+					</div>
+
+					{sections.map((sec) => (
+						<div class:list={["mg-section", { "hidden": sec.tabKey !== activeTab }]} data-section={sec.tabKey}>
+							<div class="mg-filter-wrapper mb-5 flex flex-wrap gap-2">
+								{sec.filters.map((filter) => (
+									<button
+										class:list={[
+											"mg-filter-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+											filter.value === "all"
+												? "bg-(--primary) text-white"
+												: "bg-(--card-bg) text-(--deep-text) border border-(--line-divider) hover:border-(--primary)/50",
+										]}
+										data-filter={filter.value}
+										data-section={sec.tabKey}
+										type="button"
+									>
+										<span class={`w-1.5 h-1.5 rounded-full ${filter.color} inline-block`}></span>
+										<span>{filter.label}</span>
+										{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-black/10 text-white">{filter.count}</span>}
+									</button>
+								))}
+							</div>
+
+							{sec.items.length > 0 ? (
+								<>
+									<div class="mg-grid grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5">
+										{sec.items.map((item: MgItem) => (
+											<div
+												class="mg-item"
+												data-item-section={sec.tabKey}
+												data-item-status={statusMap[item.type] || "unknown"}
+											>
+												<MovieGameCard item={item as any} link={item.link} />
+											</div>
+										))}
+									</div>
+
+									<ClientPagination
+										totalItems={sec.items.length}
+										itemsPerPage={12}
+										itemsPerPageMobile={6}
+										currentPage={1}
+										sectionId={sec.tabKey}
+									/>
+								</>
+							) : (
+								<div class="flex flex-col items-center justify-center py-16 text-center">
+									<p class="text-sm text-(--content-meta)">{i18n(I18nKey.moviesGamesNoData)}</p>
+								</div>
+							)}
+						</div>
+					))}
+				</>
+			) : (
+				<div class="flex flex-col items-center justify-center py-20 text-center">
+					<div class="inline-flex items-center justify-center w-14 h-14 bg-(--btn-regular-bg) rounded-2xl mb-4 border border-(--line-divider)">
+						<Icon name="material-symbols:movie-outline" class="w-7 h-7 text-(--content-meta)" />
+					</div>
+					<h3 class="text-base font-medium text-(--deep-text) mb-1.5">{i18n(I18nKey.moviesNoData)}</h3>
+				</div>
+			)}
+		</div>
+	</div>
+	<Comment customPath="/movies/" />
+</MainGridLayout>
+
+<script is:inline>
+	(function() {
+		function updateIndicator(indicator, btn) {
+			if (!indicator || !btn) return;
+			indicator.style.left = btn.offsetLeft + 'px';
+			indicator.style.top = btn.offsetTop + 'px';
+			indicator.style.width = btn.offsetWidth + 'px';
+			indicator.style.height = btn.offsetHeight + 'px';
+			indicator.style.opacity = '1';
+		}
+
+		function activateBtn(btns, target, indicator) {
+			btns.forEach(function(btn) {
+				btn.classList.remove('tools-tab-btn-active');
+				btn.classList.add('tools-tab-btn-inactive');
+				btn.disabled = false;
+			});
+			target.classList.remove('tools-tab-btn-inactive');
+			target.classList.add('tools-tab-btn-active');
+			target.disabled = true;
+			if (indicator) {
+				requestAnimationFrame(function() { updateIndicator(indicator, target); });
+			}
+		}
+
+		function initIndicators() {
+			var tabNav = document.querySelector('[data-mg-tab-nav]');
+			var tabIndicator = document.querySelector('[data-mg-tab-indicator]');
+			if (tabNav && tabIndicator) {
+				var activeTab = tabNav.querySelector('.tools-tab-btn-active');
+				if (activeTab) requestAnimationFrame(function() { updateIndicator(tabIndicator, activeTab); });
+			}
+			document.querySelectorAll('[data-mg-filter-indicator]').forEach(function(indicator) {
+				var section = indicator.getAttribute('data-mg-filter-indicator');
+				var nav = document.querySelector('[data-mg-filter-nav="' + section + '"]');
+				if (nav) {
+					var activeFilter = nav.querySelector('.tools-tab-btn-active');
+					if (activeFilter) requestAnimationFrame(function() { updateIndicator(indicator, activeFilter); });
+				}
+			});
+		}
+
+		function applyMoviesFilters() {
+			var searchQuery = document.getElementById('movies-search-input')?.value.toLowerCase() || '';
+			var activeTab = document.querySelector('.tools-tab-btn-active[data-tab]')?.dataset.tab || 'all';
+			
+			document.querySelectorAll('[data-item-section]').forEach(function(item) {
+				var sectionMatch = item.dataset.itemSection === activeTab;
+				var title = item.querySelector('.mg-item-title')?.textContent.toLowerCase() || '';
+				var searchMatch = !searchQuery || title.includes(searchQuery);
+				var match = sectionMatch && searchMatch;
+				item.classList.toggle('hidden', !match);
+				item.style.display = match ? 'block' : 'none';
+			});
+		}
+
+		document.getElementById('movies-search-input')?.addEventListener('input', applyMoviesFilters);
+
+		initIndicators();
+		document.addEventListener('astro:page-load', initIndicators);
+		document.addEventListener('swup:content:replace', function() { setTimeout(initIndicators, 50); });
+		window.addEventListener('resize', initIndicators);
+
+		document.addEventListener('click', function(e) {
+			var tab = e.target.closest('[data-tab]');
+			if (tab) {
+				var targetTab = tab.dataset.tab;
+				var tabNav = tab.closest('[data-mg-tab-nav]');
+				var tabIndicator = tabNav ? tabNav.querySelector('[data-mg-tab-indicator]') : null;
+				activateBtn(Array.from(tabNav.querySelectorAll('[data-tab]')), tab, tabIndicator);
+				document.querySelectorAll('[data-section]').forEach(function(section) {
+					section.classList.toggle('hidden', section.dataset.section !== targetTab);
+				});
+				var newFilterIndicator = document.querySelector('[data-mg-filter-indicator="' + targetTab + '"]');
+				var newFilterNav = document.querySelector('[data-mg-filter-nav="' + targetTab + '"]');
+				if (newFilterIndicator && newFilterNav) {
+					var activeFilter = newFilterNav.querySelector('.tools-tab-btn-active');
+					if (activeFilter) {
+						newFilterIndicator.style.opacity = '0';
+						requestAnimationFrame(function() {
+							updateIndicator(newFilterIndicator, activeFilter);
+						});
+					}
+				}
+				applyMoviesFilters();
+				return;
+			}
+
+			var filterBtn = e.target.closest('.mg-filter-btn');
+			if (filterBtn) {
+				var filter = filterBtn.dataset.filter;
+				var sid = filterBtn.dataset.section;
+				var filterNav = filterBtn.closest('.mg-filter-wrapper');
+				filterNav.querySelectorAll('.mg-filter-btn').forEach(function(btn) {
+					btn.classList.remove('bg-(--primary)', 'text-white');
+					btn.classList.add('bg-(--card-bg)', 'text-(--deep-text)', 'border', 'border-(--line-divider)', 'hover:border-(--primary)/50');
+				});
+				filterBtn.classList.remove('bg-(--card-bg)', 'text-(--deep-text)', 'border', 'border-(--line-divider)', 'hover:border-(--primary)/50');
+				filterBtn.classList.add('bg-(--primary)', 'text-white');
+				document.querySelectorAll('[data-item-section="' + sid + '"]').forEach(function(item) {
+					var match = filter === 'all' || item.dataset.itemStatus === filter;
+					item.classList.toggle('hidden', !match);
+					item.style.display = match ? 'block' : 'none';
+				});
+				var pagination = document.querySelector('[data-pagination-section="' + sid + '"]');
+				if (pagination) {
+					var visibleItems = document.querySelectorAll('[data-item-section="' + sid + '"]:not(.hidden)');
+					pagination.dispatchEvent(new CustomEvent('updatePagination', {
+						detail: { visibleCount: visibleItems.length }
+					}));
+				}
+			}
+		});
+	})();
+</script>
+
+<style>
+	.mg-page-wrapper {
+		border-radius: var(--radius-large);
+	}
+
+	.mg-header {
+		animation: fadeSlideIn 0.4s ease-[var(--ease-standard)] both;
+	}
+
+	@keyframes fadeSlideIn {
+		from { opacity: 0; transform: translateY(8px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	.mg-section {
+		animation: fadeIn 0.3s ease-[var(--ease-standard)] both;
+	}
+
+	@keyframes fadeIn {
+		from { opacity: 0; }
+		to { opacity: 1; }
+	}
+
+	.tools-tab-pill {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		padding: 0.375rem;
+		border-radius: var(--radius-large);
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+	}
+
+	.tools-tab-indicator {
+		position: absolute;
+		border-radius: 9999px;
+		background: var(--primary);
+		transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+					top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+					width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+					height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.tools-tab-btn {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.875rem;
+		border: none;
+		border-radius: 9999px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		white-space: nowrap;
+		cursor: pointer;
+		background: transparent;
+		transition: color 0.2s;
+		flex-shrink: 0;
+		font-family: inherit;
+		color: var(--deep-text);
+	}
+
+	.tools-tab-btn-active {
+		color: #fff;
+		cursor: default;
+	}
+
+	.tools-tab-btn-inactive:hover {
+		color: var(--primary);
+	}
+
+	.tools-tab-badge {
+		font-size: 0.65rem;
+		padding: 0.0625rem 0.375rem;
+		border-radius: 9999px;
+		background: var(--btn-regular-bg);
+		color: var(--btn-content);
+		line-height: 1.4;
+	}
+
+	.tools-tab-btn-active .tools-tab-badge {
+		background: rgba(255, 255, 255, 0.25);
+		color: #fff;
+	}
+
+	@media (max-width: 640px) {
+		.card-base {
+			padding-left: 1rem;
+			padding-right: 1rem;
+			padding-top: 1.5rem;
+			padding-bottom: 1.5rem;
+		}
+	}
+</style>

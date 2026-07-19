@@ -1,0 +1,293 @@
+---
+import { getCollection } from "astro:content";
+import Comment from "@/components/comment/index.astro";
+import { Icon } from "astro-icon/components";
+import ClientPagination from "@/components/common/ClientPagination.astro";
+import MovieGameCard from "@/components/pages/movies-games/MovieGameCard.astro";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { formatDateI18nWithTime } from "@/utils/date-utils";
+import { removeFileExtension } from "@/utils/url-utils";
+
+if (!siteConfig.pages.games) {
+	return Astro.redirect("/404/");
+}
+
+const buildTime = formatDateI18nWithTime(new Date());
+
+const customBangumi = await getCollection("bangumi");
+
+const statusMap: Record<number, string> = {
+	1: "wish",
+	2: "collect",
+	3: "doing",
+	5: "dropped",
+};
+
+interface GameItem {
+	subject_id: number;
+	subject_type: number;
+	rate: number;
+	type: number;
+	comment: string | null;
+	tags: string[];
+	updated_at: string;
+	link: string;
+	subject: {
+		id: number;
+		type: number;
+		name: string;
+		name_cn: string;
+		images: {
+			medium: string;
+			large: string;
+			common: string;
+			small: string;
+			grid: string;
+		};
+		score: number;
+	};
+}
+
+function sortByDateAndTime(a: any, b: any) {
+	const dateA = a.data.date?.getTime() || 0;
+	const dateB = b.data.date?.getTime() || 0;
+	if (dateA !== dateB) {
+		return dateB - dateA;
+	}
+	const timeA = a.data.time || "00:00";
+	const timeB = b.data.time || "00:00";
+	return timeB.localeCompare(timeA);
+}
+
+const gameItems: GameItem[] = customBangumi
+	.filter((item) => item.data.category === "game")
+	.map((item) => {
+		const { data, id } = item;
+		const imageSrc =
+			typeof data.image === "string" ? data.image : data.image.src;
+
+		const finalLink = "/bangumi/" + removeFileExtension(id) + "/";
+
+		return {
+			subject_id: 0,
+			subject_type: 4,
+			rate: data.score || 0,
+			type: data.status,
+			comment: data.comment || null,
+			tags: data.tags || [],
+			updated_at: data.date?.toISOString() || new Date().toISOString(),
+			link: finalLink,
+			subject: {
+				id: 0,
+				type: 4,
+				name: data.title,
+				name_cn: data.name_cn || data.title,
+				images: {
+					medium: imageSrc,
+					large: imageSrc,
+					common: imageSrc,
+					small: imageSrc,
+					grid: imageSrc,
+				},
+				score: data.score || 0,
+			},
+		};
+	})
+	.sort(sortByDateAndTime);
+
+const statusCounts: Record<string, number> = {};
+for (const item of gameItems) {
+	const s = statusMap[item.type] || "unknown";
+	statusCounts[s] = (statusCounts[s] || 0) + 1;
+}
+
+const filters = [
+	{
+		value: "all",
+		label: i18n(I18nKey.gamesFilterAll),
+		count: gameItems.length,
+		color: "bg-(--primary)",
+	},
+	{
+		value: "doing",
+		label: i18n(I18nKey.gamesFilterPlaying),
+		count: statusCounts.doing || 0,
+		color: "bg-emerald-500",
+	},
+	{
+		value: "collect",
+		label: i18n(I18nKey.gamesFilterPlayed),
+		count: statusCounts.collect || 0,
+		color: "bg-amber-500",
+	},
+	{
+		value: "wish",
+		label: i18n(I18nKey.gamesFilterWish),
+		count: statusCounts.wish || 0,
+		color: "bg-sky-500",
+	},
+	{
+		value: "dropped",
+		label: i18n(I18nKey.gamesFilterDropped),
+		count: statusCounts.dropped || 0,
+		color: "bg-rose-400",
+	},
+];
+---
+
+<MainGridLayout title={i18n(I18nKey.gamesTitle)} description={i18n(I18nKey.gamesSubtitle)}>
+	<div class="games-page-wrapper flex w-full overflow-hidden relative min-h-32">
+		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<header class="games-header relative w-full mb-6">
+				<div class="mb-6">
+					<div class="flex items-center gap-3 mb-3">
+						<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+							<Icon is:inline name="material-symbols:gamepad-rounded" class="text-[1.5rem]" />
+						</div>
+						<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+							{i18n(I18nKey.gamesTitle)}
+						</div>
+					</div>
+					<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+						{i18n(I18nKey.gamesSubtitle)}
+					</p>
+					<p class="text-xs text-neutral-500 dark:text-neutral-500 mt-2">
+						{i18n(I18nKey.bangumiLastUpdated)} {buildTime}
+					</p>
+				</div>
+			</header>
+
+			{gameItems.length > 0 ? (
+				<>
+					<div class="mb-6 flex flex-col gap-3">
+						<div class="relative">
+							<svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+							<input
+								type="text"
+								id="games-search-input"
+								placeholder={i18n(I18nKey.gamesSearch)}
+								class="w-full rounded-xl border border-(--line-divider) bg-(--card-bg) py-2.5 pl-10 pr-4 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 outline-none transition-colors focus:border-(--primary)"
+							/>
+						</div>
+						<div class="games-filter-wrapper flex flex-wrap gap-2">
+							{filters.map((filter) => (
+								<button
+									class:list={[
+										"games-filter-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+										filter.value === "all"
+											? "bg-(--primary) text-white"
+											: "bg-(--card-bg) text-(--deep-text) border border-(--line-divider) hover:border-(--primary)/50",
+									]}
+									data-filter={filter.value}
+									type="button"
+								>
+									<span class={`w-1.5 h-1.5 rounded-full ${filter.color} inline-block`}></span>
+									<span>{filter.label}</span>
+									{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-black/10 text-white">{filter.count}</span>}
+								</button>
+							))}
+						</div>
+					</div>
+
+					<div class="games-grid grid grid-cols-3 sm:grid-cols-4 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 md:gap-5">
+						{gameItems.map((item: GameItem) => (
+							<div
+								class="games-item"
+								data-item-status={statusMap[item.type] || "unknown"}
+							>
+								<MovieGameCard item={item as any} link={item.link} />
+							</div>
+						))}
+					</div>
+
+					<ClientPagination
+						totalItems={gameItems.length}
+						itemsPerPage={12}
+						itemsPerPageMobile={6}
+						currentPage={1}
+						sectionId="all"
+					/>
+				</>
+			) : (
+				<div class="flex flex-col items-center justify-center py-20 text-center">
+					<div class="inline-flex items-center justify-center w-14 h-14 bg-(--btn-regular-bg) rounded-2xl mb-4 border border-(--line-divider)">
+						<Icon name="material-symbols:gamepad-rounded" class="w-7 h-7 text-(--content-meta)" />
+					</div>
+					<h3 class="text-base font-medium text-(--deep-text) mb-1.5">{i18n(I18nKey.gamesNoData)}</h3>
+				</div>
+			)}
+		</div>
+	</div>
+	<Comment customPath="/games/" />
+</MainGridLayout>
+
+<script is:inline>
+	(function() {
+		function applyGamesFilters() {
+			var searchQuery = document.getElementById('games-search-input')?.value.toLowerCase() || '';
+			var activeFilter = document.querySelector('.games-filter-btn.bg-(--primary)')?.dataset.filter || 'all';
+			
+			document.querySelectorAll('.games-item').forEach(function(item) {
+				var statusMatch = activeFilter === 'all' || item.dataset.itemStatus === activeFilter;
+				var title = item.querySelector('.mg-item-title')?.textContent.toLowerCase() || '';
+				var searchMatch = !searchQuery || title.includes(searchQuery);
+				var match = statusMatch && searchMatch;
+				item.classList.toggle('hidden', !match);
+				item.style.display = match ? 'block' : 'none';
+			});
+		}
+
+		document.getElementById('games-search-input')?.addEventListener('input', applyGamesFilters);
+
+		document.addEventListener('click', function(e) {
+			var filterBtn = e.target.closest('.games-filter-btn');
+			if (filterBtn) {
+				var filter = filterBtn.dataset.filter;
+				var nav = filterBtn.closest('.games-filter-wrapper');
+				nav.querySelectorAll('.games-filter-btn').forEach(function(btn) {
+					btn.classList.remove('bg-(--primary)', 'text-white');
+					btn.classList.add('bg-(--card-bg)', 'text-(--deep-text)', 'border', 'border-(--line-divider)', 'hover:border-(--primary)/50');
+				});
+				filterBtn.classList.remove('bg-(--card-bg)', 'text-(--deep-text)', 'border', 'border-(--line-divider)', 'hover:border-(--primary)/50');
+				filterBtn.classList.add('bg-(--primary)', 'text-white');
+				applyGamesFilters();
+				var pagination = document.querySelector('[data-pagination-section="all"]');
+				if (pagination) {
+					var visibleItems = document.querySelectorAll('.games-item:not(.hidden)');
+					pagination.dispatchEvent(new CustomEvent('updatePagination', {
+						detail: { visibleCount: visibleItems.length }
+					}));
+				}
+			}
+		});
+	})();
+</script>
+
+<style>
+	.games-page-wrapper {
+		border-radius: var(--radius-large);
+	}
+
+	.games-header {
+		animation: fadeSlideIn 0.4s ease-[var(--ease-standard)] both;
+	}
+
+	@keyframes fadeSlideIn {
+		from { opacity: 0; transform: translateY(8px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	@media (max-width: 640px) {
+		.card-base {
+			padding-left: 1rem;
+			padding-right: 1rem;
+			padding-top: 1.5rem;
+			padding-bottom: 1.5rem;
+		}
+	}
+</style>

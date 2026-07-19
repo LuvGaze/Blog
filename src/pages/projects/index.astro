@@ -1,0 +1,516 @@
+---
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const allEntries = await getCollection("daohang");
+
+const categoryMap = new Map<string, typeof allEntries>();
+const allCategories: string[] = [];
+
+allEntries.forEach((entry) => {
+	const cat = entry.data.category || "未分类";
+	if (!categoryMap.has(cat)) {
+		categoryMap.set(cat, []);
+		allCategories.push(cat);
+	}
+	categoryMap.get(cat)!.push(entry);
+});
+
+const categoryOrder: Record<string, number> = {
+	我的网站: 0,
+	常用网站: 1,
+	资源网站: 2,
+	工具网站: 3,
+	大佬博客: 4,
+	学习网站: 5,
+	文档: 6,
+	其他网站: 7,
+};
+
+const sortedCategories = [...allCategories].sort((a, b) => {
+	return (categoryOrder[a] ?? 99) - (categoryOrder[b] ?? 99);
+});
+
+const sortedData = new Map(
+	[...categoryMap.entries()]
+		.sort(([a], [b]) => {
+			return (categoryOrder[a] ?? 99) - (categoryOrder[b] ?? 99);
+		})
+		.map(([cat, items]) => [
+			cat,
+			[...items].sort((a, b) => {
+				const orderA = a.data.order ?? 99;
+				const orderB = b.data.order ?? 99;
+				return orderA - orderB;
+			}),
+		]),
+);
+
+const categoryIcons: Record<string, string> = {
+	我的网站: "material-symbols:person",
+	常用网站: "material-symbols:star",
+	资源网站: "material-symbols:folder",
+	工具网站: "material-symbols:handyman",
+	大佬博客: "material-symbols:menu-book",
+	学习网站: "material-symbols:school",
+	文档: "material-symbols:description",
+	其他网站: "material-symbols:link",
+};
+
+const getCategoryIcon = (cat: string) => {
+	return categoryIcons[cat] || "material-symbols:link";
+};
+
+const categoryCounts: Record<string, number> = {};
+for (const [cat, items] of sortedData) {
+	categoryCounts[cat] = items.length;
+}
+
+const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
+---
+
+<MainGridLayout title={i18n(I18nKey.projectsTitle)} description={i18n(I18nKey.projectsDescription)}>
+	<script slot="head" is:inline>
+		(function () {
+			function initToolsTabs() {
+				var tabNav = document.querySelector("[data-tools-tab-nav]");
+				var tabButtons = document.querySelectorAll("[data-tools-tab]");
+				var sections = document.querySelectorAll("[data-tools-section]");
+				var indicator = document.querySelector("[data-tools-tab-indicator]");
+				if (!tabNav || !tabButtons.length || !indicator) return;
+
+				function updateIndicator(targetBtn) {
+					if (!indicator || !targetBtn) return;
+					indicator.style.left = targetBtn.offsetLeft + "px";
+					indicator.style.top = targetBtn.offsetTop + "px";
+					indicator.style.width = targetBtn.offsetWidth + "px";
+					indicator.style.height = targetBtn.offsetHeight + "px";
+					indicator.style.opacity = "1";
+				}
+
+				function activateTab(targetTab) {
+					if (!targetTab) return;
+					var targetButton = Array.from(tabButtons).find(function (btn) {
+						return btn.dataset.toolsTab === targetTab;
+					});
+					if (!targetButton) return;
+
+					tabButtons.forEach(function (btn) {
+						btn.classList.remove("tools-tab-btn-active");
+						btn.classList.add("tools-tab-btn-inactive");
+						btn.disabled = false;
+					});
+					targetButton.classList.remove("tools-tab-btn-inactive");
+					targetButton.classList.add("tools-tab-btn-active");
+					targetButton.disabled = true;
+
+					requestAnimationFrame(function () {
+						updateIndicator(targetButton);
+					});
+
+					sections.forEach(function (section) {
+						if (section.dataset.toolsSection === targetTab) {
+							section.classList.remove("hidden");
+							var cards = section.querySelectorAll(".tools-card");
+							cards.forEach(function (card) {
+								card.style.animation = "none";
+								card.offsetHeight;
+								card.style.animation = "";
+							});
+						} else {
+							section.classList.add("hidden");
+						}
+					});
+
+					var nextHash = "#tools-" + encodeURIComponent(targetTab);
+					if (window.location.hash !== nextHash) {
+						window.history.replaceState(null, "", nextHash);
+					}
+				}
+
+				tabButtons.forEach(function (button) {
+					button.addEventListener("click", function () {
+						var targetTab = button.dataset.toolsTab;
+						if (targetTab) activateTab(targetTab);
+					});
+				});
+
+				function getTabFromHash() {
+					var hash = window.location.hash.replace(/^#tools-/, "");
+					if (!hash) return "";
+					try {
+						return decodeURIComponent(hash);
+					} catch (e) {
+						return "";
+					}
+				}
+
+				var initialTab = getTabFromHash();
+				if (initialTab) {
+					activateTab(initialTab);
+				} else {
+					var activeBtn = tabNav.querySelector(".tools-tab-btn-active");
+					if (activeBtn) {
+						requestAnimationFrame(function () {
+							updateIndicator(activeBtn);
+						});
+					}
+				}
+
+				window.addEventListener("hashchange", function () {
+					var tabFromHash = getTabFromHash();
+					if (tabFromHash) activateTab(tabFromHash);
+				});
+
+				window.addEventListener("resize", function () {
+					var activeBtn = tabNav.querySelector(".tools-tab-btn-active");
+					if (activeBtn) updateIndicator(activeBtn);
+				});
+			}
+
+			if (document.readyState === "loading") {
+				document.addEventListener("DOMContentLoaded", initToolsTabs);
+			} else {
+				initToolsTabs();
+			}
+			document.addEventListener("astro:page-load", initToolsTabs);
+			document.addEventListener("astro:after-swap", initToolsTabs);
+			document.addEventListener("swup:contentReplaced", initToolsTabs);
+		})();
+	</script>
+
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+			<div class="mb-6">
+				<div class="flex items-center gap-3 mb-3">
+					<div class="w-12 h-12 rounded-2xl bg-(--primary) flex items-center justify-center">
+						<Icon name="material-symbols:bookmark" class="text-[1.4rem] text-white" />
+					</div>
+					<div>
+						<h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-3xl font-bold text-(--deep-text)">
+							{i18n(I18nKey.projectsTitle)}
+						</h1>
+					</div>
+				</div>
+				<p class="text-sm text-(--content-meta) leading-relaxed">
+					{i18n(I18nKey.projectsDescription)}
+				</p>
+			</div>
+
+			{allSites.length > 0 && sortedCategories.length > 1 && (
+				<div class="tools-tab-wrapper">
+					<div class="tools-tab-pill" data-tools-tab-nav>
+						<div class="tools-tab-indicator" data-tools-tab-indicator></div>
+						<button data-tools-tab="all" class="tools-tab-btn tools-tab-btn-active">
+							{i18n(I18nKey.all)}
+							<span class="tools-tab-badge">{allSites.length}</span>
+						</button>
+						{sortedCategories.map((cat) => (
+							<button data-tools-tab={cat} class="tools-tab-btn tools-tab-btn-inactive">
+								{cat}
+								<span class="tools-tab-badge">{categoryCounts[cat]}</span>
+							</button>
+						))}
+					</div>
+				</div>
+			)}
+
+			{allSites.length > 0 ? (
+				<div>
+					<div data-tools-section="all">
+						{sortedCategories.map((cat) => {
+							const catSites = sortedData.get(cat)!;
+							if (catSites.length === 0) return null;
+							return (
+								<div class="tools-category-group mt-8 first:mt-0">
+									<div class="flex items-center gap-3 mb-5">
+										<div class="flex items-center gap-2">
+											<Icon name={getCategoryIcon(cat)} class="text-lg text-(--deep-text)" />
+											<span class="text-base font-bold text-(--deep-text)">{cat}</span>
+										</div>
+										<span class="text-xs text-(--content-meta)">{catSites.length}</span>
+										<div class="flex-1 h-[2px] bg-(--line-divider)" />
+									</div>
+									<div class="tools-card-grid">
+										{catSites.map((site, index) => (
+											<a
+												href={site.data.url}
+												target="_blank"
+												rel="noopener noreferrer"
+												class="tools-card group"
+												data-category={cat}
+												style={`animation-delay: ${index * 60}ms`}
+											>
+												<div class="tools-card-jump-icon">
+													<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+														<path d="M7 17L17 7" />
+														<path d="M7 7h10v10" />
+													</svg>
+												</div>
+												<div class="flex items-center gap-2 mb-3">
+													{site.data.icon ? (
+														site.data.icon.startsWith("http") ? (
+															<img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
+														) : (
+															<Icon name={site.data.icon} class="text-2xl text-(--content-meta) group-hover:text-(--primary) transition-colors duration-300 shrink-0" />
+														)
+													) : site.data.image ? (
+														<img src={site.data.image} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
+													) : (
+														<Icon name="material-symbols:language" class="text-2xl text-(--content-meta) group-hover:text-(--primary) transition-colors duration-300 shrink-0" />
+													)}
+													<h3 class="text-lg font-bold text-(--deep-text) group-hover:translate-x-1 transition-transform duration-300 truncate">
+														{site.data.name}
+													</h3>
+												</div>
+												<p class="tools-card-desc">{site.data.description}</p>
+												<div class="tools-card-footer">
+													<span class="text-xs text-(--content-meta) truncate">
+														{(() => {
+															try {
+																return new URL(site.data.url).hostname;
+															} catch {
+																return site.data.url;
+															}
+														})()}
+													</span>
+												</div>
+											</a>
+										))}
+									</div>
+								</div>
+							);
+						})}
+					</div>
+
+					{sortedCategories.map((cat) => {
+						const catSites = sortedData.get(cat)!;
+						if (catSites.length === 0) return null;
+						return (
+							<div data-tools-section={cat} class="hidden">
+								<div class="tools-card-grid">
+									{catSites.map((site, index) => (
+										<a
+											href={site.data.url}
+											target="_blank"
+											rel="noopener noreferrer"
+											class="tools-card group"
+											data-category={cat}
+											style={`animation-delay: ${index * 60}ms`}
+										>
+											<div class="tools-card-jump-icon">
+												<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+													<path d="M7 17L17 7" />
+													<path d="M7 7h10v10" />
+												</svg>
+											</div>
+											<div class="flex items-center gap-2 mb-3">
+												{site.data.icon ? (
+													site.data.icon.startsWith("http") ? (
+														<img src={site.data.icon} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
+													) : (
+														<Icon name={site.data.icon} class="text-2xl text-(--content-meta) group-hover:text-(--primary) transition-colors duration-300 shrink-0" />
+													)
+												) : site.data.image ? (
+													<img src={site.data.image} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" />
+												) : (
+													<Icon name="material-symbols:language" class="text-2xl text-(--content-meta) group-hover:text-(--primary) transition-colors duration-300 shrink-0" />
+												)}
+												<h3 class="text-lg font-bold text-(--deep-text) group-hover:translate-x-1 transition-transform duration-300 truncate">
+													{site.data.name}
+												</h3>
+											</div>
+											<p class="tools-card-desc">{site.data.description}</p>
+											<div class="tools-card-footer">
+												<span class="text-xs text-(--content-meta) truncate">
+													{(() => {
+														try {
+															return new URL(site.data.url).hostname;
+														} catch {
+															return site.data.url;
+														}
+													})()}
+												</span>
+											</div>
+										</a>
+									))}
+								</div>
+							</div>
+						);
+					})}
+				</div>
+			) : (
+				<div class="text-center py-16">
+					<Icon name="material-symbols:bookmark-outline" class="text-5xl text-(--content-meta)/50 mb-4" />
+					<p class="text-(--content-meta)">{i18n(I18nKey.projectsNoData)}</p>
+				</div>
+			)}
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.tools-tab-wrapper {
+		margin-bottom: 1.5rem;
+	}
+
+	.tools-tab-pill {
+		position: relative;
+		display: flex;
+		flex-wrap: wrap;
+		gap: 0.375rem;
+		padding: 0.375rem;
+		border-radius: var(--radius-large);
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+	}
+
+	.tools-tab-indicator {
+		position: absolute;
+		border-radius: 9999px;
+		background: var(--primary);
+		transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+		opacity: 0;
+		pointer-events: none;
+		z-index: 0;
+	}
+
+	.tools-tab-btn {
+		position: relative;
+		z-index: 1;
+		display: flex;
+		align-items: center;
+		gap: 0.375rem;
+		padding: 0.375rem 0.875rem;
+		border: none;
+		border-radius: 9999px;
+		font-size: 0.8125rem;
+		font-weight: 500;
+		white-space: nowrap;
+		cursor: pointer;
+		background: transparent;
+		transition: color 0.2s;
+		flex-shrink: 0;
+		font-family: inherit;
+		color: var(--deep-text);
+	}
+
+	.tools-tab-btn-active {
+		color: #fff;
+		cursor: default;
+	}
+
+	.tools-tab-btn-inactive:hover {
+		color: var(--primary);
+	}
+
+	.tools-tab-badge {
+		font-size: 0.65rem;
+		padding: 0.0625rem 0.375rem;
+		border-radius: 9999px;
+		background: var(--btn-regular-bg);
+		color: var(--btn-content);
+		line-height: 1.4;
+	}
+
+	.tools-tab-btn-active .tools-tab-badge {
+		background: rgba(255, 255, 255, 0.25);
+		color: #fff;
+	}
+
+	.tools-category-group + .tools-category-group {
+		margin-top: 2rem;
+	}
+
+	.tools-card-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 1rem;
+	}
+	@media (max-width: 1024px) {
+		.tools-card-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+	@media (max-width: 640px) {
+		.tools-card-grid {
+			grid-template-columns: 1fr;
+		}
+	}
+
+	.tools-card {
+		position: relative;
+		display: flex;
+		flex-direction: column;
+		padding: 1.25rem;
+		border-radius: var(--radius-large);
+		border: 1px solid var(--line-divider);
+		background: var(--card-bg);
+		text-decoration: none;
+		overflow: hidden;
+		opacity: 0;
+		transform: translateY(20px);
+		animation: toolsCardSlideIn 0.5s ease-out forwards;
+		transition: border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease, background-color 300ms ease;
+	}
+	.tools-card:hover {
+		border-color: var(--primary);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+		transform: translateY(-2px);
+	}
+
+	.tools-card-jump-icon {
+		position: absolute;
+		top: 0.875rem;
+		right: 0.875rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.75rem;
+		height: 1.75rem;
+		border-radius: 0.5rem;
+		color: var(--content-meta);
+		background: var(--btn-regular-bg);
+		opacity: 0;
+		transform: scale(0.8) translateY(-4px);
+		transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1), transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+		z-index: 2;
+		pointer-events: none;
+	}
+	.tools-card:hover .tools-card-jump-icon {
+		opacity: 1;
+		transform: scale(1) translateY(0);
+	}
+
+	.tools-card-desc {
+		margin: 0 0 0.75rem 0;
+		font-size: 0.875rem;
+		font-weight: 400;
+		color: var(--content-meta);
+		line-height: 1.5;
+		display: -webkit-box;
+		-webkit-line-clamp: 2;
+		-webkit-box-orient: vertical;
+		overflow: hidden;
+		flex: 1;
+		min-height: 2.625rem;
+	}
+
+	.tools-card-footer {
+		display: flex;
+		align-items: center;
+		padding-top: 0.75rem;
+		border-top: 1px solid var(--line-divider);
+		margin-top: auto;
+	}
+
+	@keyframes toolsCardSlideIn {
+		to {
+			opacity: 1;
+			transform: translateY(0);
+		}
+	}
+</style>

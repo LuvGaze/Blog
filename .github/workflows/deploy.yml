@@ -1,0 +1,57 @@
+name: Deploy Astro Blog to Server
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. 拉取你的源码
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      # 2. 配置 Node.js 环境
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      # 3. 配置 pnpm 环境
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      # 4. 启用 pnpm 缓存
+      - name: Get pnpm store directory
+        id: pnpm-cache
+        shell: bash
+        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      # 5. 安装依赖并自动打包
+      - name: Install and Build
+        run: |
+          pnpm install --no-frozen-lockfile
+          pnpm run build
+
+      # 6. 【核心提速】使用 rsync 增量同步（只传变动文件）
+      - name: Sync files via Rsync
+        uses: burnett01/rsync-deployments@7.0.0
+        with:
+          switches: -avzr --delete --exclude='.git' --exclude='node_modules'
+          path: ./dist/
+          remote_path: /www/wwwroot/Funny/
+          remote_host: ${{ secrets.SERVER_HOST }}
+          remote_user: root
+          remote_port: ${{ secrets.SERVER_PORT }}      # 读取你的 91 端口
+          remote_key: ${{ secrets.SERVER_PASSWORD }}   # 读取你的 SSH 密钥

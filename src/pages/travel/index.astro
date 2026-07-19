@@ -1,0 +1,396 @@
+---
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+
+const travelEntries = await getCollection("travel");
+
+const filteredEntries = travelEntries.filter(
+	(entry) => !entry.id.toLowerCase().includes("readme"),
+);
+
+const now = new Date();
+const currentYear = now.getFullYear();
+
+const isSameYear = (date?: Date | string) => {
+	if (!date) return false;
+	const d = date instanceof Date ? date : new Date(String(date));
+	if (Number.isNaN(d.getTime())) return false;
+	return d.getFullYear() === currentYear;
+};
+
+const sum = (arr: number[]) => arr.reduce((acc, num) => acc + num, 0);
+
+const sortedPlaces = [...filteredEntries].sort((a, b) => {
+	const aTime = a.data.date instanceof Date ? a.data.date.getTime() : 0;
+	const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
+	return bTime - aTime;
+});
+
+const totalVisitCount = sum(sortedPlaces.map((p) => p.data.visitCount || 1));
+const thisYearVisitCount = sortedPlaces.filter((p) => isSameYear(p.data.date)).length;
+
+const clientSortedPlaces = sortedPlaces.map((p) => ({
+	province: p.data.province,
+	city: p.data.city || "",
+	district: p.data.district || "",
+	experience: p.data.experience || "",
+	visitCount: p.data.visitCount || 1,
+	date: p.data.date instanceof Date ? p.data.date.toISOString().split("T")[0] : "",
+}));
+---
+
+<MainGridLayout title={i18n(I18nKey.placesTitle)} description={i18n(I18nKey.placesDescription)}>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
+		<div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+			<div class="mb-6">
+				<div class="flex items-center gap-3 mb-3">
+					<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+						<Icon is:inline name="material-symbols:explore" class="text-[1.5rem]" />
+					</div>
+					<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+						{i18n(I18nKey.placesTitle)}
+					</div>
+				</div>
+				<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+					{i18n(I18nKey.placesDescription)}
+				</p>
+			</div>
+
+			<div class="flex flex-wrap gap-3 mb-6">
+				<div class="stat-pill">
+					<Icon name="material-symbols:location-city" class="text-sm" />
+					<span class="font-semibold">{sortedPlaces.length}</span>
+					<span class="text-(--content-meta)">地点</span>
+				</div>
+				<div class="stat-pill">
+					<Icon name="material-symbols:pin-drop" class="text-sm" />
+					<span class="font-semibold">{totalVisitCount}</span>
+					<span class="text-(--content-meta)">到访次数</span>
+				</div>
+				<div class="stat-pill">
+					<Icon name="material-symbols:calendar-today" class="text-sm" />
+					<span class="font-semibold">{thisYearVisitCount}</span>
+					<span class="text-(--content-meta)">今年出行</span>
+				</div>
+			</div>
+
+			<div class="mb-6">
+				<h2 class="text-lg font-bold text-(--deep-text) mb-3">足迹地图</h2>
+				<div id="life-map" class="h-[500px] w-full rounded-xl border border-(--line-divider) overflow-hidden"></div>
+				<p class="mt-2 text-xs text-(--content-meta) text-center">地图由 Apache ECharts 提供</p>
+			</div>
+
+			<div>
+				<h2 class="text-lg font-bold text-(--deep-text) mb-3">地点列表</h2>
+				{sortedPlaces.length === 0 ? (
+					<div class="w-full p-12 text-center">
+						<Icon name="material-symbols:explore" class="text-5xl text-(--content-meta)/50 mb-4" />
+						<p class="text-(--content-meta)">{i18n(I18nKey.placesNoData)}</p>
+					</div>
+				) : (
+					<div class="places-grid">
+						{sortedPlaces.map((entry) => {
+							const place = entry.data;
+							const slug = entry.id.replace(/\.md$/, "");
+							return (
+								<article class="place-card">
+									<a href={`/travel/${slug}/`} class="flex items-start justify-between gap-4 w-full">
+										<div class="flex-1 min-w-0">
+											<h3 class="place-name">
+												{place.province || "未知省份"}
+												{place.city ? ` · ${place.city}` : ""}
+											</h3>
+											{place.experience && <p class="place-exp">{place.experience}</p>}
+										</div>
+										<div class="text-right text-xs text-(--content-meta) shrink-0">
+											<div class="font-semibold text-(--deep-text)">
+												到访 {place.visitCount || 1} 次
+											</div>
+											<div class="mt-0.5">
+												{place.date instanceof Date
+													? place.date.toISOString().split("T")[0]
+													: typeof place.date === "string"
+													? place.date
+													: ""}
+											</div>
+										</div>
+									</a>
+								</article>
+							);
+						})}
+					</div>
+				)}
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<script is:inline define:vars={{ clientSortedPlaces }}>
+	(function () {
+		var container = document.getElementById("life-map");
+		if (!container) return;
+
+		var chartInstance = null;
+
+		function loadECharts() {
+			return new Promise(function (resolve, reject) {
+				if (window.echarts) {
+					resolve(window.echarts);
+					return;
+				}
+				var script = document.createElement("script");
+				script.src = "https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js";
+				script.onload = function () {
+					resolve(window.echarts);
+				};
+				script.onerror = function () {
+					reject(new Error("ECharts load failed"));
+				};
+				document.head.appendChild(script);
+			});
+		}
+
+		function loadChinaMap() {
+			return fetch("/china-map.json")
+				.then(function (res) {
+					return res.json();
+				})
+				.catch(function () {
+					return fetch("https://cdn.jsdelivr.net/npm/echarts@5.4.3/map/json/china.json").then(function (res) {
+						return res.json();
+					});
+				});
+		}
+
+		function initMap() {
+			var currentContainer = document.getElementById("life-map");
+			if (!currentContainer) return;
+
+			if (chartInstance) {
+				chartInstance.dispose();
+				chartInstance = null;
+			}
+
+			Promise.all([loadECharts(), loadChinaMap()])
+				.then(function (results) {
+					var echartsLib = results[0];
+					var chinaMapData = results[1];
+
+					currentContainer = document.getElementById("life-map");
+					if (!currentContainer || !chinaMapData) {
+						if (currentContainer)
+							currentContainer.innerHTML =
+								'<div class="h-full flex items-center justify-center text-neutral-400">地图数据加载失败</div>';
+						return;
+					}
+
+					echartsLib.registerMap("china", chinaMapData);
+					chartInstance = echartsLib.init(currentContainer);
+
+					var provinceVisitCount = {};
+					var maxVisits = 1;
+					clientSortedPlaces.forEach(function (place) {
+						var province = place.province;
+						var count = place.visitCount || 1;
+						if (province) {
+							provinceVisitCount[province] = (provinceVisitCount[province] || 0) + count;
+							if (provinceVisitCount[province] > maxVisits)
+								maxVisits = provinceVisitCount[province];
+						}
+					});
+
+					var isDark = document.documentElement.classList.contains("dark");
+					var bgColor = isDark ? "#0a0a0a" : "#f5f5f5";
+					var emptyColor = isDark ? "#2a2a2a" : "#e8e8e8";
+					var borderColor = isDark ? "#3f3f46" : "#ccc";
+
+					var provinceData = (chinaMapData.features || []).map(function (f) {
+						var name = f.properties && f.properties.name;
+						var normalizedName = name.replace(/省|自治区|特别行政区/g, "");
+						var visits = provinceVisitCount[normalizedName] || provinceVisitCount[name] || 0;
+						var places = clientSortedPlaces.filter(function (p) {
+							var pName = (p.province || "").replace(/省|自治区|特别行政区/g, "");
+							return pName === normalizedName || pName === name;
+						});
+						return { name: name, value: visits, places: places };
+					});
+
+					var option = {
+						backgroundColor: "transparent",
+						tooltip: {
+							trigger: "item",
+							formatter: function (params) {
+								if (params.value && params.value > 0) {
+									var places = params.data && params.data.places ? params.data.places : [];
+									var tip = "<strong>" + params.name + "</strong><br/>到访：" + params.value + "次";
+									if (places.length > 0) {
+										tip += "<br/><span style='font-size:11px;opacity:0.7;'>";
+										for (var i = 0; i < Math.min(places.length, 5); i++) {
+											tip += "<br/>• " + (places[i].city || "未标记") + "(" + (places[i].visitCount || 1) + "次)";
+										}
+										if (places.length > 5) tip += "<br/>...等" + places.length + "处";
+										tip += "</span>";
+									}
+									return tip;
+								}
+								return "<strong>" + params.name + "</strong><br/><span style='opacity:0.5;'>未到访</span>";
+							},
+						},
+						visualMap: {
+							type: "piecewise",
+							show: true,
+							left: 20,
+							bottom: 20,
+							pieces: [
+								{ gt: Math.ceil(maxVisits * 0.8), color: isDark ? "#555" : "#000" },
+								{ gt: Math.ceil(maxVisits * 0.5), lte: Math.ceil(maxVisits * 0.8), color: isDark ? "#777" : "#333" },
+								{ gt: 1, lte: Math.ceil(maxVisits * 0.5), color: isDark ? "#999" : "#666" },
+								{ value: 0, color: emptyColor },
+							],
+							textStyle: { color: isDark ? "#a1a1aa" : "#52525b", fontSize: 12 },
+						},
+						series: [
+							{
+								name: "省份",
+								type: "map",
+								map: "china",
+								roam: true,
+								zoom: 1.2,
+								center: [105, 36],
+								itemStyle: {
+									areaColor: emptyColor,
+									borderColor: borderColor,
+									borderWidth: 1,
+								},
+								emphasis: {
+									itemStyle: { areaColor: isDark ? "#444" : "#ccc" },
+									label: { show: true },
+								},
+								select: { disabled: true },
+								data: provinceData,
+							},
+						],
+					};
+
+					chartInstance.setOption(option);
+					setTimeout(function () {
+						chartInstance.resize();
+					}, 100);
+				})
+				.catch(function (err) {
+					var failContainer = document.getElementById("life-map");
+					if (failContainer)
+						failContainer.innerHTML =
+							'<div class="h-full flex items-center justify-center text-neutral-400">加载失败: ' + (err.message || "") + "</div>";
+				});
+		}
+
+		function whenReady(fn) {
+			if (document.readyState === "complete") {
+				requestAnimationFrame(fn);
+			} else {
+				window.addEventListener("load", function () {
+					requestAnimationFrame(fn);
+				});
+			}
+		}
+
+		whenReady(initMap);
+
+		window.addEventListener("resize", function () {
+			if (chartInstance) chartInstance.resize();
+		});
+
+		var observer = new MutationObserver(function (mutations) {
+			mutations.forEach(function (m) {
+				if (m.attributeName === "class") {
+					if (chartInstance) {
+						chartInstance.dispose();
+						chartInstance = null;
+					}
+					initMap();
+				}
+			});
+		});
+		observer.observe(document.documentElement, { attributes: true });
+
+		document.addEventListener("astro:after-swap", function () {
+			if (document.getElementById("life-map") && !chartInstance) {
+				whenReady(initMap);
+			}
+		});
+		document.addEventListener("swup:contentReplaced", function () {
+			if (document.getElementById("life-map")) {
+				if (chartInstance) {
+					chartInstance.dispose();
+					chartInstance = null;
+				}
+				whenReady(initMap);
+			}
+		});
+	})();
+</script>
+
+<style>
+	.stat-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 14px;
+		border: 1px solid var(--line-divider);
+		border-radius: 50px;
+		font-size: 13px;
+		color: var(--deep-text);
+		background: var(--card-bg);
+	}
+
+	.stat-pill :global(svg) {
+		color: var(--primary);
+	}
+
+	.places-grid {
+		display: grid;
+		gap: 0.5rem;
+		grid-template-columns: 1fr;
+	}
+	@media (min-width: 768px) {
+		.places-grid {
+			grid-template-columns: repeat(2, 1fr);
+		}
+	}
+
+	.place-card {
+		padding: 0.875rem 1rem;
+		border: 1px solid var(--line-divider);
+		border-radius: var(--radius-large);
+		background: var(--card-bg);
+		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+	}
+	.place-card:hover {
+		border-color: var(--primary);
+		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	}
+
+	.place-name {
+		font-size: 0.9375rem;
+		font-weight: 700;
+		color: var(--deep-text);
+		margin: 0;
+	}
+
+	.place-exp {
+		margin: 0.25rem 0 0;
+		font-size: 0.8125rem;
+		color: var(--content-meta);
+		line-height: 1.5;
+	}
+
+	@media (max-width: 640px) {
+		.place-card {
+			padding: 0.75rem 0.875rem;
+		}
+	}
+</style>

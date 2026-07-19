@@ -1,0 +1,764 @@
+---
+title: 🔥 Firefly 更新逻辑设计
+published: 2026-07-06
+pinned: true
+description: 本文档详细描述 Firefly 博客系统的三种更新类型（写作内容、前端代码、后端代码）的检测机制、更新策略和实现方法。
+tags: [博客, 使用指南, Firefly]
+category: 博客指南
+draft: false
+image: api
+encrypted: false
+
+---
+
+> 本文档详细描述 Firefly 博客系统的三种更新类型（写作内容、前端代码、后端代码）的检测机制、更新策略和实现方法。  
+  
+---  
+  
+## 📋 核心原则  
+  
+### 1.1 更新分离原则  
+  
+将更新分为三个独立维度，各自独立检测、独立更新：  
+  
+| 维度 | 检测范围 | 更新方式 | 用户干预 |  
+|------|----------|----------|----------|  
+| **写作内容** | `src/content/` 目录 | 自动检测 + 自动构建 | 无需干预 |  
+| **前端代码** | `src/` 目录（排除 content） | 检测提示 + 用户确认后更新 | 需要确认 |  
+| **后端代码** | `admin/` 目录 | 检测提示 + 用户确认后更新 | 需要确认 |  
+  
+### 1.2 配置保留原则  
+  
+后端更新时，必须保留用户的个性化配置（密码、密钥等），不能被覆盖。  
+  
+### 1.3 无冲突原则  
+  
+三种更新互不干扰，可独立进行，不会互相覆盖。  
+  
+---  
+  
+## 🔧 架构设计  
+  
+### 2.1 更新检测机制  
+  
+#### 2.1.1 基于 GitHub API 的差异检测  
+  
+使用 GitHub REST API 的 `/repos/{owner}/{repo}/compare/{base}...{head}` 接口，比较本地当前提交与远程主分支的差异。  
+  
+**检测流程**：  
+  
+```  
+本地当前 commit SHA  
+        ↓  
+   GitHub API  
+        ↓  
+获取差异文件列表  
+        ↓  
+按路径分类（content / frontend / backend）  
+        ↓  
+返回各维度更新状态  
+```  
+  
+#### 2.1.2 差异分类规则  
+  
+```  
+文件路径前缀          → 更新类型  
+───────────────────────────────────  
+src/content/          → 写作内容更新  
+src/                  → 前端代码更新（排除 content）  
+admin/                → 后端代码更新  
+其他路径              → 不处理  
+```  
+  
+**注意**：单个提交可能同时包含多种更新类型，需分别标记。  
+  
+#### 2.1.3 检测频率  
+  
+| 场景 | 检测方式 | 频率 |  
+|------|----------|------|  
+| 后台页面加载 | 主动检测 | 每次页面刷新 |  
+| 定时检测 | 定时任务 | 每 5 分钟 |  
+| 手动触发 | 用户点击检测按钮 | 按需 |  
+  
+### 2.2 更新状态模型  
+  
+```typescript  
+interface UpdateStatus {  
+  hasContentUpdate: boolean;      // 是否有写作内容更新  
+  hasFrontendUpdate: boolean;     // 是否有前端代码更新  
+  hasBackendUpdate: boolean;      // 是否有后端代码更新  
+  lastChecked: Date;              // 最后检测时间  
+  latestCommit: string;           // 远程最新 commit SHA  
+  currentCommit: string;          // 本地当前 commit SHA  
+  contentChanges: string[];       // content 变更文件列表  
+  frontendChanges: string[];      // 前端变更文件列表  
+  backendChanges: string[];       // 后端变更文件列表  
+}  
+```  
+  
+---  
+  
+## 📝 写作内容更新  
+  
+### 3.1 更新场景  
+  
+用户在本地 Obsidian 写好文章后推送到 GitHub，服务器自动检测并同步。  
+  
+### 3.2 检测逻辑  
+  
+```typescript  
+// 检测 content 目录是否有变更  
+const hasContentUpdate = diffFiles.some(file =>   
+  file.startsWith('src/content/')  
+);  
+  
+// 获取 content 变更详情  
+const contentChanges = diffFiles.filter(file =>   
+  file.startsWith('src/content/')  
+);  
+```  
+  
+### 3.3 更新流程  
+  
+```  
+GitHub 推送  
+    ↓  
+Webhook 触发 / 定时检测  
+    ↓  
+检测到 content 目录有更新  
+    ↓  
+自动执行：git pull → pnpm build → 部署前端  
+    ↓  
+用户访问博客即可看到新文章  
+```  
+  
+### 3.4 关键特性  
+  
+- ✅ **完全自动化**：无需用户干预，后台自动完成  
+- ✅ **静默更新**：更新过程不影响用户访问  
+- ✅ **增量构建**：仅重新编译变更的内容（Astro 支持增量构建）  
+  
+### 3.5 实现方案  
+  
+#### 方案 A：GitHub Webhook（推荐）  
+  
+当 GitHub 收到 push 时，立即触发服务器更新：  
+  
+```yaml  
+# .github/workflows/content-update.yml  
+name: Content Update  
+  
+on:  
+  push:  
+    paths:  
+      - 'src/content/**'  
+    branches: [main]  
+  
+jobs:  
+  notify-server:  
+    runs-on: ubuntu-latest  
+    steps:  
+      - name: Notify server  
+        env:  
+          SERVER_URL: ${{ secrets.SERVER_URL }}  
+          API_KEY: ${{ secrets.API_KEY }}  
+        run: |  
+          curl -X POST "$SERVER_URL/api/system/content-update" \  
+            -H "Authorization: Bearer $API_KEY" \  
+            -H "Content-Type: application/json" \  
+            -d '{"type": "content"}'  
+```  
+  
+#### 方案 B：定时轮询  
+  
+服务器每 5 分钟检测一次 GitHub：  
+  
+```typescript  
+// 定时检测任务  
+setInterval(async () => {  
+  const status = await checkUpdateStatus();  
+  if (status.hasContentUpdate) {  
+    await updateContent();  
+  }  
+}, 5 * 60 * 1000);  
+```  
+  
+---  
+  
+## 🎨 前端代码更新  
+  
+### 4.1 更新场景  
+  
+主题框架更新（样式、布局、组件、配置结构等）。  
+  
+### 4.2 检测逻辑  
+  
+```typescript  
+// 检测前端代码是否有变更（排除 content）  
+const hasFrontendUpdate = diffFiles.some(file =>   
+  file.startsWith('src/') &&   
+  !file.startsWith('src/content/')  
+);  
+  
+// 获取前端变更详情  
+const frontendChanges = diffFiles.filter(file =>   
+  file.startsWith('src/') &&   
+  !file.startsWith('src/content/')  
+);  
+```  
+  
+### 4.3 更新流程  
+  
+```  
+检测到前端代码有更新  
+    ↓  
+后台显示醒目提示："发现前端更新，是否立即更新？"  
+    ↓  
+用户点击"更新"按钮  
+    ↓  
+执行：git pull → pnpm build → 部署前端  
+    ↓  
+更新完成提示  
+```  
+  
+### 4.4 关键特性  
+  
+- ✅ **用户确认**：必须用户手动确认才能更新  
+- ✅ **不影响内容**：前端更新不涉及 content 目录，不会覆盖用户文章  
+- ✅ **版本对比**：显示更新内容摘要，让用户了解更新内容  
+  
+### 4.5 后台提示设计  
+  
+```  
+┌─────────────────────────────────────────────┐  
+│  ⚠️ 发现前端更新！                           │  
+│                                             │  
+│  更新内容：                                  │  
+│  • 修改了导航栏样式                          │  
+│  • 新增了深色模式支持                        │  
+│  • 修复了移动端布局问题                      │  
+│                                             │  
+│  更新时间：2024-01-01 12:00                 │  
+│                                             │  
+│  [立即更新]  [稍后提醒]                      │  
+└─────────────────────────────────────────────┘  
+```  
+  
+---  
+  
+## 🖥️ 后端代码更新  
+  
+### 5.1 更新场景  
+  
+后台管理系统更新（API、功能、安全补丁等）。  
+  
+### 5.2 检测逻辑  
+  
+```typescript  
+// 检测 admin 目录是否有变更  
+const hasBackendUpdate = diffFiles.some(file =>   
+  file.startsWith('admin/')  
+);  
+  
+// 获取后端变更详情  
+const backendChanges = diffFiles.filter(file =>   
+  file.startsWith('admin/')  
+);  
+```  
+  
+### 5.3 更新流程  
+  
+```  
+检测到后端代码有更新  
+    ↓  
+后台显示醒目提示："发现后端更新，是否立即更新？"  
+    ↓  
+用户点击"更新"按钮  
+    ↓  
+执行：git stash（保存本地配置）  
+    ↓  
+执行：git pull → 更新依赖 → 构建后端 → PM2 重启  
+    ↓  
+执行：git stash pop（恢复本地配置）  
+    ↓  
+更新完成提示  
+```  
+  
+### 5.4 配置保留策略  
+  
+**核心问题**：用户修改的 `.env` 文件（密码、密钥等）不能被 git pull 覆盖。  
+  
+**解决方案**：  
+  
+#### 方案 A：.gitignore（推荐）  
+  
+将 `.env` 文件加入 `.gitignore`，确保不会被版本控制：  
+  
+```gitignore  
+# .gitignore  
+.env  
+admin/.env  
+admin/node_modules/  
+admin/dist/  
+```  
+  
+**优点**：简单可靠，配置文件永远不会被覆盖  
+**缺点**：首次部署需要手动创建 `.env`  
+  
+#### 方案 B：git stash（备选）  
+  
+在 pull 前暂存本地修改，pull 后恢复：  
+  
+```bash  
+# 更新脚本中的配置保留逻辑  
+git stash  
+git pull origin main  
+git stash pop  
+```  
+  
+**优点**：即使配置文件在 git 中也能保留  
+**缺点**：可能产生冲突，需要手动解决  
+  
+#### 方案 C：配置备份（推荐配合方案 A）  
+  
+在更新前备份配置文件：  
+  
+```bash  
+# 更新脚本中的配置保留逻辑  
+BACKUP_DIR="/www/firefly/backup"  
+mkdir -p $BACKUP_DIR  
+  
+# 备份配置文件  
+if [ -f ".env" ]; then  
+  cp .env $BACKUP_DIR/.env.backup  
+fi  
+  
+if [ -f "admin/.env" ]; then  
+  cp admin/.env $BACKUP_DIR/admin.env.backup  
+fi  
+  
+# 更新代码  
+git pull origin main  
+  
+# 恢复配置文件（如果被覆盖）  
+if [ -f $BACKUP_DIR/.env.backup ]; then  
+  cp $BACKUP_DIR/.env.backup .env  
+fi  
+  
+if [ -f $BACKUP_DIR/admin.env.backup ]; then  
+  cp $BACKUP_DIR/admin.env.backup admin/.env  
+fi  
+```  
+  
+### 5.5 关键特性  
+  
+- ✅ **用户确认**：必须用户手动确认才能更新  
+- ✅ **配置保留**：用户密码、密钥等配置不会被覆盖  
+- ✅ **无缝重启**：PM2 优雅重启，不中断服务  
+- ✅ **版本对比**：显示更新内容摘要  
+  
+---  
+  
+## 🔄 三种更新的协调机制  
+  
+### 6.1 互斥更新  
+  
+确保同一时间只有一种更新在执行：  
+  
+```typescript  
+let isUpdating = false;  
+  
+async function performUpdate(type: 'content' | 'frontend' | 'backend') {  
+  if (isUpdating) {  
+    throw new Error('正在执行其他更新，请稍后重试');  
+  }  
+    
+  try {  
+    isUpdating = true;  
+    // 执行更新逻辑  
+  } finally {  
+    isUpdating = false;  
+  }  
+}  
+```  
+  
+### 6.2 更新优先级  
+  
+| 优先级 | 更新类型 | 说明 |  
+|--------|----------|------|  
+| 1 | 写作内容 | 自动执行，优先级最高 |  
+| 2 | 前端代码 | 用户确认后执行 |  
+| 3 | 后端代码 | 用户确认后执行 |  
+  
+### 6.3 冲突处理  
+  
+**场景**：用户在后台编辑了文章，同时本地也推送了文章更新。  
+  
+**解决方案**：  
+  
+```  
+后台编辑文章  
+    ↓  
+保存到本地文件  
+    ↓  
+本地推送文章到 GitHub  
+    ↓  
+服务器检测到冲突  
+    ↓  
+提示用户："检测到冲突，请手动解决"  
+    ↓  
+用户选择：保留服务器版本 / 保留 GitHub 版本 / 手动合并  
+```  
+  
+---  
+  
+## 📦 打包与部署策略  
+  
+### 7.1 前端打包  
+  
+```bash  
+# 完整构建（包含所有内容）  
+pnpm build  
+  
+# 构建产物位置  
+dist/  
+├── index.html  
+├── assets/  
+│   ├── js/  
+│   ├── css/  
+│   └── images/  
+├── posts/  
+├── books/  
+├── movies/  
+└── ...  
+```  
+  
+### 7.2 后端打包  
+  
+```bash  
+# 构建后端  
+cd admin  
+npm run build  
+  
+# 构建产物位置  
+admin/dist/  
+├── app.js  
+├── controllers/  
+├── routes/  
+├── services/  
+└── ...  
+```  
+  
+### 7.3 部署流程  
+  
+```  
+本地开发完成  
+    ↓  
+git commit + push  
+    ↓  
+服务器检测到更新  
+    ↓  
+根据更新类型执行对应操作：  
+    ├── 内容更新 → 自动构建前端 → 部署到 Nginx  
+    ├── 前端更新 → 用户确认 → 构建前端 → 部署到 Nginx  
+    └── 后端更新 → 用户确认 → 构建后端 → PM2 重启  
+```  
+  
+---  
+  
+## 🔌 API 接口设计  
+  
+### 8.1 检测更新接口  
+  
+```  
+GET /api/system/check-update  
+```  
+  
+**响应**：  
+  
+```json  
+{  
+  "code": 200,  
+  "data": {  
+    "hasContentUpdate": true,  
+    "hasFrontendUpdate": false,  
+    "hasBackendUpdate": true,  
+    "lastChecked": "2024-01-01T12:00:00Z",  
+    "latestCommit": "abc123",  
+    "currentCommit": "def456",  
+    "contentChanges": [  
+      "src/content/posts/new-article.md",  
+      "src/content/books/new-book.md"  
+    ],  
+    "frontendChanges": [],  
+    "backendChanges": [  
+      "admin/controllers/postsController.ts",  
+      "admin/routes/config.ts"  
+    ]  
+  }  
+}  
+```  
+  
+### 8.2 更新内容接口  
+  
+```  
+POST /api/system/update-content  
+```  
+  
+**响应**：  
+  
+```json  
+{  
+  "code": 200,  
+  "message": "内容更新完成",  
+  "data": {  
+    "updatedFiles": ["src/content/posts/new-article.md"],  
+    "buildTime": "3.5s"  
+  }  
+}  
+```  
+  
+### 8.3 更新前端接口  
+  
+```  
+POST /api/system/update-frontend  
+```  
+  
+**响应**：  
+  
+```json  
+{  
+  "code": 200,  
+  "message": "前端更新完成",  
+  "data": {  
+    "updatedFiles": ["src/components/Navbar.astro"],  
+    "buildTime": "15.2s"  
+  }  
+}  
+```  
+  
+### 8.4 更新后端接口  
+  
+```  
+POST /api/system/update-backend  
+```  
+  
+**响应**：  
+  
+```json  
+{  
+  "code": 200,  
+  "message": "后端更新完成",  
+  "data": {  
+    "updatedFiles": ["admin/controllers/postsController.ts"],  
+    "restartTime": "2.1s"  
+  }  
+}  
+```  
+  
+---  
+  
+## 📊 更新日志  
+  
+### 9.1 记录更新历史  
+  
+每次更新都会记录到日志文件：  
+  
+```json  
+// logs/update-history.json  
+[  
+  {  
+    "id": "1",  
+    "type": "content",  
+    "trigger": "webhook",  
+    "timestamp": "2024-01-01T12:00:00Z",  
+    "commits": ["abc123"],  
+    "updatedFiles": ["src/content/posts/new-article.md"],  
+    "status": "success",  
+    "duration": 3500  
+  }  
+]  
+```  
+  
+### 9.2 后台展示  
+  
+在后台管理面板显示最近更新历史：  
+  
+```  
+┌─────────────────────────────────────────────┐  
+│  更新历史                                   │  
+│                                             │  
+│  [内容] 2024-01-01 12:00  自动更新成功       │  
+│    • 新增文章：《我的第一篇博客》             │  
+│                                             │  
+│  [前端] 2024-01-01 10:30  用户确认更新       │  
+│    • 更新导航栏组件                          │  
+│                                             │  
+│  [后端] 2024-01-01 09:00  用户确认更新       │  
+│    • 修复文章加密问题                        │  
+└─────────────────────────────────────────────┘  
+```  
+  
+---  
+  
+## 🔧 实现代码示例  
+  
+### 10.1 更新检测服务  
+  
+```typescript  
+// services/updateService.ts  
+import axios from 'axios';  
+  
+class UpdateService {  
+  private readonly GITHUB_API = 'https://api.github.com';  
+  private readonly REPO_OWNER = 'CuteLeaf';  
+  private readonly REPO_NAME = 'Firefly';  
+    
+  async checkUpdate(): Promise<UpdateStatus> {  
+    // 获取本地当前 commit  
+    const currentCommit = await this.getCurrentCommit();  
+      
+    try {  
+      // 调用 GitHub API 比较差异  
+      const response = await axios.get(  
+        `${this.GITHUB_API}/repos/${this.REPO_OWNER}/${this.REPO_NAME}/compare/${currentCommit}...main`  
+      );  
+        
+      const files = response.data.files?.map((f: { filename: string }) => f.filename) || [];  
+        
+      return {  
+        hasContentUpdate: files.some(f => f.startsWith('src/content/')),  
+        hasFrontendUpdate: files.some(f => f.startsWith('src/') && !f.startsWith('src/content/')),  
+        hasBackendUpdate: files.some(f => f.startsWith('admin/')),  
+        lastChecked: new Date(),  
+        latestCommit: response.data.head.sha,  
+        currentCommit,  
+        contentChanges: files.filter(f => f.startsWith('src/content/')),  
+        frontendChanges: files.filter(f => f.startsWith('src/') && !f.startsWith('src/content/')),  
+        backendChanges: files.filter(f => f.startsWith('admin/')),  
+      };  
+    } catch (error) {  
+      return {  
+        hasContentUpdate: false,  
+        hasFrontendUpdate: false,  
+        hasBackendUpdate: false,  
+        lastChecked: new Date(),  
+        latestCommit: currentCommit,  
+        currentCommit,  
+        contentChanges: [],  
+        frontendChanges: [],  
+        backendChanges: [],  
+      };  
+    }  
+  }  
+    
+  private async getCurrentCommit(): Promise<string> {  
+    // 通过 git 命令获取当前 commit  
+    const { execSync } = require('child_process');  
+    try {  
+      return execSync('git rev-parse HEAD', { encoding: 'utf-8' }).trim();  
+    } catch {  
+      return 'unknown';  
+    }  
+  }  
+}  
+```  
+  
+### 10.2 更新执行脚本  
+  
+```bash  
+#!/bin/bash  
+# update.sh - 统一更新脚本  
+  
+set -e  
+  
+TYPE="$1"  
+BACKUP_DIR="/www/firefly/backup"  
+  
+echo "=================================="  
+echo "  Firefly 更新脚本"  
+echo "  类型: $TYPE"  
+echo "=================================="  
+  
+# 创建备份目录  
+mkdir -p $BACKUP_DIR  
+  
+# 备份配置文件  
+if [ -f ".env" ]; then  
+  cp .env $BACKUP_DIR/.env.backup  
+fi  
+if [ -f "admin/.env" ]; then  
+  cp admin/.env $BACKUP_DIR/admin.env.backup  
+fi  
+  
+# 拉取代码  
+echo "[1/3] 拉取最新代码..."  
+git pull origin main  
+  
+# 根据类型执行不同操作  
+case $TYPE in  
+  content)  
+    echo "[2/3] 构建前端（仅内容）..."  
+    pnpm build  
+    echo "[3/3] 部署前端..."  
+    cp -r dist/* /www/wwwroot/firefly/  
+    ;;  
+    
+  frontend)  
+    echo "[2/3] 构建前端..."  
+    pnpm build  
+    echo "[3/3] 部署前端..."  
+    cp -r dist/* /www/wwwroot/firefly/  
+    ;;  
+    
+  backend)  
+    echo "[2/3] 构建后端..."  
+    cd admin  
+    npm install  
+    npm run build  
+    cd ..  
+    echo "[3/3] 重启后台服务..."  
+    pm2 restart firefly-admin  
+    ;;  
+esac  
+  
+# 恢复配置文件  
+if [ -f $BACKUP_DIR/.env.backup ]; then  
+  cp $BACKUP_DIR/.env.backup .env  
+fi  
+if [ -f $BACKUP_DIR/admin.env.backup ]; then  
+  cp $BACKUP_DIR/admin.env.backup admin/.env  
+fi  
+  
+echo "=================================="  
+echo "  更新完成！"  
+echo "=================================="  
+```  
+  
+---  
+  
+## 📋 总结  
+  
+### 更新逻辑对照表  
+  
+| 更新类型 | 检测方式 | 更新方式 | 配置保留 | 用户干预 |  
+|----------|----------|----------|----------|----------|  
+| **写作内容** | GitHub API / Webhook | 自动构建 + 部署 | 不涉及 | 无 |  
+| **前端代码** | GitHub API | 用户确认后构建 + 部署 | 不涉及 | 需要确认 |  
+| **后端代码** | GitHub API | 用户确认后构建 + 重启 | .gitignore + 备份 | 需要确认 |  
+  
+### 核心设计思想  
+  
+1. **内容更新自动化**：用户写文章推送到 GitHub，博客自动更新，无需任何操作  
+2. **代码更新人工化**：框架更新需要用户确认，避免意外破坏现有功能  
+3. **配置保护严格化**：用户密码、密钥等配置永远不会被覆盖  
+4. **更新过程透明化**：后台显示更新状态、历史记录和变更详情  
+  
+---  
+  
+**实现这个更新系统后，你可以：**  
+- 在 Obsidian 写文章，推送到 GitHub，博客自动同步  
+- 收到前端/后端更新提示时，选择性更新  
+- 完全不用担心配置被覆盖  
+  
+让写作更专注，让更新更安心！🌌

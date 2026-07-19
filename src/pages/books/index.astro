@@ -1,0 +1,200 @@
+---
+import { getCollection } from "astro:content";
+import Comment from "@/components/comment/index.astro";
+import { Icon } from "astro-icon/components";
+import Bookshelf from "@/components/pages/books/Bookshelf.astro";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { formatDateI18nWithTime } from "@/utils/date-utils";
+import { removeFileExtension } from "@/utils/url-utils";
+
+if (!siteConfig.pages.books) {
+	return Astro.redirect("/404/");
+}
+
+const buildTime = formatDateI18nWithTime(new Date());
+
+const customBangumi = await getCollection("bangumi");
+
+function sortByDateAndTime(a: any, b: any) {
+	const dateA = a.data.date?.getTime() || 0;
+	const dateB = b.data.date?.getTime() || 0;
+	if (dateA !== dateB) {
+		return dateB - dateA;
+	}
+	const timeA = a.data.time || "00:00";
+	const timeB = b.data.time || "00:00";
+	return timeB.localeCompare(timeA);
+}
+
+const bookItems = customBangumi
+	.filter((item) => item.data.category === "book")
+	.sort(sortByDateAndTime)
+	.map((item) => {
+		const imageSrc =
+			typeof item.data.image === "string"
+				? item.data.image
+				: item.data.image.src;
+		const slug = removeFileExtension(item.id);
+		const link = `/books/${slug}/`;
+
+		return {
+			title: item.data.title,
+			coverImage: imageSrc,
+			link,
+			status: item.data.status,
+			score: item.data.score || 0,
+		};
+	});
+
+const readCount = bookItems.filter((b) => b.status === 2).length;
+const readingCount = bookItems.filter((b) => b.status === 3).length;
+const wishCount = bookItems.filter((b) => b.status === 1).length;
+const droppedCount = bookItems.filter((b) => b.status === 5).length;
+const totalCount = readCount + readingCount + wishCount + droppedCount;
+
+const statusMap: Record<number, string> = {
+	1: "wish",
+	2: "collect",
+	3: "doing",
+	5: "dropped",
+};
+
+const filters = [
+	{ value: "all", label: i18n(I18nKey.booksFilterAll), count: totalCount, color: "bg-(--primary)" },
+	{ value: "doing", label: i18n(I18nKey.booksFilterReading), count: readingCount, color: "bg-emerald-500" },
+	{ value: "collect", label: i18n(I18nKey.booksFilterRead), count: readCount, color: "bg-amber-500" },
+	{ value: "wish", label: i18n(I18nKey.booksFilterWish), count: wishCount, color: "bg-sky-500" },
+	{ value: "dropped", label: i18n(I18nKey.booksFilterDropped), count: droppedCount, color: "bg-rose-400" },
+];
+---
+
+<MainGridLayout title={i18n(I18nKey.booksTitle)} description={i18n(I18nKey.booksSubtitle)}>
+	<div class="books-page-wrapper flex w-full overflow-hidden relative min-h-32">
+		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<header class="books-header relative w-full mb-6">
+				<div class="mb-6">
+					<div class="flex items-center gap-3 mb-3">
+						<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
+							<Icon is:inline name="material-symbols:auto-stories" class="text-[1.5rem]" />
+						</div>
+						<div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+							{i18n(I18nKey.booksTitle)}
+						</div>
+					</div>
+					<p class="text-base text-neutral-600 dark:text-neutral-400 leading-relaxed">
+						{i18n(I18nKey.booksSubtitle)}
+					</p>
+					<p class="text-xs text-neutral-500 dark:text-neutral-500 mt-2">
+						{i18n(I18nKey.bangumiLastUpdated)} {buildTime}
+					</p>
+				</div>
+			</header>
+
+			{bookItems.length > 0 ? (
+				<>
+					<div class="mb-6 flex flex-col gap-3">
+						<div class="relative">
+							<svg class="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+								<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+							</svg>
+							<input
+								type="text"
+								id="books-search-input"
+								placeholder={i18n(I18nKey.booksSearch)}
+								class="w-full rounded-xl border border-(--line-divider) bg-(--card-bg) py-2.5 pl-10 pr-4 text-sm text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 outline-none transition-colors focus:border-(--primary)"
+							/>
+						</div>
+						<div class="books-filter-wrapper flex flex-wrap gap-2">
+							{filters.map((filter) => (
+								<button
+									class:list={[
+										"books-filter-btn flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-200",
+										filter.value === "all"
+											? "bg-(--primary) text-white"
+											: "bg-(--card-bg) text-(--deep-text) border border-(--line-divider) hover:border-(--primary)/50",
+									]}
+									data-filter={filter.value}
+									type="button"
+								>
+									<span class={`w-1.5 h-1.5 rounded-full ${filter.color} inline-block`}></span>
+									<span>{filter.label}</span>
+									{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-black/10 text-white">{filter.count}</span>}
+								</button>
+							))}
+						</div>
+					</div>
+					<Bookshelf books={bookItems} statusMap={statusMap} />
+				</>
+			) : (
+				<div class="w-full p-12 text-center">
+					<Icon name="material-symbols:auto-stories" class="text-6xl text-(--content-meta)/50 mb-4" />
+					<p class="text-(--content-meta)">{i18n(I18nKey.booksNoData)}</p>
+				</div>
+			)}
+		</div>
+	</div>
+
+	<Comment customPath="/books/" />
+</MainGridLayout>
+
+<script is:inline>
+	(function() {
+		function applyFilters() {
+			var searchQuery = document.getElementById('books-search-input')?.value.toLowerCase() || '';
+			var activeFilter = document.querySelector('.books-filter-btn.bg-(--primary)')?.dataset.filter || 'all';
+			
+			document.querySelectorAll('.book-item').forEach(function(item) {
+				var statusMatch = activeFilter === 'all' || item.dataset.bookStatus === activeFilter;
+				var title = item.querySelector('.book-title')?.textContent.toLowerCase() || '';
+				var searchMatch = !searchQuery || title.includes(searchQuery);
+				var match = statusMatch && searchMatch;
+				item.classList.toggle('hidden', !match);
+				item.style.display = match ? 'block' : 'none';
+			});
+		}
+
+		document.getElementById('books-search-input')?.addEventListener('input', applyFilters);
+
+		document.addEventListener('click', function(e) {
+			var filterBtn = e.target.closest('.books-filter-btn');
+			if (filterBtn) {
+				var filter = filterBtn.dataset.filter;
+				var nav = filterBtn.closest('.books-filter-wrapper');
+				nav.querySelectorAll('.books-filter-btn').forEach(function(btn) {
+					btn.classList.remove('bg-(--primary)', 'text-white');
+					btn.classList.add('bg-(--card-bg)', 'text-(--deep-text)', 'border', 'border-(--line-divider)', 'hover:border-(--primary)/50');
+				});
+				filterBtn.classList.remove('bg-(--card-bg)', 'text-(--deep-text)', 'border', 'border-(--line-divider)', 'hover:border-(--primary)/50');
+				filterBtn.classList.add('bg-(--primary)', 'text-white');
+				applyFilters();
+			}
+		});
+	})();
+</script>
+
+<style>
+	.books-page-wrapper {
+		border-radius: var(--radius-large);
+	}
+
+	.books-header {
+		animation: fadeSlideIn 0.4s ease-[var(--ease-standard)] both;
+	}
+
+	@keyframes fadeSlideIn {
+		from { opacity: 0; transform: translateY(8px); }
+		to { opacity: 1; transform: translateY(0); }
+	}
+
+	@media (max-width: 640px) {
+		.card-base {
+			padding-left: 1rem;
+			padding-right: 1rem;
+			padding-top: 1.5rem;
+			padding-bottom: 1.5rem;
+		}
+	}
+</style>

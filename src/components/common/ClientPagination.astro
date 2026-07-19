@@ -1,0 +1,322 @@
+---
+import { Icon } from "astro-icon/components";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+
+interface Props {
+	totalItems: number;
+	itemsPerPage: number;
+	itemsPerPageMobile?: number;
+	currentPage: number;
+	sectionId: string;
+}
+
+const {
+	totalItems,
+	itemsPerPage,
+	itemsPerPageMobile = 6,
+	currentPage,
+	sectionId,
+} = Astro.props;
+
+const totalPagesMobile = Math.ceil(totalItems / itemsPerPageMobile);
+const totalPagesDesktop = Math.ceil(totalItems / itemsPerPage);
+
+function generatePageNumbers(current: number, total: number) {
+	const delta = 2;
+	const rangeWithDots: (number | string)[] = [];
+
+	if (total <= 7) {
+		for (let i = 1; i <= total; i++) rangeWithDots.push(i);
+		return rangeWithDots;
+	}
+
+	const left = Math.max(2, current - delta);
+	const right = Math.min(total - 1, current + delta);
+
+	rangeWithDots.push(1);
+	if (left > 2) rangeWithDots.push("...");
+	for (let i = left; i <= right; i++) rangeWithDots.push(i);
+	if (right < total - 1) rangeWithDots.push("...");
+	if (total > 1) rangeWithDots.push(total);
+
+	return rangeWithDots;
+}
+
+const mobilePageNumbers = generatePageNumbers(currentPage, totalPagesMobile);
+const desktopPageNumbers = generatePageNumbers(currentPage, totalPagesDesktop);
+---
+
+{totalItems > 0 && (
+	<div
+		class="bangumi-pagination responsive-pagination flex justify-center items-center mt-8"
+		data-pagination-section={sectionId}
+	>
+		<div class="mobile-pagination items-center gap-2">
+			<button
+				type="button"
+				class="btn-card flex items-center justify-center w-10 h-10 rounded-xl text-[var(--primary)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--btn-card-bg-hover)] transition-all duration-150"
+				data-page="prev"
+				data-section={sectionId}
+				disabled={currentPage === 1}
+				aria-label={i18n(I18nKey.bangumiPrevPage)}
+			>
+				<Icon name="material-symbols:chevron-left-rounded" class="text-[1.6rem]" />
+			</button>
+
+			<div class="bg-[var(--card-bg)] flex items-center rounded-xl px-3.5 h-10 gap-1.5 border border-[var(--line-divider)] shadow-sm">
+				<span class="mobile-current-page text-sm font-bold text-[var(--primary)] tabular-nums">{currentPage}</span>
+				<span class="text-sm text-[var(--content-meta)]">/</span>
+				<span class="mobile-total-pages text-sm font-bold text-[var(--content-meta)] tabular-nums">{totalPagesMobile}</span>
+			</div>
+
+			<button
+				type="button"
+				class="btn-card flex items-center justify-center w-10 h-10 rounded-xl text-[var(--primary)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--btn-card-bg-hover)] transition-all duration-150"
+				data-page="next"
+				data-section={sectionId}
+				disabled={currentPage >= totalPagesMobile}
+				aria-label={i18n(I18nKey.bangumiNextPage)}
+			>
+				<Icon name="material-symbols:chevron-right-rounded" class="text-[1.6rem]" />
+			</button>
+		</div>
+
+		<div class="desktop-pagination items-center gap-2">
+			<button
+				type="button"
+				class="btn-card flex items-center justify-center w-10 h-10 rounded-xl text-[var(--primary)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--btn-card-bg-hover)] transition-all duration-150"
+				data-page="prev"
+				data-section={sectionId}
+				disabled={currentPage === 1}
+				aria-label={i18n(I18nKey.bangumiPrevPage)}
+			>
+				<Icon name="material-symbols:chevron-left-rounded" class="text-[1.6rem]" />
+			</button>
+
+			<div
+				class="bg-[var(--card-bg)] flex flex-row rounded-xl items-center text-[var(--content-meta)] font-medium shadow-sm border border-[var(--line-divider)]"
+				data-page-numbers={sectionId}
+			>
+				{desktopPageNumbers.map((pageItem) => (
+					pageItem === "..." ? (
+						<Icon name="material-symbols:more-horiz" class="mx-1 text-[var(--content-meta)]" />
+					) : (
+						<button
+							type="button"
+							class:list={[
+								"bangumi-page-btn w-10 h-10 flex items-center justify-center font-medium text-sm rounded-xl transition-all duration-150",
+								{
+									"bg-[var(--primary)] text-white shadow-sm": pageItem === currentPage,
+									"hover:bg-[var(--btn-card-bg-hover)] text-[var(--content-meta)] active:scale-90": pageItem !== currentPage
+								}
+							]}
+							data-page={pageItem}
+							data-section={sectionId}
+							aria-label={`${pageItem}`}
+							aria-current={pageItem === currentPage ? "page" : undefined}
+						>
+							{pageItem}
+						</button>
+					)
+				))}
+			</div>
+
+			<button
+				type="button"
+				class="btn-card flex items-center justify-center w-10 h-10 rounded-xl text-[var(--primary)] disabled:opacity-40 disabled:cursor-not-allowed hover:bg-[var(--btn-card-bg-hover)] transition-all duration-150"
+				data-page="next"
+				data-section={sectionId}
+				disabled={currentPage >= totalPagesDesktop}
+				aria-label={i18n(I18nKey.bangumiNextPage)}
+			>
+				<Icon name="material-symbols:chevron-right-rounded" class="text-[1.6rem]" />
+			</button>
+		</div>
+	</div>
+)}
+
+<script is:inline define:vars={{ itemsPerPage, itemsPerPageMobile, sectionId }}>
+	(function() {
+		let currentPage = 1;
+		let isMobile = window.innerWidth < 768;
+
+		function getItemsPerPage() {
+			return window.innerWidth < 768 ? itemsPerPageMobile : itemsPerPage;
+		}
+
+		function getVisibleItems() {
+			return document.querySelectorAll(`[data-item-section="${sectionId}"]:not(.hidden)`);
+		}
+
+		function getTotalPages(itemsPerPg) {
+			return Math.ceil(getVisibleItems().length / itemsPerPg);
+		}
+
+		function initPagination() {
+			const pagination = document.querySelector(`[data-pagination-section="${sectionId}"]`);
+			if (!pagination) return;
+
+			function updateMobileDisplay() {
+				const el = pagination.querySelector('.mobile-current-page');
+				if (el) el.textContent = currentPage.toString();
+				const totalEl = pagination.querySelector('.mobile-total-pages');
+				if (totalEl) totalEl.textContent = getTotalPages(getItemsPerPage()).toString();
+			}
+
+			function updatePage() {
+				const pg = getItemsPerPage();
+				const items = getVisibleItems();
+				const total = getTotalPages(pg);
+
+				for (const item of items) item.style.display = 'none';
+
+				const start = (currentPage - 1) * pg;
+				const end = start + pg;
+				for (let i = start; i < end && i < items.length; i++) {
+					items[i].style.display = 'block';
+				}
+
+				updatePaginationButtons(total);
+				updateMobileDisplay();
+			}
+
+			function generatePageNumbers(current, total) {
+				const delta = 2;
+				const rangeWithDots = [];
+				if (total <= 7) {
+					for (let i = 1; i <= total; i++) rangeWithDots.push(i);
+					return rangeWithDots;
+				}
+				const left = Math.max(2, current - delta);
+				const right = Math.min(total - 1, current + delta);
+				rangeWithDots.push(1);
+				if (left > 2) rangeWithDots.push('...');
+				for (let i = left; i <= right; i++) rangeWithDots.push(i);
+				if (right < total - 1) rangeWithDots.push('...');
+				if (total > 1) rangeWithDots.push(total);
+				return rangeWithDots;
+			}
+
+			function updatePaginationButtons(total) {
+				const prevButtons = pagination.querySelectorAll('[data-page="prev"]');
+				const nextButtons = pagination.querySelectorAll('[data-page="next"]');
+				const pageNumbersContainer = pagination.querySelector(`[data-page-numbers="${sectionId}"]`);
+
+				prevButtons.forEach(btn => { btn.disabled = currentPage === 1; });
+				nextButtons.forEach(btn => { btn.disabled = currentPage >= total; });
+
+				if (pageNumbersContainer) {
+					pageNumbersContainer.innerHTML = '';
+					generatePageNumbers(currentPage, total).forEach(pageItem => {
+						if (pageItem === '...') {
+							const wrapper = document.createElement('span');
+							wrapper.innerHTML = '<svg class="mx-1" width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm12 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm-6 0c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>';
+							pageNumbersContainer.appendChild(wrapper.firstChild);
+						} else {
+							const btn = document.createElement('button');
+							btn.className = pageItem === currentPage
+								? 'bangumi-page-btn w-10 h-10 flex items-center justify-center font-medium text-sm rounded-xl bg-[var(--primary)] text-white shadow-sm'
+								: 'bangumi-page-btn w-10 h-10 flex items-center justify-center font-medium text-sm rounded-xl hover:bg-[var(--btn-card-bg-hover)] text-[var(--content-meta)] active:scale-90';
+							btn.dataset.page = pageItem.toString();
+							btn.dataset.section = sectionId;
+							btn.textContent = pageItem.toString();
+							btn.addEventListener('click', function() {
+								currentPage = pageItem;
+								updatePage();
+							});
+							pageNumbersContainer.appendChild(btn);
+						}
+					});
+				}
+			}
+
+			pagination.querySelectorAll('[data-page]').forEach(btn => {
+				btn.addEventListener('click', function() {
+					const action = this.dataset.page;
+					const pg = getItemsPerPage();
+					const total = getTotalPages(pg);
+
+					if (action === 'prev') {
+						currentPage = Math.max(1, currentPage - 1);
+					} else if (action === 'next') {
+						currentPage = Math.min(total, currentPage + 1);
+					} else {
+						currentPage = parseInt(action);
+					}
+
+					updatePage();
+				});
+			});
+
+			pagination.addEventListener('updatePagination', function() {
+				currentPage = 1;
+				updatePage();
+			});
+
+			let resizeTimer;
+			window.addEventListener('resize', function() {
+				clearTimeout(resizeTimer);
+				resizeTimer = setTimeout(function() {
+					const wasMobile = isMobile;
+					isMobile = window.innerWidth < 768;
+					if (wasMobile !== isMobile) {
+						currentPage = 1;
+						updatePage();
+					} else {
+						updateMobileDisplay();
+					}
+				}, 150);
+			});
+
+			updatePage();
+		}
+
+		if (document.readyState === 'loading') {
+			document.addEventListener('DOMContentLoaded', initPagination);
+		} else {
+			initPagination();
+		}
+	})();
+</script>
+
+<style>
+	.responsive-pagination {
+		max-width: 100%;
+		overflow-x: auto;
+		-webkit-overflow-scrolling: touch;
+	}
+
+	.mobile-pagination {
+		display: flex;
+		padding: 0 0.5rem;
+	}
+
+	.desktop-pagination {
+		display: none;
+	}
+
+	@media (min-width: 768px) {
+		.mobile-pagination { display: none; }
+		.desktop-pagination { display: flex; }
+	}
+
+	.bangumi-page-btn {
+		transition: all 0.15s ease-[var(--ease-standard)];
+	}
+
+	@media (hover: none) and (pointer: coarse) {
+		.bangumi-page-btn,
+		.btn-card[data-page] {
+			min-height: 40px;
+			min-width: 40px;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.bangumi-page-btn,
+		.btn-card[data-page] {
+			transition: none;
+		}
+	}
+</style>

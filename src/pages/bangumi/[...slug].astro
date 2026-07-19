@@ -1,0 +1,174 @@
+---
+import { getCollection, render } from "astro:content";
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import { siteConfig } from "@/config";
+
+export async function getStaticPaths() {
+	const allEntries = await getCollection("bangumi");
+	const paths = [];
+
+	for (const entry of allEntries) {
+		const normalizedId = entry.id.replace(/\\/g, "/");
+		paths.push({
+			params: { slug: normalizedId.replace(/\.md$/, "") },
+			props: { entry },
+		});
+	}
+
+	return paths;
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const statusMap: Record<number, { label: string; color: string }> = {
+	1: { label: i18n(I18nKey.bangumiStatusWish), color: "bg-sky-500" },
+	2: { label: i18n(I18nKey.bangumiStatusWatched), color: "bg-emerald-500" },
+	3: { label: i18n(I18nKey.bangumiStatusWatching), color: "bg-amber-500" },
+	4: { label: i18n(I18nKey.bangumiStatusOnHold), color: "bg-violet-500" },
+	5: { label: i18n(I18nKey.bangumiStatusDropped), color: "bg-rose-400" },
+};
+
+const categoryNames: Record<string, string> = {
+	book: i18n(I18nKey.bangumiCategoryBook),
+	anime: i18n(I18nKey.bangumiCategoryAnime),
+	music: i18n(I18nKey.bangumiCategoryMusic),
+	game: i18n(I18nKey.bangumiCategoryGame),
+	real: i18n(I18nKey.bangumiCategoryReal),
+};
+
+const subcategoryNames: Record<string, string> = {
+	movie: "电影",
+	tv: "电视剧",
+	anime: "动漫",
+	documentary: "纪录片",
+};
+
+const status = statusMap[entry.data.status] || statusMap[2];
+
+const backUrl = entry.data.category === "game" ? "/games/" : "/movies/";
+const category = categoryNames[entry.data.category] || entry.data.category;
+const subcategory = entry.data.subcategory ? subcategoryNames[entry.data.subcategory] || entry.data.subcategory : null;
+
+const imageSrc = typeof entry.data.image === "string" ? entry.data.image : entry.data.image.src;
+---
+
+<MainGridLayout
+	title={entry.data.title}
+	description={entry.data.comment || ""}
+>
+	<div class="bangumi-detail-page w-full">
+		<div class="card-base px-6 pt-8 pb-8">
+			<div class="flex flex-col lg:flex-row gap-6">
+				<div class="lg:w-64 flex-shrink-0">
+					<div class="bangumi-cover rounded-xl overflow-hidden shadow-lg bg-(--btn-regular-bg)">
+						<img
+							src={imageSrc}
+							alt={entry.data.title}
+							class="w-full aspect-[2/3] object-cover"
+						/>
+					</div>
+				</div>
+
+				<div class="flex-1">
+					<div class="flex items-start justify-between mb-4">
+						<div>
+							<h1 class="text-2xl font-bold text-(--deep-text) mb-2">
+								{entry.data.title}
+							</h1>
+							{entry.data.name_cn && (
+								<p class="text-lg text-(--content-meta)">{entry.data.name_cn}</p>
+							)}
+						</div>
+						<div class="flex items-center gap-2">
+							<span class={`px-3 py-1 rounded-full text-xs font-medium text-white ${status.color}`}>
+								{status.label}
+							</span>
+						</div>
+					</div>
+
+					<div class="flex flex-wrap gap-4 mb-4 text-sm text-(--content-meta)">
+						<div class="flex items-center gap-1">
+							<Icon name="material-symbols:category" class="w-4 h-4" />
+							<span>{category}</span>
+							{subcategory && <span>· {subcategory}</span>}
+						</div>
+						{entry.data.score && (
+							<div class="flex items-center gap-1">
+								<svg viewBox="0 0 20 20" fill="currentColor" class="w-4 h-4 text-amber-500">
+									<path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
+								</svg>
+								<span class="font-semibold text-(--deep-text)">{entry.data.score}</span>
+							</div>
+						)}
+						{entry.data.published && (
+							<div class="flex items-center gap-1">
+								<Icon name="material-symbols:calendar-today" class="w-4 h-4" />
+								<span>{entry.data.published.toISOString().split("T")[0]}</span>
+							</div>
+						)}
+					</div>
+
+					{entry.data.tags && entry.data.tags.length > 0 && (
+						<div class="flex flex-wrap gap-2 mb-4">
+							{entry.data.tags.map((tag: string) => (
+								<span
+									key={tag}
+									class="px-2 py-1 bg-(--btn-regular-bg) text-xs text-(--content-meta) rounded-lg"
+								>
+									{tag}
+								</span>
+							))}
+						</div>
+					)}
+
+					{entry.data.comment && (
+						<div class="bg-(--card-bg) p-4 rounded-xl border border-(--line-divider) mb-4">
+							<h3 class="text-sm font-semibold text-(--deep-text) mb-2">
+								{i18n(I18nKey.bangumiComment)}
+							</h3>
+							<p class="text-sm text-(--content-meta)">{entry.data.comment}</p>
+						</div>
+					)}
+
+					{entry.data.link && (
+						<a
+							href={entry.data.link}
+							target="_blank"
+							rel="noopener noreferrer"
+							class="inline-flex items-center gap-2 px-4 py-2 bg-(--primary) text-white text-sm font-medium rounded-lg hover:opacity-90 transition-opacity"
+						>
+							<Icon name="material-symbols:external-link" class="w-4 h-4" />
+							{i18n(I18nKey.bangumiViewOriginal)}
+						</a>
+					)}
+				</div>
+			</div>
+
+			<div class="mt-8 pt-8 border-t border-(--line-divider)">
+					<article class="prose prose-sm max-w-none">
+						<Content />
+					</article>
+				</div>
+
+			<div class="mt-6 flex items-center gap-4">
+				<a
+					href={backUrl}
+					class="flex items-center gap-2 text-sm text-(--content-meta) hover:text-(--primary) transition-colors"
+				>
+					<Icon name="material-symbols:arrow-back" class="w-4 h-4" />
+					{i18n(I18nKey.back)}
+				</a>
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.bangumi-detail-page {
+		border-radius: var(--radius-large);
+	}
+</style>
