@@ -4,6 +4,10 @@ dist/
 # generated types
 .astro/
 
+# generated constants
+src/constants/icons.ts
+src/constants/lqips.json
+
 # dependencies
 node_modules/
 
@@ -40,3 +44,9 @@ package/
 
 # backend
 admin/
+
+# docs
+docs/
+
+# others
+.venv/
