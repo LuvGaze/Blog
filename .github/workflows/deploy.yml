@@ -48,7 +48,7 @@ jobs:
       - name: Sync files via Rsync
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          switches: -avzr --delete --exclude='.git' --exclude='node_modules'
+          switches: -avzr --progress --delete --exclude='.git' --exclude='node_modules'
           path: ./dist/
           remote_path: /www/wwwroot/Funny/
           remote_host: ${{ secrets.SERVER_HOST }}
