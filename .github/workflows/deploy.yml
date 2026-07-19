@@ -53,7 +53,7 @@ jobs:
         env:
           HOST: ${{ secrets.SERVER_HOST }}
           PORT: ${{ secrets.SERVER_PORT }}
-          PWD: ${{ secrets.SERVER_PWD }}
+          PWD: ${{ secrets.SERVER_PASSWORD }}
         run: |
           # -avz = 归档+详细输出+压缩，核心增量参数
           # --delete 删除远程本地不存在的旧文件
