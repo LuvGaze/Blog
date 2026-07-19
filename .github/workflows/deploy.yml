@@ -44,22 +44,15 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 6. 安装sshpass用于自动填SSH密码
-      - name: Install sshpass
-        run: sudo apt update && sudo apt install -y sshpass
-
-      # 7. rsync增量同步
-      - name: Rsync增量同步
-        env:
-          HOST: ${{ secrets.SERVER_HOST }}
-          PORT: ${{ secrets.SERVER_PORT }}
-          PWD: ${{ secrets.SERVER_PASSWORD }}
-        run: |
-          # -avz = 归档+详细输出+压缩，核心增量参数
-          # --delete 删除远程本地不存在的旧文件
-          # -e "ssh -p $PORT" 指定SSH端口
-          # -o StrictHostKeyChecking=no 跳过主机密钥确认
-          sshpass -p "$PWD" rsync -avzr --delete \
-            --exclude='.git' --exclude='node_modules' \
-            -e "ssh -p $PORT -o StrictHostKeyChecking=no" \
-            ./dist/ root@$HOST:/www/wwwroot/Funny/
+      # 6. Rsync密钥同步
+      - name: Sync files via Rsync
+        uses: burnett01/rsync-deployments@7.0.0
+        with:
+          switches: -avzr --delete --exclude='.git' --exclude='node_modules'
+          path: ./dist/
+          remote_path: /www/wwwroot/Funny/
+          remote_host: ${{ secrets.SERVER_HOST }}
+          remote_user: root
+          remote_port: ${{ secrets.SERVER_PORT }}
+          remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
+          legacy_allow_rsa_hostkeys: true
