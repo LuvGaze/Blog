@@ -10,21 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 拉取你的源码
+      # 1. 拉取源码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 配置 Node.js 环境
+      # 2. Node环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 3. 配置 pnpm 环境
+      # 3. pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      # 4. 启用 pnpm 缓存
+      # 4. pnpm缓存
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -38,20 +38,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      # 5. 安装依赖并自动打包
+      # 5. 安装依赖并打包
       - name: Install and Build
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 6. 使用 rsync 增量同步
-      - name: Sync files via Rsync
-        uses: burnett01/rsync-deployments@7.0.0
-        with:
-          switches: -avzr --delete --exclude='.git' --exclude='node_modules'
-          path: ./dist/
-          remote_path: /www/wwwroot/Funny/
-          remote_host: ${{ secrets.SERVER_HOST }}      # 读取服务器用户
-          remote_user: root
-          remote_port: ${{ secrets.SERVER_PORT }}      # 读取端口
-          remote_key: ${{ secrets.SERVER_PASSWORD }}   # 读取SSH 密钥
+      # 6. 安装sshpass用于自动填SSH密码
+      - name: Install sshpass
+        run: sudo apt update && sudo apt install -y sshpass
+
+      # 7. rsync增量同步
+      - name: Rsync增量同步
+        env:
+          HOST: ${{ secrets.SERVER_HOST }}
+          PORT: ${{ secrets.SERVER_PORT }}
+          PWD: ${{ secrets.SERVER_PWD }}
+        run: |
+          # -avz = 归档+详细输出+压缩，核心增量参数
+          # --delete 删除远程本地不存在的旧文件
+          # -e "ssh -p $PORT" 指定SSH端口
+          # -o StrictHostKeyChecking=no 跳过主机密钥确认
+          sshpass -p "$PWD" rsync -avzr --delete \
+            --exclude='.git' --exclude='node_modules' \
+            -e "ssh -p $PORT -o StrictHostKeyChecking=no" \
+            ./dist/ root@$HOST:/www/wwwroot/Funny/
