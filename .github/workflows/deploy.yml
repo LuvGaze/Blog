@@ -1,5 +1,4 @@
-name: Deploy Astro Blog to Server
-
+name: Deploy Astro Blog
 on:
   push:
     branches:
@@ -8,23 +7,20 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-
     steps:
-      # 1. 拉取你的源码
+      # 拉取源码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. 配置 Node.js 环境
+      # Node & pnpm 环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 3. 配置 pnpm 环境
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      # 4. 启用 pnpm 缓存
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -38,26 +34,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      # 5. 安装依赖并自动打包
+      # 打包静态资源
       - name: Install and Build
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 手动加载私钥，清空远端全站目录
-      - name: Clear remote all files
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          chmod 600 ~/.ssh/id_rsa
-          echo -e "Host *\nStrictHostKeyChecking no\nUserKnownHostsFile /dev/null" > ~/.ssh/config
-          ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/Funny/*"
-
-      # 6. rsync上传，移除--delete，无删除操作就不会报code23
-      - name: Sync files via Rsync
+      # Rsync增量同步
+      - name: Sync changed files only
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          switches: -vzr --inplace --progress --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
+          switches: -vzr --inplace --progress --delete --ignore-errors --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
           path: ./dist/
           remote_path: /www/wwwroot/Funny/
           remote_host: ${{ secrets.SERVER_HOST }}
