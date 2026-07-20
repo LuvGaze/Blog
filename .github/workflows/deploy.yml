@@ -1,106 +1,110 @@
-# 流水线名称：Astro博客自动化部署
+# Astro博客自动化部署流水线
+# 优化方案：本地打包单个tar压缩包上传，大幅降低海量小文件网络握手耗时，速度远高于直接rsync一堆小文件
 name: Astro博客部署
-# 触发规则：仅当向master分支推送代码时执行部署流程
+# 触发条件：仅推送master分支代码时自动执行部署
 on:
   push:
     branches:
       - master
 
-# 部署任务
 jobs:
   deploy:
-    # 使用GitHub官方Ubuntu云主机运行流水线
+    # 运行环境：GitHub云端Ubuntu服务器
     runs-on: ubuntu-latest
     steps:
-      # 步骤1：拉取仓库全部源码到运行环境
+      # 1. 拉取仓库完整源码到运行容器
       - name: Checkout source code
         uses: actions/checkout@v4
 
-      # 步骤2：配置Node.js 22运行环境，用于打包Astro静态资源
+      # 2. 安装Node22环境，用于Astro项目打包
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 步骤3：安装pnpm包管理器，替代npm/yarn，安装依赖速度更快
+      # 3. 安装pnpm包管理器，依赖安装速度优于npm/yarn
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      # 步骤4：获取pnpm依赖缓存目录路径，用于缓存复用依赖，减少重复下载
+      # 4. 获取pnpm缓存目录路径，用于复用依赖缓存，减少重复下载
       - name: Get pnpm store path
         id: pnpm_store
         shell: bash
         run: echo "PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      # 步骤5：缓存pnpm下载的依赖包
-      # 下次构建直接复用缓存，大幅缩短安装依赖耗时
+      # 5. 缓存项目依赖，第二次及后续构建无需重新下载全部包
       - name: Cache pnpm dependencies
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm_store.outputs.PATH }}
-          # 缓存key绑定lock文件，依赖变更自动刷新缓存
+          # 缓存唯一标识，lock文件变更自动更新缓存
           key: ${{ runner.os }}-pnpm-lock-${{ hashFiles('pnpm-lock.yaml') }}
-          # 兜底缓存，匹配历史缓存快速恢复
+          # 兜底缓存前缀，快速匹配历史缓存
           restore-keys: |
             ${{ runner.os }}-pnpm-lock-
 
-      # 步骤6：安装项目依赖并执行Astro打包，生成dist静态站点文件夹
-      - name: Install dependencies & Build
+      # 6. 安装依赖 + Astro打包dist + 把dist打包为单个tar包（核心提速操作）
+      # 把上千个html/js/image合并成1个文件，避免每个文件单独TCP握手，跨境上传提速数倍
+      - name: Install dependencies & Build & Pack single tar archive
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
+          # 将dist目录打包成 dist.tar，放到工作根目录
+          tar -cf dist.tar ./dist
 
-      # 步骤7：Rsync增量同步dist静态文件到服务器【同级临时目录Blog_Tmp】
-      # 临时目录位置：/www/wwwroot/Blog_Tmp 与线上网站目录Funny同级，规避嵌套误删风险
-      - name: Fast sync to Blog_Tmp
+      # 7. 仅上传单个tar压缩包到服务器同级临时目录 /www/wwwroot/Blog_Tmp
+      # rsync不存在远端目录时会自动递归创建完整目录
+      - name: Fast upload single tar to Blog_Tmp
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          # rsync全套优化参数说明
-          # -v 输出详细日志；-z 传输时压缩文本文件；-r 递归同步文件夹，不存在目录自动创建
-          # --stats 输出传输统计；--inplace 原地写入文件，减少临时文件占用
-          # --progress 实时打印传输进度；--delete 自动删除远端临时目录内本地已移除的旧文件
-          # --ignore-errors 忽略文件权限占用类警告，不中断同步
-          # --size-only 仅对比文件大小判断是否更新，跳过哈希校验，上千小文件大幅提速
-          # --compress-level=6 压缩等级平衡速度与压缩率；--no-xxx 不同步权限、时间、属主元数据减少校验开销
-          # --exclude 排除不需要同步的文件夹
-          switches: -vzr --stats --inplace --progress --delete --ignore-errors --size-only --compress --compress-level=6 --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
-          # 本地待同步目录：打包输出的dist文件夹
-          path: ./dist/
-          # 远端临时目录，与Funny同级，rsync不存在会自动创建完整目录
+          # 参数说明：
+          # -v 输出传输日志  -z 传输通道二次压缩  --stats 打印流量统计
+          # --progress 实时进度  --size-only 仅对比大小跳过哈希校验提速
+          # --compress-level=6 平衡压缩速度与体积；排除无用目录
+          switches: -vz --stats --progress --size-only --compress --compress-level=6 --exclude='.git' --exclude='node_modules'
+          # 本地待上传文件：打包后的单个tar包
+          path: ./dist.tar
+          # 远端临时目录，与线上网站Funny同级，不会被rm误删新版文件
           remote_path: /www/wwwroot/Blog_Tmp/
-          # 服务器连接信息，均在仓库Secrets中配置，不写明文
+          # 服务器连接私密信息，存放于仓库Secrets，不暴露明文
           remote_host: ${{ secrets.SERVER_HOST }}
           remote_user: root
           remote_port: ${{ secrets.SERVER_PORT }}
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
           legacy_allow_rsa_hostkeys: true
 
-      # 步骤8：安全原子替换线上网站目录
-      # 逻辑：校验临时目录存在有效文件才替换，上传失败则保留原有网站，杜绝全站清空
-      - name: Safe atomic replace
+      # 8. 远程服务器：解压tar包 + 安全原子替换线上网站目录
+      # 安全逻辑：临时目录和网站目录同级，校验文件完整才替换，上传/解压失败不会清空旧站
+      - name: Safe atomic replace online site
         run: |
-          # 创建ssh配置文件夹，写入服务器私钥用于免密登录
+          # 生成ssh密钥配置目录，写入私钥免密登录服务器
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
-          # 修改私钥权限，ssh要求必须600，否则拒绝连接
+          # ssh强制私钥权限600，否则拒绝登录
           chmod 600 ~/.ssh/id_rsa
           # 关闭主机密钥校验，避免首次连接交互阻塞流水线
           echo -e "Host *\nStrictHostKeyChecking no\nUserKnownHostsFile /dev/null" > ~/.ssh/config
           chmod 644 ~/.ssh/config
-          # ssh远程执行服务器操作脚本
+          # SSH远程执行服务器脚本
           ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "
-            # 判断Blog_Tmp目录存在且内部有文件，2>/dev/null屏蔽目录不存在报错
-            if [ -n \"\$(ls -A /www/wwwroot/Blog_Tmp 2>/dev/null)\" ]; then
-              # 清空线上网站目录Funny，Blog_Tmp同级不受影响不会被连带删除
+            # 进入临时目录
+            cd /www/wwwroot/Blog_Tmp
+            # 清理上一次残留dist文件夹，避免旧文件干扰
+            rm -rf dist
+            # 解压上传过来的tar包，还原完整dist站点
+            tar -xf dist.tar
+            # 判断解压后的dist文件夹是否存在且包含文件，屏蔽目录不存在报错
+            if [ -n \"\$(ls -A ./dist 2>/dev/null)\" ]; then
+              # 清空线上网站目录Funny，Blog_Tmp在同级不会被连带删除
               rm -rf /www/wwwroot/Funny/*
-              # 将新版全部文件移动到线上网站目录
-              mv /www/wwwroot/Blog_Tmp/* /www/wwwroot/Funny/
-              # 清理临时文件夹释放服务器空间
+              # 将解压好的新版站点全部移入线上目录
+              mv ./dist/* /www/wwwroot/Funny/
+              # 清理临时目录释放服务器磁盘
               rm -rf /www/wwwroot/Blog_Tmp
-              echo "部署完成，新版网站已生效"
+              echo \"部署完成，新版网站已生效\"
             else
-              # 临时目录为空/不存在，放弃替换，保留旧网站，流水线标记失败
-              echo "临时目录无有效文件，放弃替换，原有网站保留"
+              # 解压失败/无有效站点文件，放弃替换，保留原有网站
+              echo \"tar包解压后无有效站点文件，终止替换，旧网站保持不变\"
               rm -rf /www/wwwroot/Blog_Tmp
               exit 1
             fi
