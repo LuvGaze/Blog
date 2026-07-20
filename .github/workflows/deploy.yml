@@ -1,4 +1,4 @@
-name: Deploy Astro Blog
+name: Astro博客部署
 on:
   push:
     branches:
@@ -9,46 +9,63 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       # 拉取源码
-      - name: Checkout code
+      - name: Checkout source code
         uses: actions/checkout@v4
 
-      # Node & pnpm 环境
+      # Node 22 环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
+      # 安装pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      - name: Get pnpm store directory
-        id: pnpm-cache
+      # pnpm依赖缓存，加速安装
+      - name: Get pnpm store path
+        id: pnpm_store
         shell: bash
-        run: echo "STORE_PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
+        run: echo "PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Setup pnpm cache
+      - name: Cache pnpm dependencies
         uses: actions/cache@v4
         with:
-          path: ${{ steps.pnpm-cache.outputs.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          path: ${{ steps.pnpm_store.outputs.PATH }}
+          key: ${{ runner.os }}-pnpm-lock-${{ hashFiles('pnpm-lock.yaml') }}
           restore-keys: |
-            ${{ runner.os }}-pnpm-store-
+            ${{ runner.os }}-pnpm-lock-
 
       # 打包静态资源
-      - name: Install and Build
+      - name: Install dependencies & Build
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # Rsync增量同步
-      - name: Sync changed files only
+      # 增量同步到服务器临时目录 _tmp
+      - name: Fast sync to temp dir
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          switches: -vzr --inplace --progress --delete --ignore-errors --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
+          # 全套极速参数：压缩、仅对比大小、原地写入、自动删除旧文件
+          switches: -vzr --stats --inplace --progress --delete --ignore-errors --size-only --compress --compress-level=9 --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
           path: ./dist/
-          remote_path: /www/wwwroot/Funny/
+          remote_path: /www/wwwroot/Funny/_tmp/
           remote_host: ${{ secrets.SERVER_HOST }}
           remote_user: root
           remote_port: ${{ secrets.SERVER_PORT }}
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
           legacy_allow_rsa_hostkeys: true
+
+      # 上传完成，原子替换线上目录
+      - name: Atomic replace online folder
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo -e "Host *\nStrictHostKeyChecking no\nUserKnownHostsFile /dev/null" > ~/.ssh/config
+          chmod 644 ~/.ssh/config
+          ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "
+            rm -rf /www/wwwroot/Funny/*
+            mv /www/wwwroot/Funny/_tmp/* /www/wwwroot/Funny/
+            rm -rf /www/wwwroot/Funny/_tmp
+          "
