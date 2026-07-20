@@ -10,17 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+      # 1. 拉取源码
       - name: Checkout code
         uses: actions/checkout@v4
 
+      # 2. Node环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
+      # 3. pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
+      # 4. pnpm缓存
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -34,24 +38,27 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
+      # 5. 安装依赖打包
       - name: Install and Build
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
+      # 加载私钥
       - name: Prepare SSH Agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
           ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
 
-      # 1. 先停Nginx
+      # 关闭Nginx，增加跳过主机密钥校验参数
       - name: Stop Nginx
-        run: ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "systemctl stop nginx"
+        run: ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_HOST }} "systemctl stop nginx"
 
-      # 2. 提前清空站点目录，无多余旧文件
-      - name: Clean remote dir
-        run: ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/Funny/*"
+      # 提前清空远端目录，避免--delete删旧文件报错
+      - name: Clean Remote Folder
+        run: ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/Funny/*"
 
+      # Rsync上传
       - name: Sync files via Rsync
         uses: burnett01/rsync-deployments@7.0.0
         with:
@@ -64,6 +71,6 @@ jobs:
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
           legacy_allow_rsa_hostkeys: true
 
-      # 3. 重启Nginx
+      # 重启Nginx
       - name: Start Nginx
-        run: ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "systemctl start nginx"
+        run: ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_HOST }} "systemctl start nginx"
