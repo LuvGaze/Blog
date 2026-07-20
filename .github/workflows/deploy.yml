@@ -10,21 +10,21 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 拉取源码
+      # 1. 拉取你的源码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Node环境
+      # 2. 配置 Node.js 环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 3. pnpm
+      # 3. 配置 pnpm 环境
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      # 4. pnpm缓存
+      # 4. 启用 pnpm 缓存
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -38,31 +38,17 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      # 5. 安装依赖打包
+      # 5. 安装依赖并自动打包
       - name: Install and Build
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 加载私钥
-      - name: Prepare SSH Agent
-        uses: webfactory/ssh-agent@v0.9.0
-        with:
-          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
-
-      # 关闭Nginx，增加跳过主机密钥校验参数
-      - name: Stop Nginx
-        run: ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_HOST }} "systemctl stop nginx"
-
-      # 提前清空远端目录，避免--delete删旧文件报错
-      - name: Clean Remote Folder
-        run: ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/Funny/*"
-
-      # Rsync上传
+      # 6. rsync增量同步，彻底解决文件占用code23报错
       - name: Sync files via Rsync
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          switches: -vzr --inplace --progress --exclude='.git' --exclude='node_modules'
+          switches: -vzr --inplace --progress --delete --ignore-errors --ignore-missing-args --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
           path: ./dist/
           remote_path: /www/wwwroot/Funny/
           remote_host: ${{ secrets.SERVER_HOST }}
@@ -70,7 +56,3 @@ jobs:
           remote_port: ${{ secrets.SERVER_PORT }}
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
           legacy_allow_rsa_hostkeys: true
-
-      # 重启Nginx
-      - name: Start Nginx
-        run: ssh -p ${{ secrets.SERVER_PORT }} -o StrictHostKeyChecking=no -o UserKnownHostsFile=/dev/null root@${{ secrets.SERVER_HOST }} "systemctl start nginx"
