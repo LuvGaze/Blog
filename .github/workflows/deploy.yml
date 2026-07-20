@@ -44,11 +44,11 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 6. Rsync密钥同步
+      # 6. Rsync上传，忽略权限、属主、时间戳
       - name: Sync files via Rsync
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          switches: -avzr --inplace --progress --delete --exclude='.git' --exclude='node_modules'
+          switches: -vzr --inplace --progress --delete --ignore-errors --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
           path: ./dist/
           remote_path: /www/wwwroot/Funny/
           remote_host: ${{ secrets.SERVER_HOST }}
