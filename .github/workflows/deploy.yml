@@ -44,11 +44,20 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 6. rsync增量同步，彻底解决文件占用code23报错
+      # 手动加载私钥，清空远端全站目录
+      - name: Clear remote all files
+        run: |
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo -e "Host *\nStrictHostKeyChecking no\nUserKnownHostsFile /dev/null" > ~/.ssh/config
+          ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/Funny/*"
+
+      # 6. rsync上传，移除--delete，无删除操作就不会报code23
       - name: Sync files via Rsync
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          switches: -vzr --inplace --progress --delete --ignore-errors --ignore-missing-args --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
+          switches: -vzr --inplace --progress --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
           path: ./dist/
           remote_path: /www/wwwroot/Funny/
           remote_host: ${{ secrets.SERVER_HOST }}
