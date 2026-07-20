@@ -1,4 +1,33 @@
 import type { ProfileConfig } from "../types/profileConfig";
-import profileData from "../data/profile.json";
 
-export const profileConfig: ProfileConfig = profileData;
+export const profileConfig: ProfileConfig = {
+	avatar: "assets/images/picture.png",
+	name: "一只喵⁹",
+	bio: "Hello, Everyone.",
+	links: [
+		{
+			name: "qq",
+			icon: "fa7-brands:qq",
+			url: "https://qq.com/2773434682/",
+			showName: false,
+		},
+		{
+			name: "GitHub",
+			icon: "fa7-brands:github",
+			url: "https://github.com/LuvGaze/",
+			showName: false,
+		},
+		{
+			name: "Email",
+			icon: "fa7-solid:envelope",
+			url: "mailto:2773434682@qq.com",
+			showName: false,
+		},
+		{
+			name: "RSS",
+			icon: "fa7-solid:rss",
+			url: "/rss/",
+			showName: false,
+		},
+	],
+};

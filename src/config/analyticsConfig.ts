@@ -1,4 +1,28 @@
-import type { AnalyticsConfig } from "../types/analyticsConfig";
-import analyticsData from "../data/analytics.json";
+import type { AnalyticsConfig } from "@/types/analyticsConfig";
 
-export const analyticsConfig: AnalyticsConfig = analyticsData;
+export const analyticsConfig: AnalyticsConfig = {
+	googleAnalyticsId: "",
+	microsoftClarityId: "",
+	umamiAnalytics: {
+		websiteId: "",
+		scriptUrl: "https://cloud.umami.is/script.js",
+		replaysScriptUrl: "https://cloud.umami.is/recorder.js",
+		trackOutboundLinks: true,
+		collectWebVitals: false,
+		replays: {
+			enabled: false,
+			sampleRate: 0.15,
+			maskLevel: "moderate",
+			maxDuration: 300000,
+			blockSelector: "",
+		},
+	},
+	la51Analytics: {
+		Id: "",
+		sdkUrl: "",
+		ck: "",
+		autoTrack: false,
+		hashMode: false,
+		screenRecord: true,
+	},
+};

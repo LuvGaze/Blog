@@ -1,5 +1,5 @@
 {
-  "title": "我的日记",
-  "cover": "https://picsum.photos/seed/diary/400/300",
+  "name": "我的日记",
+  "cover": "https://picsum.photos/seed/picsum/400/300",
   "summary": "记录生活中的点点滴滴"
 }

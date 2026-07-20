@@ -145,6 +145,34 @@ const changelogCollection = defineCollection({
 	}),
 });
 
+const friendsCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/friends" }),
+	schema: z.object({
+		title: z.string(),
+		imgurl: z.string(),
+		desc: z.string().optional().default(""),
+		siteurl: z.string(),
+		tags: z.array(z.string()).optional().default([]),
+		weight: z.number().optional().default(0),
+		enabled: z.boolean().optional().default(true),
+	}),
+});
+
+const galleryCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/gallery" }),
+	schema: z.object({
+		name: z.string(),
+		description: z.string().optional().default(""),
+		location: z.string().optional().default(""),
+		date: z.coerce.date().optional(),
+		tags: z.array(z.string()).optional().default([]),
+		password: z.string().optional().default(""),
+		passwordHint: z.string().optional().default(""),
+		images: z.array(z.string()).optional().default([]),
+		cover: z.string().optional().default(""),
+	}),
+});
+
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
@@ -154,4 +182,6 @@ export const collections = {
 	travel: travelCollection,
 	daohang: daohangCollection,
 	changelog: changelogCollection,
+	friends: friendsCollection,
+	gallery: galleryCollection,
 };
