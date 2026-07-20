@@ -10,21 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # 1. 拉取源码
       - name: Checkout code
         uses: actions/checkout@v4
 
-      # 2. Node环境
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      # 3. pnpm
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
 
-      # 4. pnpm缓存
       - name: Get pnpm store directory
         id: pnpm-cache
         shell: bash
@@ -38,17 +34,28 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-store-
 
-      # 5. 安装依赖并打包
       - name: Install and Build
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      # 6. Rsync上传，忽略权限、属主、时间戳
+      - name: Prepare SSH Agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+
+      # 1. 先停Nginx
+      - name: Stop Nginx
+        run: ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "systemctl stop nginx"
+
+      # 2. 提前清空站点目录，无多余旧文件
+      - name: Clean remote dir
+        run: ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "rm -rf /www/wwwroot/Funny/*"
+
       - name: Sync files via Rsync
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          switches: -vzr --inplace --progress --delete --ignore-errors --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
+          switches: -vzr --inplace --progress --exclude='.git' --exclude='node_modules'
           path: ./dist/
           remote_path: /www/wwwroot/Funny/
           remote_host: ${{ secrets.SERVER_HOST }}
@@ -56,3 +63,7 @@ jobs:
           remote_port: ${{ secrets.SERVER_PORT }}
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
           legacy_allow_rsa_hostkeys: true
+
+      # 3. 重启Nginx
+      - name: Start Nginx
+        run: ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "systemctl start nginx"
