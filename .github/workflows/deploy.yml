@@ -36,19 +36,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-lock-
 
-      # 打包静态资源
-      - name: Install dependencies & Build
+      # 打包静态资源 + 本地整包tar
+      - name: Install dependencies & Build & Pack Tar
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
+          # 将dist打包成单个tar，避免海量小文件传输握手损耗
+          tar -cf dist.tar ./dist
 
-      # 增量同步到服务器临时目录 _tmp
-      - name: Fast sync to temp dir
+      # 只传输单个tar包，大幅减少网络交互
+      - name: Fast sync tar to temp dir
         uses: burnett01/rsync-deployments@7.0.0
         with:
-          # 全套极速参数：压缩、仅对比大小、原地写入、自动删除旧文件
-          switches: -vzr --stats --inplace --progress --delete --ignore-errors --size-only --compress --compress-level=9 --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
-          path: ./dist/
+          switches: -vz --stats --progress --compress --compress-level=6 --size-only --exclude='.git' --exclude='node_modules'
+          path: ./dist.tar
           remote_path: /www/wwwroot/Funny/_tmp/
           remote_host: ${{ secrets.SERVER_HOST }}
           remote_user: root
@@ -56,7 +57,7 @@ jobs:
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
           legacy_allow_rsa_hostkeys: true
 
-      # 上传完成，原子替换线上目录
+      # 远程解压、原子替换线上目录
       - name: Atomic replace online folder
         run: |
           mkdir -p ~/.ssh
@@ -65,7 +66,12 @@ jobs:
           echo -e "Host *\nStrictHostKeyChecking no\nUserKnownHostsFile /dev/null" > ~/.ssh/config
           chmod 644 ~/.ssh/config
           ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "
+            mkdir -p /www/wwwroot/Funny/_tmp
+            cd /www/wwwroot/Funny/_tmp
+            rm -rf dist
+            tar -xf dist.tar
+            # 清空线上目录，替换新版
             rm -rf /www/wwwroot/Funny/*
-            mv /www/wwwroot/Funny/_tmp/* /www/wwwroot/Funny/
+            mv /www/wwwroot/Funny/_tmp/dist/* /www/wwwroot/Funny/
             rm -rf /www/wwwroot/Funny/_tmp
           "
