@@ -55,11 +55,12 @@ jobs:
         uses: burnett01/rsync-deployments@7.0.0
         with:
           # 参数说明：
-          # -vz 打印日志+传输时压缩文本文件；--delete 远端删除本地不存在的旧页面/图片
+          # -vzr 打印日志+传输压缩+递归目录（--delete必须依赖-r递归参数）
+          # --delete 远端删除本地不存在的旧页面/图片
           # --size-only 仅对比文件大小判断是否变更，跳过哈希校验，提速
           # --compress-level=3 轻度压缩，降低加密CPU开销
           # --no-xxx 不同步权限、时间、属主元数据，减少比对耗时
-          switches: -vz --stats --progress --delete --size-only --compress --compress-level=3 --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
+          switches: -vzr --stats --progress --delete --size-only --compress --compress-level=3 --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
           # 本地待同步目录：打包输出dist文件夹
           path: ./dist/
           # 远端永久缓存目录，与线上网站Funny同级，不会被rm误删新版文件
