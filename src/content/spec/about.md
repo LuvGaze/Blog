@@ -8,22 +8,25 @@
 
 **Firefly** 是一款基于 Astro 框架和 Fuwari 模板开发的清新美观且现代化个人博客主题模板，专为技术爱好者和内容创作者设计。该主题融合了现代 Web 技术栈，提供了丰富的功能模块和高度可定制的界面，让您能够轻松打造出专业且美观的个人博客网站。
 
-
-**🖥️在线预览： [一只喵⁹ - Demo site](https://LuvGaze.com/)**
+[//]: # (**🖥️在线预览： [一只喵⁹ - Demo site]&#40;https://LuvGaze.com/&#41;**)
 
 **🏠我的博客： [一只喵⁹](https://LuvGaze.com/)**
 
-**📝Firefly使用文档： [https://docs-firefly.cuteleaf.cn](https://docs-firefly.cuteleaf.cn/)**
+[//]: # (**📝Firefly使用文档： [https://docs-firefly.cuteleaf.cn]&#40;https://docs-firefly.cuteleaf.cn/&#41;**)
 
-**⭐Firefly开源地址：[https://github.com/CuteLeaf/Firefly](https://github.com/CuteLeaf/Firefly)** 
+[//]: # ()
+[//]: # (**⭐Firefly开源地址：[https://github.com/CuteLeaf/Firefly]&#40;https://github.com/CuteLeaf/Firefly&#41;** )
 
-**⭐Fuwari开源地址：[https://github.com/saicaca/fuwari](https://github.com/saicaca/fuwari)**
+[//]: # ()
+[//]: # (**⭐Fuwari开源地址：[https://github.com/saicaca/fuwari]&#40;https://github.com/saicaca/fuwari&#41;**)
 
-::github{repo="CuteLeaf/Firefly"}
+[//]: # ()
+[//]: # (::github{repo="CuteLeaf/Firefly"})
 
-::github{repo="saicaca/fuwari"}
+[//]: # ()
+[//]: # (::github{repo="saicaca/fuwari"})
 
-::github{repo="LuvGaze/Funny"}
+::github{repo="LuvGaze/Blog"}
 
 ---
 

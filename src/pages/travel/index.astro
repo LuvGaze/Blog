@@ -80,7 +80,7 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 			<div class="mb-6">
 				<h2 class="text-lg font-bold text-(--deep-text) mb-3">足迹地图</h2>
 				<div id="life-map" class="h-[500px] w-full rounded-xl border border-(--line-divider) overflow-hidden"></div>
-				<p class="mt-2 text-xs text-(--content-meta) text-center">地图由 Apache ECharts 提供</p>
+				<p class="mt-2 text-xs text-(--content-meta) text-center">记录走过的每一步</p>
 			</div>
 
 			<div>
@@ -154,15 +154,33 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 		}
 
 		function loadChinaMap() {
-			return fetch("/china-map.json")
-				.then(function (res) {
-					return res.json();
-				})
-				.catch(function () {
-					return fetch("https://cdn.jsdelivr.net/npm/echarts@5.4.3/map/json/china.json").then(function (res) {
+			var urls = [
+				"https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
+				"https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/vendors/echarts/map/json/china.json",
+				"/china-map.json"
+			];
+			var index = 0;
+			function tryNext() {
+				if (index >= urls.length) {
+					return Promise.reject(new Error("所有地图数据源加载失败"));
+				}
+				var url = urls[index++];
+				return fetch(url)
+					.then(function (res) {
+						if (!res.ok) throw new Error("HTTP " + res.status);
 						return res.json();
+					})
+					.then(function (data) {
+						if (!data || !data.features || !Array.isArray(data.features)) {
+							throw new Error("地图数据格式不正确");
+						}
+						return data;
+					})
+					.catch(function () {
+						return tryNext();
 					});
-				});
+			}
+			return tryNext();
 		}
 
 		function initMap() {
@@ -196,7 +214,14 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 						var province = place.province;
 						var count = place.visitCount || 1;
 						if (province) {
-							provinceVisitCount[province] = (provinceVisitCount[province] || 0) + count;
+							var normalizedProvince = province.replace(/省|自治区|特别行政区|市/g, "");
+							if (!provinceVisitCount[province]) {
+								provinceVisitCount[province] = 0;
+							}
+							provinceVisitCount[province] += count;
+							if (normalizedProvince !== province && !provinceVisitCount[normalizedProvince]) {
+								provinceVisitCount[normalizedProvince] = provinceVisitCount[province];
+							}
 							if (provinceVisitCount[province] > maxVisits)
 								maxVisits = provinceVisitCount[province];
 						}
@@ -209,11 +234,11 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 
 					var provinceData = (chinaMapData.features || []).map(function (f) {
 						var name = f.properties && f.properties.name;
-						var normalizedName = name.replace(/省|自治区|特别行政区/g, "");
-						var visits = provinceVisitCount[normalizedName] || provinceVisitCount[name] || 0;
+						var normalizedName = name.replace(/省|自治区|特别行政区|市/g, "");
+						var visits = provinceVisitCount[name] || provinceVisitCount[normalizedName] || provinceVisitCount[name.replace(/市$/, "")] || 0;
 						var places = clientSortedPlaces.filter(function (p) {
-							var pName = (p.province || "").replace(/省|自治区|特别行政区/g, "");
-							return pName === normalizedName || pName === name;
+							var pName = (p.province || "").replace(/省|自治区|特别行政区|市/g, "");
+							return pName === normalizedName || pName === name || pName === name.replace(/市$/, "");
 						});
 						return { name: name, value: visits, places: places };
 					});
@@ -229,7 +254,7 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 									if (places.length > 0) {
 										tip += "<br/><span style='font-size:11px;opacity:0.7;'>";
 										for (var i = 0; i < Math.min(places.length, 5); i++) {
-											tip += "<br/>• " + (places[i].city || "未标记") + "(" + (places[i].visitCount || 1) + "次)";
+											tip += "<br/>• " + (places[i].city || places[i].province || "未标记") + "(" + (places[i].visitCount || 1) + "次)";
 										}
 										if (places.length > 5) tip += "<br/>...等" + places.length + "处";
 										tip += "</span>";

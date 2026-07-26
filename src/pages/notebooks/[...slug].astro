@@ -78,6 +78,8 @@ const folderName = isNotebookRootMatch
 	? isNotebookRootMatch[1]
 	: normalizedEntryId.split("/")[0];
 
+const notebookName = entry.data.name && entry.data.name !== "未命名日记本" ? entry.data.name : folderName;
+
 let coverSrc: string | null = null;
 const rawCover = entry.data.cover as string | undefined;
 if (rawCover) {
@@ -222,16 +224,16 @@ const sortedEntriesWithImages = isNotebookIndex
 		</div>
 	</MainGridLayout>
 ) : (
-	<MainGridLayout title={item.data.name || item.data.title || "日记"}>
+	<MainGridLayout title={item.data.title || item.data.name || "日记"}>
 		<div class="diary-detail-page">
 			<article class="diary-paper">
 				<a href={`/notebooks/${folderName}/`} class="diary-paper-back">
 					<Icon name="material-symbols:arrow-back-rounded" />
-					<span>返回 {entry.data.name || "日记本"}</span>
+					<span>返回 {notebookName || "日记本"}</span>
 				</a>
 
 				<h1 class="diary-paper-title">
-					{item.data.name || item.data.title || item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题"}
+					{item.data.title || item.data.name && item.data.name !== "未命名日记本" ? item.data.name : item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题"}
 				</h1>
 
 				<div class="diary-paper-content">
