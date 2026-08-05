@@ -27,7 +27,7 @@ export const sponsorConfig: SponsorConfig = {
 			// 图标名称（来自astro-icon）
 			icon: "fa7-brands:alipay",
 			// 二维码图片路径（相对于public目录）
-			qrCode: "/assets/images/sponsor/alipay.png",
+			qrCode: "/assets/images/sponsor/alipay.jpg",
 			// 链接地址（如果不是二维码方式则填写）
 			link: "",
 			// 描述文字

@@ -84,11 +84,11 @@ export const siteConfig: SiteConfig = {
 		guestbook: true,    // 留言板页面
 		bangumi: false,     // 番组计划页面
 		gallery: true,      // 相册页面
-		anime: false,       // 追番页面
+		anime: true,       // 追番页面
 		books: true,        // 书架页面
 		movies: true,       // 影视页面
 		games: true,        // 游戏页面
-		musicPage: true,    // 音乐页面
+		musicPage: false,    // 音乐页面
 		changelog: true,    // 更新日志页面
 		routines: true,     // 规划页面
 		places: true,       // 足迹页面
