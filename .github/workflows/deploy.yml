@@ -8,23 +8,23 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout source code
+      - name: 拉取代码仓库
         uses: actions/checkout@v4
 
-      - name: Setup Node.js
+      - name: 配置Node.js环境
         uses: actions/setup-node@v4
         with:
           node-version: '22'
 
-      - name: Setup pnpm
+      - name: 配置pnpm包管理器
         uses: pnpm/action-setup@v4
 
-      - name: Get pnpm store path
+      - name: 获取pnpm缓存路径
         id: pnpm_store
         shell: bash
         run: echo "PATH=$(pnpm store path)" >> $GITHUB_OUTPUT
 
-      - name: Cache pnpm dependencies
+      - name: 启用pnpm依赖缓存
         uses: actions/cache@v4
         with:
           path: ${{ steps.pnpm_store.outputs.PATH }}
@@ -32,12 +32,12 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-lock-
 
-      - name: Install dependencies & Build
+      - name: 安装依赖并构建项目
         run: |
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      - name: Incremental rsync dist → Blog_Tmp(服务器永久基准目录)
+      - name: 增量同步dist目录到服务器Blog_Tmp基准目录
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
@@ -53,7 +53,7 @@ jobs:
             -e "ssh -p ${{ secrets.SERVER_PORT }}" ./dist/ root@${{ secrets.SERVER_HOST }}:/www/wwwroot/Blog_Tmp/ \
             | stdbuf -oL tr '\r' '\n'
 
-      - name: 原子替换线上站点
+      - name: 原子替换线上站点目录
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
