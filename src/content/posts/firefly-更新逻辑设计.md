@@ -8,7 +8,6 @@ category: 博客指南
 draft: false
 image: api
 encrypted: false
-
 ---
 
 > 本文档详细描述 Firefly 博客系统的三种更新类型（写作内容、前端代码、后端代码）的检测机制、更新策略和实现方法。  

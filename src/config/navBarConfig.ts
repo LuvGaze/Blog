@@ -31,7 +31,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 	// 「网站导航」：跳转到项目展示页面
 	links.push({
 		name: "网站导航",
-		url: "/projects/",
+		url: "/website/",
 		icon: "material-symbols:public",
 	});
 

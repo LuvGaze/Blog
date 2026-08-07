@@ -409,6 +409,7 @@ export const zh_CN: Translation = {
 	[Key.booksFilterReading]: "在读",
 	[Key.booksFilterRead]: "读过",
 	[Key.booksFilterWish]: "想读",
+	[Key.booksFilterOnHold]: "搁置",
 	[Key.booksFilterDropped]: "抛弃",
 	[Key.booksSearch]: "搜索书籍...",
 
@@ -421,6 +422,7 @@ export const zh_CN: Translation = {
 	[Key.moviesFilterWatching]: "在看",
 	[Key.moviesFilterWatched]: "看过",
 	[Key.moviesFilterWish]: "想看",
+	[Key.moviesFilterOnHold]: "搁置",
 	[Key.moviesFilterDropped]: "抛弃",
 	[Key.moviesSearch]: "搜索影视...",
 
@@ -433,6 +435,7 @@ export const zh_CN: Translation = {
 	[Key.gamesFilterPlaying]: "在玩",
 	[Key.gamesFilterPlayed]: "玩过",
 	[Key.gamesFilterWish]: "想玩",
+	[Key.gamesFilterOnHold]: "搁置",
 	[Key.gamesFilterDropped]: "抛弃",
 	[Key.gamesSearch]: "搜索游戏...",
 

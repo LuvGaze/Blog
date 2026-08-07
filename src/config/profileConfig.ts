@@ -15,34 +15,28 @@ export const profileConfig: ProfileConfig = {
 	// 社交链接列表（显示在简介下方）
 	links: [
 		{
-			// 链接名称（用于hover提示）
-			name: "qq",
-			// 图标名称（来自astro-icon）
-			icon: "fa7-brands:qq",
-			// 链接地址
-			url: "https://qq.com/2773434682/",
-			// 是否显示链接名称（true=显示，false=只显示图标）
-			showName: false,
-		},
+		    name: "qq",
+		    icon: "fa7-brands:qq",
+		    url: "https://qq.com/2773434682/",
+		    showName: false
+		   },
 		{
-			name: "GitHub",
-			icon: "fa7-brands:github",
-			url: "https://github.com/LuvGaze/",
-			showName: false,
-		},
+		    name: "GitHub",
+		    icon: "fa7-brands:github",
+		    url: "https://github.com/LuvGaze/",
+		    showName: false
+		   },
 		{
-			name: "Email",
-			icon: "fa7-solid:envelope",
-			// mailto:协议，点击打开邮件客户端
-			url: "mailto:2773434682@qq.com",
-			showName: false,
-		},
+		    name: "Email",
+		    icon: "fa7-solid:envelope",
+		    url: "mailto:2773434682@qq.com",
+		    showName: false
+		   },
 		{
-			name: "RSS",
-			icon: "fa7-solid:rss",
-			// RSS订阅地址
-			url: "/rss/",
-			showName: false,
-		},
+		    name: "RSS",
+		    icon: "fa7-solid:rss",
+		    url: "/rss/",
+		    showName: false
+		   }
 	],
 };

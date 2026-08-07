@@ -36,7 +36,6 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 	province: p.data.province,
 	city: p.data.city || "",
 	district: p.data.district || "",
-	experience: p.data.experience || "",
 	visitCount: p.data.visitCount || 1,
 	date: p.data.date instanceof Date ? p.data.date.toISOString().split("T")[0] : "",
 }));
@@ -103,7 +102,6 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 												{place.province || "未知省份"}
 												{place.city ? ` · ${place.city}` : ""}
 											</h3>
-											{place.experience && <p class="place-exp">{place.experience}</p>}
 										</div>
 										<div class="text-right text-xs text-(--content-meta) shrink-0">
 											<div class="font-semibold text-(--deep-text)">
@@ -404,13 +402,6 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 		font-weight: 700;
 		color: var(--deep-text);
 		margin: 0;
-	}
-
-	.place-exp {
-		margin: 0.25rem 0 0;
-		font-size: 0.8125rem;
-		color: var(--content-meta);
-		line-height: 1.5;
 	}
 
 	@media (max-width: 640px) {

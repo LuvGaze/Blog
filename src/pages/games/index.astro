@@ -23,6 +23,7 @@ const statusMap: Record<number, string> = {
 	1: "wish",
 	2: "collect",
 	3: "doing",
+	4: "onHold",
 	5: "dropped",
 };
 
@@ -51,16 +52,7 @@ interface GameItem {
 	};
 }
 
-function sortByDateAndTime(a: any, b: any) {
-	const dateA = a.data.date?.getTime() || 0;
-	const dateB = b.data.date?.getTime() || 0;
-	if (dateA !== dateB) {
-		return dateB - dateA;
-	}
-	const timeA = a.data.time || "00:00";
-	const timeB = b.data.time || "00:00";
-	return timeB.localeCompare(timeA);
-}
+
 
 const gameItems: GameItem[] = customBangumi
 	.filter((item) => item.data.category === "game")
@@ -69,7 +61,7 @@ const gameItems: GameItem[] = customBangumi
 		const imageSrc =
 			typeof data.image === "string" ? data.image : data.image.src;
 
-		const finalLink = "/bangumi/" + removeFileExtension(id) + "/";
+		const finalLink = "/games/" + removeFileExtension(id).split("/").pop() + "/";
 
 		return {
 			subject_id: 0,
@@ -96,7 +88,7 @@ const gameItems: GameItem[] = customBangumi
 			},
 		};
 	})
-	.sort(sortByDateAndTime);
+
 
 const statusCounts: Record<string, number> = {};
 for (const item of gameItems) {
@@ -128,6 +120,12 @@ const filters = [
 		label: i18n(I18nKey.gamesFilterWish),
 		count: statusCounts.wish || 0,
 		color: "bg-sky-500",
+	},
+	{
+		value: "onHold",
+		label: i18n(I18nKey.gamesFilterOnHold),
+		count: statusCounts.onHold || 0,
+		color: "bg-violet-500",
 	},
 	{
 		value: "dropped",
@@ -188,7 +186,7 @@ const filters = [
 								>
 									<span class={`w-1.5 h-1.5 rounded-full ${filter.color} inline-block`}></span>
 									<span>{filter.label}</span>
-									{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-black/10 text-white">{filter.count}</span>}
+									{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-(--btn-regular-bg) text-(--btn-content)">{filter.count}</span>}
 								</button>
 							))}
 						</div>

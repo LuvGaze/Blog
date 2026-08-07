@@ -22,43 +22,29 @@ export const sponsorConfig: SponsorConfig = {
 	// 打赏方式列表
 	methods: [
 		{
-			// 打赏方式名称
-			name: "支付宝",
-			// 图标名称（来自astro-icon）
-			icon: "fa7-brands:alipay",
-			// 二维码图片路径（相对于public目录）
-			qrCode: "/assets/images/sponsor/alipay.jpg",
-			// 链接地址（如果不是二维码方式则填写）
-			link: "",
-			// 描述文字
-			description: "使用 支付宝 扫码打赏",
-			// 是否启用
-			enabled: true,
-		},
+		    name: "支付宝",
+		    icon: "fa7-brands:alipay",
+		    qrCode: "/assets/images/sponsor/alipay.jpg",
+		    link: "",
+		    description: "使用 支付宝 扫码打赏",
+		    enabled: true
+		   },
 		{
-			name: "微信",
-			icon: "fa7-brands:weixin",
-			qrCode: "/assets/images/sponsor/wechat.png",
-			link: "",
-			description: "使用 微信 扫码打赏",
-			enabled: true,
-		},
+		    name: "微信",
+		    icon: "fa7-brands:weixin",
+		    qrCode: "/assets/images/sponsor/wechat.png",
+		    link: "",
+		    description: "使用 微信 扫码打赏",
+		    enabled: true
+		   },
 		{
-			name: "ko-fi",
-			icon: "simple-icons:kofi",
-			qrCode: "",           // 无二维码，使用链接方式
-			link: "https://ko-fi.com/cuteleaf",
-			description: "Buy a Coffee for Firefly",
-			enabled: false,
-		},
-		{
-			name: "爱发电",
-			icon: "simple-icons:afdian",
-			qrCode: "",           // 无二维码，使用链接方式
-			link: "https://ifdian.net/a/LuvGaze",
-			description: "通过 爱发电 进行打赏",
-			enabled: true,
-		},
+		    name: "爱发电",
+		    icon: "simple-icons:afdian",
+		    qrCode: "",
+		    link: "https://ifdian.net/a/LuvGaze",
+		    description: "通过 爱发电 进行打赏",
+		    enabled: true
+		   }
 	],
 
 	// 赞助者列表（展示已赞助的用户）

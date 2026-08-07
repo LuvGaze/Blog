@@ -6,18 +6,23 @@ import { getCategoryUrl } from "@utils/url-utils";
 // // Retrieve posts and sort them by publication date
 async function getRawSortedPosts() {
 	const allBlogPosts = await getCollection("posts", ({ data }) => {
-		return import.meta.env.PROD ? data.draft !== true : true;
+		// 草稿一律不对外展示（dev / prod 一致），与后台「草稿」开关语义对齐
+		return data.draft !== true;
 	});
 
 	const sorted = allBlogPosts.sort((a, b) => {
-		// 首先按置顶状态排序，置顶文章在前
-		if (a.data.pinned && !b.data.pinned) return -1;
-		if (!a.data.pinned && b.data.pinned) return 1;
+		// 优先顺序：草稿 > 置顶 > 其他
+		const aDraft = a.data.draft ? 1 : 0;
+		const bDraft = b.data.draft ? 1 : 0;
+		if (aDraft !== bDraft) return bDraft - aDraft;
+		const aPinned = a.data.pinned ? 1 : 0;
+		const bPinned = b.data.pinned ? 1 : 0;
+		if (aPinned !== bPinned) return bPinned - aPinned;
 
-		// 如果置顶状态相同，则按发布日期排序
-		const dateA = new Date(a.data.published);
-		const dateB = new Date(b.data.published);
-		return dateA > dateB ? -1 : 1;
+		// 同类型按发布时间排序，越新越靠前
+		const dateA = new Date(a.data.published).getTime();
+		const dateB = new Date(b.data.published).getTime();
+		return dateB - dateA;
 	});
 	return sorted;
 }

@@ -27,6 +27,7 @@ export const coverImageConfig: CoverImageConfig = {
 			"https://t.alcy.cc/pc",
 			"https://www.dmoe.cc/random.php",
 			"https://uapis.cn/api/v1/random/image?category=acg&type=pc",
+			"https://t.alcy.cc/fj"
 		],
 		// API失败时的回退图片路径（相对于src目录或以/开头的public目录路径）
 		fallback: "assets/images/cover.avif",

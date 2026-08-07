@@ -23,6 +23,7 @@ const statusMap: Record<number, string> = {
 	1: "wish",
 	2: "collect",
 	3: "doing",
+	4: "onHold",
 	5: "dropped",
 };
 
@@ -52,17 +53,6 @@ interface MgItem {
 	};
 }
 
-function sortByDateAndTime(a: any, b: any) {
-	const dateA = a.data.date?.getTime() || 0;
-	const dateB = b.data.date?.getTime() || 0;
-	if (dateA !== dateB) {
-		return dateB - dateA;
-	}
-	const timeA = a.data.time || "00:00";
-	const timeB = b.data.time || "00:00";
-	return timeB.localeCompare(timeA);
-}
-
 const mgItems: MgItem[] = customBangumi
 	.filter((item) => ["anime", "real"].includes(item.data.category))
 	.map((item) => {
@@ -70,7 +60,7 @@ const mgItems: MgItem[] = customBangumi
 		const imageSrc =
 			typeof data.image === "string" ? data.image : data.image.src;
 
-		const finalLink = "/bangumi/" + removeFileExtension(id) + "/";
+		const finalLink = "/movies/" + removeFileExtension(id).split("/").pop() + "/";
 
 		const subjectTypeMap: Record<string, number> = {
 			anime: 2,
@@ -105,7 +95,6 @@ const mgItems: MgItem[] = customBangumi
 			},
 		};
 	})
-	.sort(sortByDateAndTime);
 
 function getItemSubcategory(item: MgItem): string {
 	if (item._subcategory) return item._subcategory;
@@ -174,6 +163,12 @@ for (const tc of tabConfig) {
 			label: i18n(I18nKey.moviesFilterWish),
 			count: statusCounts.wish || 0,
 			color: "bg-sky-500",
+		},
+		{
+			value: "onHold",
+			label: i18n(I18nKey.moviesFilterOnHold),
+			count: statusCounts.onHold || 0,
+			color: "bg-violet-500",
 		},
 		{
 			value: "dropped",
@@ -270,7 +265,7 @@ const activeTab = sections[0]?.tabKey || "all";
 									>
 										<span class={`w-1.5 h-1.5 rounded-full ${filter.color} inline-block`}></span>
 										<span>{filter.label}</span>
-										{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-black/10 text-white">{filter.count}</span>}
+										{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-(--btn-regular-bg) text-(--btn-content)">{filter.count}</span>}
 									</button>
 								))}
 							</div>

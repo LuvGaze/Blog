@@ -37,7 +37,7 @@ const bookItems = customBangumi
 			typeof item.data.image === "string"
 				? item.data.image
 				: item.data.image.src;
-		const slug = removeFileExtension(item.id);
+		const slug = removeFileExtension(item.id).split("/").pop();
 		const link = `/books/${slug}/`;
 
 		return {
@@ -52,13 +52,15 @@ const bookItems = customBangumi
 const readCount = bookItems.filter((b) => b.status === 2).length;
 const readingCount = bookItems.filter((b) => b.status === 3).length;
 const wishCount = bookItems.filter((b) => b.status === 1).length;
+const onHoldCount = bookItems.filter((b) => b.status === 4).length;
 const droppedCount = bookItems.filter((b) => b.status === 5).length;
-const totalCount = readCount + readingCount + wishCount + droppedCount;
+const totalCount = readCount + readingCount + wishCount + onHoldCount + droppedCount;
 
 const statusMap: Record<number, string> = {
 	1: "wish",
 	2: "collect",
 	3: "doing",
+	4: "onHold",
 	5: "dropped",
 };
 
@@ -67,6 +69,7 @@ const filters = [
 	{ value: "doing", label: i18n(I18nKey.booksFilterReading), count: readingCount, color: "bg-emerald-500" },
 	{ value: "collect", label: i18n(I18nKey.booksFilterRead), count: readCount, color: "bg-amber-500" },
 	{ value: "wish", label: i18n(I18nKey.booksFilterWish), count: wishCount, color: "bg-sky-500" },
+	{ value: "onHold", label: i18n(I18nKey.booksFilterOnHold), count: onHoldCount, color: "bg-violet-500" },
 	{ value: "dropped", label: i18n(I18nKey.booksFilterDropped), count: droppedCount, color: "bg-rose-400" },
 ];
 ---
@@ -121,7 +124,7 @@ const filters = [
 								>
 									<span class={`w-1.5 h-1.5 rounded-full ${filter.color} inline-block`}></span>
 									<span>{filter.label}</span>
-									{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-black/10 text-white">{filter.count}</span>}
+									{filter.count > 0 && <span class="px-1.5 py-0.5 rounded-full bg-(--btn-regular-bg) text-(--btn-content)">{filter.count}</span>}
 								</button>
 							))}
 						</div>

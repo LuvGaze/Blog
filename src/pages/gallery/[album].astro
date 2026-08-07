@@ -27,6 +27,10 @@ export async function getStaticPaths() {
 
 const { albumData, albumId } = Astro.props;
 const albumMeta = { ...albumData, id: albumId };
+const dateStr =
+	albumData.date instanceof Date
+		? albumData.date.toISOString().slice(0, 10)
+		: albumData.date || "";
 const imagesFromMd = albumData.images || [];
 const photos = imagesFromMd.length > 0 ? imagesFromMd : scanAlbumPhotos(albumMeta.id);
 const cover = getAlbumCover(albumMeta, photos);
@@ -68,7 +72,7 @@ const coverLqipProps = cover
             {albumMeta.date && (
               <span class="inline-flex items-center gap-1">
                 <Icon is:inline name="material-symbols:calendar-today" class="text-sm" />
-                {albumMeta.date}
+                {dateStr}
               </span>
             )}
             {albumMeta.location && (
@@ -109,7 +113,7 @@ const coverLqipProps = cover
           {albumMeta.date && (
             <span class="inline-flex items-center gap-1">
               <Icon is:inline name="material-symbols:calendar-today" class="text-sm" />
-              {albumMeta.date}
+              {dateStr}
             </span>
           )}
           {albumMeta.location && (

@@ -27,7 +27,7 @@ const dateStr = entry.data.date instanceof Date
 
 <MainGridLayout
 	title={`${entry.data.province || "未知"}${entry.data.city ? " · " + entry.data.city : ""}`}
-	description={entry.data.experience || ""}
+	description={entry.data.city || entry.data.province || ""}
 >
 	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
 		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
@@ -59,13 +59,6 @@ const dateStr = entry.data.date instanceof Date
 						</div>
 					)}
 				</div>
-
-				{entry.data.experience && (
-					<div class="bg-(--card-bg) p-4 rounded-xl border border-(--line-divider) mb-6">
-						<h3 class="text-sm font-semibold text-(--deep-text) mb-2">旅行体验</h3>
-						<p class="text-sm text-(--content-meta) leading-relaxed">{entry.data.experience}</p>
-					</div>
-				)}
 
 				{entry.body && (
 					<article class="place-content mb-6">

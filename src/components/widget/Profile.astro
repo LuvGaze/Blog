@@ -52,7 +52,7 @@ const className = Astro.props.class;
       {profileConfig.bio}
     </div>
         <div class="flex flex-wrap gap-2 justify-center mb-1">
-            {profileConfig.links.length > 1 && profileConfig.links.map(item =>
+            {profileConfig.links.filter(item => item && item.url).length > 1 && profileConfig.links.filter(item => item && item.url).map(item =>
                     {
                     const showName = item.showName;
                     const className = showName 
@@ -85,7 +85,7 @@ const className = Astro.props.class;
                     }
                     }
             )}
-            {profileConfig.links.length == 1 && (function(item){
+            {profileConfig.links.filter(item => item && item.url).length == 1 && (function(item){
                 if (item.url.startsWith("mailto:")) {
                         const encodedEmail = Buffer.from(item.url.replace("mailto:", "")).toString("base64");
                         return <a rel="me" aria-label={item.name} href="#" data-encoded-email={encodedEmail} onclick={`

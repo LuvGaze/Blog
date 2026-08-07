@@ -405,6 +405,7 @@ enum I18nKey {
 	booksFilterReading = "booksFilterReading",
 	booksFilterRead = "booksFilterRead",
 	booksFilterWish = "booksFilterWish",
+	booksFilterOnHold = "booksFilterOnHold",
 	booksFilterDropped = "booksFilterDropped",
 	booksSearch = "booksSearch",
 
@@ -417,6 +418,7 @@ enum I18nKey {
 	moviesFilterWatching = "moviesFilterWatching",
 	moviesFilterWatched = "moviesFilterWatched",
 	moviesFilterWish = "moviesFilterWish",
+	moviesFilterOnHold = "moviesFilterOnHold",
 	moviesFilterDropped = "moviesFilterDropped",
 	moviesSearch = "moviesSearch",
 
@@ -429,6 +431,7 @@ enum I18nKey {
 	gamesFilterPlaying = "gamesFilterPlaying",
 	gamesFilterPlayed = "gamesFilterPlayed",
 	gamesFilterWish = "gamesFilterWish",
+	gamesFilterOnHold = "gamesFilterOnHold",
 	gamesFilterDropped = "gamesFilterDropped",
 	gamesSearch = "gamesSearch",
 

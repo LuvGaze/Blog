@@ -50,3 +50,4 @@ docs/
 
 # others
 .venv/
+test/

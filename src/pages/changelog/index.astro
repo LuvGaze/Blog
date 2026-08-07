@@ -5,6 +5,7 @@ import { siteConfig } from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { removeFileExtension } from "@/utils/url-utils";
 
 if (!siteConfig.pages.changelog) {
 	return Astro.redirect("/404/");
@@ -113,9 +114,14 @@ const displayAll = i18n(I18nKey.all);
 										<span class="cl-entry-version">{entry.data.version}</span>
 									</div>
 									<div class="cl-entry-card">
+									<a
+										href={`/changelog/${removeFileExtension(entry.id)}/`}
+										class="cl-entry-link"
+									>
 										<p class="cl-entry-text">{entry.data.description}</p>
-									</div>
+									</a>
 								</div>
+							</div>
 							</article>
 						);
 					})
@@ -395,6 +401,16 @@ const displayAll = i18n(I18nKey.all);
 		transform: translateY(-1px);
 		border-color: var(--primary);
 		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+	}
+
+	.cl-entry-link {
+		display: block;
+		color: inherit;
+		text-decoration: none;
+	}
+
+	.cl-entry-link:hover {
+		text-decoration: underline;
 	}
 
 	.cl-entry-text {

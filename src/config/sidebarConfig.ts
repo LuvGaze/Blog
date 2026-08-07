@@ -72,7 +72,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：分类组件
 			type: "categories",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -87,7 +87,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：标签组件
 			type: "tags",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -102,7 +102,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：Umami 统计组件
 			type: "umamiStats",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
@@ -121,6 +121,23 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			position: "top",
 			// 是否在文章详情页显示
 			showOnPostPage: true,
+			// 组件专属配置：控制显示哪些统计项（false 即隐藏该项）
+			specificConfig: {
+				stats: {
+					// 显示文章数
+					showPostCount: true,
+					// 显示分类数
+					showCategoryCount: true,
+					// 显示标签数
+					showTagCount: true,
+					// 显示全站总字数（统计 src/content 下全部 md 正文）
+					showTotalWords: true,
+					// 显示运行时长
+					showRunningDays: true,
+					// 显示最后活动
+					showLastUpdate: true,
+				},
+			},
 		},
 		{
 			// 组件类型：站点信息组件
@@ -288,6 +305,23 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			enable: true,
 			// 是否在文章详情页显示
 			showOnPostPage: true,
+			// 组件专属配置：控制显示哪些统计项（false 即隐藏该项）
+			specificConfig: {
+				stats: {
+					// 显示文章数
+					showPostCount: true,
+					// 显示分类数
+					showCategoryCount: true,
+					// 显示标签数
+					showTagCount: true,
+					// 显示全站总字数（统计 src/content 下全部 md 正文）
+					showTotalWords: true,
+					// 显示运行时长
+					showRunningDays: true,
+					// 显示最后活动
+					showLastUpdate: true,
+				},
+			},
 		},
 		{
 			// 组件类型：站点信息组件

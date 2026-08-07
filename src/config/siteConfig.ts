@@ -81,7 +81,7 @@ export const siteConfig: SiteConfig = {
 	pages: {
 		friends: true,      // 友链页面
 		sponsor: true,      // 打赏页面
-		guestbook: true,    // 留言板页面
+		guestbook: false,    // 留言板页面
 		bangumi: false,     // 番组计划页面
 		gallery: true,      // 相册页面
 		anime: true,       // 追番页面
@@ -151,7 +151,7 @@ export const siteConfig: SiteConfig = {
 		// Bangumi 条目基础URL
 		subjectBaseUrl: "https://bgmmi.anibt.net/subject/",
 		// 分类显示顺序
-		categoryOrder: ["anime", "book", "music", "game"],
+		categoryOrder: ["book", "anime", "music", "game"],
 	},
 
 	// Bilibili 追番配置
@@ -179,5 +179,5 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 站点语言
-	lang: "zh_CN",
+	lang: SITE_LANG,
 };

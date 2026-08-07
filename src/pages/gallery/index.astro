@@ -18,12 +18,22 @@ const description = i18n(I18nKey.galleryDescription);
 const allAlbums = await getCollection("gallery");
 const albums = allAlbums
 	.filter((album) => album.id)
+	.sort((a, b) => {
+		// 按相册时间倒序，新的在前；无时间排最后
+		const da = a.data.date ? a.data.date.getTime() : 0;
+		const db = b.data.date ? b.data.date.getTime() : 0;
+		return db - da;
+	})
 	.map((album) => {
 		const albumId = album.id;
 		const imagesFromMd = album.data.images || [];
 		const photos = imagesFromMd.length > 0 ? imagesFromMd : scanAlbumPhotos(albumId);
 		const cover = getAlbumCover({ ...album.data, id: albumId }, photos);
-		return { ...album.data, id: albumId, cover, photoCount: photos.length };
+		const dateStr =
+			album.data.date instanceof Date
+				? album.data.date.toISOString().slice(0, 10)
+				: album.data.date || "";
+		return { ...album.data, id: albumId, cover, photoCount: photos.length, date: dateStr };
 	});
 
 const allTags = [...new Set(albums.flatMap((a) => a.tags || []))].sort();

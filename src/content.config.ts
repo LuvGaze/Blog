@@ -38,8 +38,14 @@ const specCollection = defineCollection({
 
 const bangumiCollection = defineCollection({
 	loader: glob({
-		pattern: "**/*.{md,mdx,yaml,yml}",
-		base: "./src/content/bangumi",
+		pattern: [
+			"books/**/*.{md,mdx,yaml,yml}",
+			"games/**/*.{md,mdx,yaml,yml}",
+			"movies/**/*.{md,mdx,yaml,yml}",
+		],
+		base: "./src/content",
+		// 保留原始文件相对路径（去扩展名）作为 id，避免默认 githubSlug 把点号/冒号等字符剥掉
+		generateId: ({ entry }) => entry.replace(/\\/g, "/").replace(/\.(md|mdx|yaml|yml)$/i, ""),
 	}),
 	schema: ({ image }) =>
 		z.object({
@@ -94,7 +100,7 @@ const routinesCollection = defineCollection({
 		description: z.string().optional().default(""),
 		icon: z.string().optional().default("📌"),
 		color: z.string().optional().default(""),
-		updatedAt: z.union([z.string(), z.date()]).optional(),
+		updatedAt: z.coerce.date().optional(),
 	}),
 });
 
@@ -111,15 +117,14 @@ const travelCollection = defineCollection({
 		city: z.string().optional().default(""),
 		district: z.string().optional().default(""),
 		tags: z.array(z.string()).optional().default([]),
-		experience: z.string().optional().default(""),
 		visitCount: z.number().optional().default(1),
 		lat: z.number().optional(),
 		lng: z.number().optional(),
 	}),
 });
 
-const daohangCollection = defineCollection({
-	loader: glob({ pattern: "**/*.md", base: "./src/content/daohang" }),
+const websiteCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/website" }),
 	schema: z.object({
 		name: z.string(),
 		url: z.string(),
@@ -135,7 +140,12 @@ const daohangCollection = defineCollection({
 });
 
 const changelogCollection = defineCollection({
-	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/changelog" }),
+	loader: glob({
+		pattern: "**/*.{md,mdx}",
+		base: "./src/content/changelog",
+		// 版本文件名带点号（v1.0.0.md），保留原文件名作为 id，避免被剥成 v100
+		generateId: ({ entry }) => entry.replace(/\\/g, "/").replace(/\.(md|mdx)$/i, ""),
+	}),
 	schema: z.object({
 		version: z.string(),
 		date: z.coerce.date(),
@@ -180,7 +190,7 @@ export const collections = {
 	notebooks: notebooksCollection,
 	routines: routinesCollection,
 	travel: travelCollection,
-	daohang: daohangCollection,
+	website: websiteCollection,
 	changelog: changelogCollection,
 	friends: friendsCollection,
 	gallery: galleryCollection,

@@ -30,6 +30,7 @@ export type {
 	MobileBottomComponentConfig,
 	SidebarLayoutConfig,
 	SiteInfoConfig,
+	StatsWidgetConfig,
 	WidgetComponentConfig,
 	WidgetComponentType,
 	WidgetSpecificConfig,

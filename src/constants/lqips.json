@@ -15,7 +15,6 @@
   "src:assets/images/MobileWallpaper/m2.avif": "f1e0ded8c2c6bbb0bc",
   "src:assets/images/MobileWallpaper/m1.avif": "cccce0cbc0d59294c0",
   "public:assets/images/sponsor/wechat.png": "d5d5d5dad9d7dbd8cf",
-  "public:assets/images/sponsor/alipay.png": "8ebbde91bedf93c0e0",
   "public:assets/images/ad/ad1.webp": "a1b8b68a8e918c8f93",
   "src:content/posts/images/vitepress.avif": "3d3d43e1e1e7ebe0da",
   "src:content/posts/images/right-grid2.avif": "cbcdcddddcd9d8d7db",
@@ -34,5 +33,6 @@
   "src:content/posts/guide/cover.avif": "c8bca9dde6d2babfb5",
   "src:assets/picture.png": "e3d2c5ebd7cebea099",
   "src:assets/images/picture.png": "e3d2c5ebd7cebea099",
-  "src:assets/images/DesktopWallpaper/d7.avif": "2482e55dadf864c0c9"
+  "src:assets/images/DesktopWallpaper/d7.avif": "2482e55dadf864c0c9",
+  "public:assets/images/sponsor/alipay.jpg": "8fb1df8eb0de6993cd"
 }

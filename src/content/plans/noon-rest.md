@@ -2,7 +2,6 @@
 name: 午间小憩
 time: 中午 12:00-13:00
 icon: 😴
-color: "#a855f7"
 description: 午餐后短暂休息，恢复精力
 updatedAt: 2026-04-18
 ---

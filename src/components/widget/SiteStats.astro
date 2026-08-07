@@ -1,4 +1,5 @@
 ---
+import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import WidgetLayout from "@/components/common/WidgetLayout.astro";
 import { siteConfig } from "@/config";
@@ -21,6 +22,10 @@ const { class: className, style, widgetConfig } = Astro.props;
 
 const showTitle = widgetConfig?.showTitle !== false;
 
+// 站点统计组件专属配置：false 即隐藏对应统计项（缺省全部显示）
+const statsCfg = widgetConfig?.specificConfig?.stats;
+const showStat = (key: string) => (statsCfg ? statsCfg[key] !== false : true);
+
 // 从配置中获取站点开始日期
 const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
 
@@ -29,12 +34,26 @@ const posts = await getSortedPosts();
 const categories = await getCategoryList();
 const tags = await getTagList();
 
+// 统计全站正文总字数：src/content 下所有集合的 md 正文（文章/笔记本/规划/足迹/关于/友链等）
+const contentCollections = [
+	"posts",
+	"spec",
+	"bangumi",
+	"notebooks",
+	"routines",
+	"travel",
+	"website",
+	"changelog",
+	"friends",
+] as const;
+const allContentEntries = (await Promise.all(contentCollections.map((c) => getCollection(c)))).flat();
+
 // 计算总字数
 let totalWords = 0;
-for (const post of posts) {
-	if (post.body) {
+for (const entry of allContentEntries) {
+	if (entry.body) {
 		// 移除代码块和内联代码后计算字数
-		let text = post.body
+		let text = entry.body
 			.replace(/```[\s\S]*?```/g, "") // 移除代码块
 			.replace(/`[^`]*`/g, "") // 移除内联代码
 			.replace(/\s+/g, " ") // 合并空白
@@ -72,27 +91,32 @@ const todayText = i18n(I18nKey.today);
 
 const stats = [
 	{
+		key: "showPostCount",
 		icon: "material-symbols:article-outline",
 		label: i18n(I18nKey.siteStatsPostCount),
 		value: posts.length,
 	},
 	{
+		key: "showCategoryCount",
 		icon: "material-symbols:folder-outline",
 		label: i18n(I18nKey.siteStatsCategoryCount),
 		value: categories.length,
 	},
 	{
+		key: "showTagCount",
 		icon: "material-symbols:label-outline",
 		label: i18n(I18nKey.siteStatsTagCount),
 		value: tags.length,
 	},
 	{
+		key: "showTotalWords",
 		icon: "material-symbols:text-ad-outline-rounded",
 		label: i18n(I18nKey.siteStatsTotalWords),
 		value: totalWords,
 		formatted: true,
 	},
 	{
+		key: "showRunningDays",
 		icon: "material-symbols:calendar-clock-outline",
 		label: i18n(I18nKey.siteStatsRunningDays),
 		value: 0, // 将由客户端更新
@@ -101,6 +125,7 @@ const stats = [
 		id: "running-days",
 	},
 	{
+		key: "showLastUpdate",
 		icon: "mingcute:heartbeat-line",
 		label: i18n(I18nKey.siteStatsLastUpdate),
 		value: 0, // 将由客户端更新
@@ -108,7 +133,7 @@ const stats = [
 		dynamic: true,
 		id: "last-update",
 	},
-];
+].filter((s) => showStat(s.key));
 ---
 
 <WidgetLayout name={i18n(I18nKey.siteStats)} showTitle={showTitle} id="site-stats" class={className} style={style}>

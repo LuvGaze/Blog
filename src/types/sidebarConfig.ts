@@ -41,6 +41,17 @@ export type WidgetSpecificConfig = {
 	calendar?: CalendarConfig; // 日历组件专用配置
 	ad?: AdConfig; // 广告组件专用配置
 	siteInfo?: SiteInfoConfig; // 站点信息组件专用配置
+	stats?: StatsWidgetConfig; // 站点统计组件专用配置
+};
+
+// 站点统计组件专用配置：控制显示哪些统计项（缺省全部显示）
+export type StatsWidgetConfig = {
+	showPostCount?: boolean; // 显示文章数
+	showCategoryCount?: boolean; // 显示分类数
+	showTagCount?: boolean; // 显示标签数
+	showTotalWords?: boolean; // 显示全站总字数
+	showRunningDays?: boolean; // 显示运行时长
+	showLastUpdate?: boolean; // 显示最后活动
 };
 
 // 站点信息组件专用配置

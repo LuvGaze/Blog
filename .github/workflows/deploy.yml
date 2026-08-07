@@ -63,7 +63,7 @@ jobs:
           switches: -vzr --stats --progress --delete --size-only --compress --compress-level=3 --no-times --no-perms --no-owner --no-group --exclude='.git' --exclude='node_modules'
           # 本地待同步目录：打包输出dist文件夹
           path: ./dist/
-          # 远端永久缓存目录，与线上网站Funny同级，不会被rm误删新版文件
+          # 远端永久缓存目录，与线上网站Blog同级，不会被rm误删新版文件
           remote_path: /www/wwwroot/Blog_Tmp/
           # 服务器连接私密信息，存放于仓库Secrets，不暴露明文
           remote_host: ${{ secrets.SERVER_HOST }}
@@ -72,7 +72,7 @@ jobs:
           remote_key: ${{ secrets.SSH_PRIVATE_KEY }}
           legacy_allow_rsa_hostkeys: true
 
-      # 8. 校验Blog_Tmp文件完整性，原子替换线上Funny目录
+      # 8. 校验Blog_Tmp文件完整性，原子替换线上Blog目录
       # 仅同步成功才覆盖网站，同步失败直接退出，旧网站完全保留
       - name: Safe atomic replace online site
         run: |
@@ -88,10 +88,10 @@ jobs:
           ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "
             # 判断缓存目录存在有效文件
             if [ -n \"\$(ls -A /www/wwwroot/Blog_Tmp 2>/dev/null)\" ]; then
-              # 清空线上网站目录Funny，Blog_Tmp同级不会被连带删除
-              rm -rf /www/wwwroot/Funny/*
+              # 清空线上网站目录Blog，Blog_Tmp同级不会被连带删除
+              rm -rf /www/wwwroot/Blog/*
               # 将增量更新完成的新版全部移入线上目录
-              mv /www/wwwroot/Blog_Tmp/* /www/wwwroot/Funny/
+              mv /www/wwwroot/Blog_Tmp/* /www/wwwroot/Blog/
               echo \"部署完成，新版网站已生效\"
             else
               echo \"缓存目录无有效站点文件，终止替换，旧网站保持不变\"
