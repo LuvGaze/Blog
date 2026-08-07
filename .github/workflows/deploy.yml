@@ -37,7 +37,7 @@ jobs:
           pnpm install --no-frozen-lockfile
           pnpm run build
 
-      - name: 增量同步dist目录到服务器Blog_Tmp基准目录
+      - name: 增量同步dist目录到服务器临时目录
         run: |
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
@@ -64,7 +64,8 @@ jobs:
           ssh -p ${{ secrets.SERVER_PORT }} root@${{ secrets.SERVER_HOST }} "
             if [ -n \"\$(ls -A /www/wwwroot/Blog_Tmp 2>/dev/null)\" ]; then
               rm -rf /www/wwwroot/Blog/*
-              mv /www/wwwroot/Blog_Tmp/* /www/wwwroot/Blog/
+              # cp‑a复制，Blog_Tmp维持完整基准，供下一次增量rsync对比
+              cp -a /www/wwwroot/Blog_Tmp/* /www/wwwroot/Blog/
               echo \"✅部署完成，新版已上线\"
             else
               echo \"❌Blog_Tmp为空，终止替换，保留旧站点\"
