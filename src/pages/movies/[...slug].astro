@@ -1,0 +1,19 @@
+---
+import { getCollection } from "astro:content";
+import BangumiDetail from "@/components/pages/bangumi/BangumiDetail.astro";
+
+export async function getStaticPaths() {
+	const bangumiEntries = await getCollection("bangumi", ({ data }) => {
+		return data.category === "real";
+	});
+	return bangumiEntries.map((entry) => ({
+		// 去掉子目录前缀：src/content/movies/星际穿越.md → 星际穿越
+		params: { slug: entry.id.replace(/\\/g, "/").replace(/\.md$/, "").split("/").pop() },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+---
+
+<BangumiDetail entry={entry} />
