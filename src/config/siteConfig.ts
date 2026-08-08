@@ -21,9 +21,9 @@ export const siteConfig: SiteConfig = {
 	// 主题颜色配置
 	themeColor: {
 		// 主题色相值（0-360），0=红色，120=绿色，240=蓝色，360=红色
-		hue: 360,
+		hue: 305,
 		// 是否固定主题色（true=用户无法通过控制面板调整）
-		fixed: false,
+		fixed: true,
 		// 默认主题模式："system"跟随系统，"light"亮色，"dark"暗色
 		defaultMode: "system",
 	},

@@ -125,13 +125,13 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			specificConfig: {
 				stats: {
 					// 显示文章数
-					showPostCount: true,
+					showPostCount: false,
 					// 显示分类数
-					showCategoryCount: true,
+					showCategoryCount: false,
 					// 显示标签数
-					showTagCount: true,
+					showTagCount: false,
 					// 显示全站总字数（统计 src/content 下全部 md 正文）
-					showTotalWords: true,
+					showTotalWords: false,
 					// 显示运行时长
 					showRunningDays: true,
 					// 显示最后活动
