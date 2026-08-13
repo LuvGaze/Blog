@@ -55,8 +55,5 @@ export const sponsorConfig: SponsorConfig = {
 		    amount: "¥99999",
 		    date: "2003-02-15"
 		   },
-		{
-
-		   }
 	],
 };
