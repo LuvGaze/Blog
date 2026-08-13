@@ -6,7 +6,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
     // 是否允许用户通过导航栏切换壁纸模式
     // 且同时维护多种壁纸模式过于复杂（已经屎山代码），在切换时有时候可能会出现一些奇怪的过渡效果或者bug
     // 推荐只选择自己喜欢的模式并关闭切换功能
-    switchable: true,
+    switchable: false,
     // 是否启用背景视频播放，配置后将在导航栏显示视频播放按钮
     playerEnable: false,
     /**

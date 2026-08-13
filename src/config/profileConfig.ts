@@ -6,7 +6,7 @@ import type { ProfileConfig } from "../types/profileConfig";
  */
 export const profileConfig: ProfileConfig = {
 	// 头像图片路径（相对于public目录）
-	avatar: "assets/images/picture.png",
+	avatar: "assets/images/picture.webp",
 	// 用户名/昵称（显示在头像下方）
 	name: "一只喵⁹",
 	// 个人简介/签名（显示在用户名下方）

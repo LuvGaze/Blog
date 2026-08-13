@@ -8,7 +8,7 @@ export const sakuraConfig: SakuraConfig = {
 	// 是否启用樱花特效
 	enable: false,
 	// 是否允许用户通过控制面板切换樱花特效
-	switchable: true,
+	switchable: false,
 	// 樱花数量（建议20-50之间）
 	sakuraNum: 25,
 	// 限制显示次数（-1表示无限制）

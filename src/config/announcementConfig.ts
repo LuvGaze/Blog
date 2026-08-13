@@ -5,7 +5,7 @@ export const announcementConfig: AnnouncementConfig = {
 	title: "公告",
 
 	// 公告内容
-	content: "版本测试中 ~",
+	content: "项目开发测试中 ~ ",
 
 	// 是否允许用户关闭公告
 	closable: false,
@@ -16,7 +16,7 @@ export const announcementConfig: AnnouncementConfig = {
 		// 链接文本
 		text: "了解更多",
 		// 链接 URL
-		url: "/about/",
+		url: "/changelog/",
 		// 内部链接
 		external: false,
 	},

@@ -50,14 +50,13 @@ export const sponsorConfig: SponsorConfig = {
 	// 赞助者列表（展示已赞助的用户）
 	sponsors: [
 		{
-			// 赞助者名称
-			name: "匿名用户",
-			// 头像URL（留空显示默认头像）
-			avatar: "",
-			// 赞助金额
-			amount: "¥99999",
-			// 赞助日期
-			date: "2003-02-15",
-		},
+		    name: "匿名用户",
+		    avatar: "",
+		    amount: "¥99999",
+		    date: "2003-02-15"
+		   },
+		{
+
+		   }
 	],
 };

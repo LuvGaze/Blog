@@ -14,14 +14,14 @@ export const siteConfig: SiteConfig = {
 	// 站点域名（用于生成绝对URL、RSS等）
 	site_url: "https://LuvGaze.com",
 	// 站点描述（用于SEO和社交分享）
-	description: "Firefly 是一款基于 Astro 框架和 Fuwari 模板开发的清新美观且现代化个人博客主题模板，专为技术爱好者和内容创作者设计。该主题融合了现代 Web 技术栈，提供了丰富的功能模块和高度可定制的界面，让您能够轻松打造出专业且美观的个人博客网站。",
+	description: "项目开发测试中 ~",
 	// 站点关键词（用于SEO）
-	keywords: ["Firefly", "Fuwari", "Astro", "ACGN", "博客", "技术博客", "静态博客"],
+	keywords: ["LuvGaze", "Blog"],
 
 	// 主题颜色配置
 	themeColor: {
 		// 主题色相值（0-360），0=红色，120=绿色，240=蓝色，360=红色
-		hue: 305,
+		hue: 265,
 		// 是否固定主题色（true=用户无法通过控制面板调整）
 		fixed: true,
 		// 默认主题模式："system"跟随系统，"light"亮色，"dark"暗色
@@ -55,7 +55,7 @@ export const siteConfig: SiteConfig = {
 			// Logo类型："image"图片，"text"文字，"emoji"表情符号
 			type: "image",
 			// Logo值（图片路径、文字内容或表情符号）
-			value: "assets/images/firefly.png",
+			value: "assets/images/firefly.webp",
 			// Logo替代文本（用于无障碍访问）
 			alt: "🍀",
 		},
@@ -111,7 +111,7 @@ export const siteConfig: SiteConfig = {
 		// 文章描述显示行数（0表示不限制）
 		descriptionLines: 2,
 		// 是否允许用户切换布局模式
-		allowSwitch: true,
+		allowSwitch: false,
 		// 网格布局配置
 		grid: {
 			// 是否启用瀑布流布局
