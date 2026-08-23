@@ -44,6 +44,8 @@ package/
 
 # backend
 admin/
+!admin/.git
+!admin/**
 
 # docs
 docs/
