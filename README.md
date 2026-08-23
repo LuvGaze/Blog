@@ -1,3 +1,8 @@
+# ⭐魔改的Firefly博客项目⭐
+- 基于 Firefly 博客系统进行二次开发
+- 本项目可搭配专属配套后端项目 [Admin](https://github.com/LuvGaze/Blog-Admin) 共同使用
+
+
 # 🔥 Firefly
 
 > 一只发光的萤火虫，照亮你的数字花园

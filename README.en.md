@@ -1,118 +1,125 @@
+# ⭐ Modified Firefly Blog Project ⭐
+
+- Secondary development based on the Firefly blog system
+- This project can be used together with the dedicated supporting backend project [Admin](https://github.com/LuvGaze/Blog-Admin)
+
 # 🔥 Firefly
 
-> A glowing firefly that illuminates your digital garden
+>
+> A glowing firefly, illuminating your digital garden
 
-Firefly is a feature-rich, highly customizable modern personal blog system built on Astro 7 + Svelte 5. It is not just a blog template, but a complete personal content management platform that supports multiple content types including articles, books, movies, games, bangumi, travel, plans, and notebooks, with a powerful admin panel.
+Firefly is a fully-featured, highly customizable modern personal blog system built with Astro 7 + Svelte 5. More than just a blog template, it is a complete personal content management platform supporting multiple content types including articles, books, movies, games, anime, travel logs, plans, notebooks, alongside a powerful admin dashboard.
 
-## ✨ Features
+## ✨ Key Features
 
 ### 🎨 Visual Design
 
-- **Responsive Layout**: Perfectly adapts to desktop and mobile devices
-- **Dark/Light Theme**: One-click toggle, auto-follows system settings
-- **Dynamic Wallpaper**: Supports banner, fullscreen, overlay modes, switchable image or video backgrounds
-- **Glassmorphism**: Modern visual hierarchy design
-- **Custom Theme Color**: Support custom global theme color
+- **Responsive Layout**: Perfect compatibility with desktop and mobile devices
+- **Dark / Light Theme**: One-click toggle, automatic system preference detection
+- **Dynamic Wallpapers**: Banner, fullscreen, overlay transparent modes; supports image or video backgrounds
+- **Frosted Glass Effects**: Modern visual layering design
+- **Custom Theme Color**: Configure global primary theme color
 
 ### 📝 Content Management
 
-- **Markdown Support**: Full Markdown syntax, code highlighting, math formulas, charts, etc.
-- **Post Encryption**: Support setting access passwords for sensitive articles
-- **Post Pinning**: Important articles displayed first
+- **Markdown Support**: Full Markdown syntax with code highlighting, math formulas, charts
+- **Password Protected Articles**: Set access passwords for sensitive posts
+- **Pin Articles**: Prioritize display for important content
 - **Categories & Tags**: Flexible content organization
-- **Search**: Full-text search based on Pagefind
+- **Search Function**: Full-text search powered by Pagefind
 
 ### 🎮 Interactive Experience
 
-- **Live2D Character**: Configurable virtual character interaction
-- **Music Player**: Built-in music player with visualization effects
-- **Sakura Falling**: Romantic visual effects
-- **Typewriter Effect**: Banner text typing animation
-- **Image Lightbox**: Fancybox image browsing
+- **Live2D Widget Character**: Configurable interactive virtual character
+- **Music Player**: Built-in audio player with visualizer effects
+- **Cherry Blossom Animation**: Romantic visual particle effect
+- **Typewriter Effect**: Animated typing banner text
+- **Image Lightbox**: Fancybox image preview
 
-### 📚 Multi-content Support
+### 📚 Multi-Type Content Support
 
 | Module | Description |
-|--------|-------------|
-| **Blog Posts** | Markdown, MDX, code highlighting, math formulas |
-| **Bookshelf** | Book management with cover, rating, reading status |
-| **Movies** | Movie/TV management with category, rating |
-| **Games** | Game management with platform, rating |
-| **Bangumi** | Anime management with batch import |
-| **Gallery** | Photo album with category browsing |
-| **Travel** | Travel location records with map display |
-| **Plans** | Todo items with status toggle |
-| **Notebooks** | Diary/note management with categories |
-| **Changelog** | Project update records |
+| --- | --- |
+| **Blog Articles** | Markdown / MDX, syntax highlighting, mathematical notation |
+| **Bookshelf** | Book management with cover images, ratings, reading status |
+| **Movies & Shows** | Film & series management with classification and scoring |
+| **Games** | Game library supporting platform tagging and ratings |
+| **Anime** | Anime collection with bulk import capability |
+| **Photo Gallery** | Categorized image browsing |
+| **Footprints** | Travel location records with map display |
+| **Plans** | Todo checklist with status switching |
+| **Notebooks** | Diary & note management with categories |
+| **Changelog** | Project update history |
 
-### 🖥️ Admin Panel
+### 🖥️ Admin Dashboard
 
-- **Complete Management Panel**: Built on Express + TypeScript
-- **Content Management**: Full module management for articles, books, movies, games, etc.
-- **Configuration Management**: Visual editing of site configuration
-- **File Upload**: Support Markdown file upload with automatic parsing
-- **Password Security**: bcrypt hash storage
-- **JWT Authentication**: Secure authentication mechanism
+- **Complete Admin Panel**: Built with Express + TypeScript
+- **Content Management**: Full module control for articles, books, media and more
+- **Configuration Management**: Visual website setting editor
+- **File Upload**: Auto parsing for uploaded Markdown files
+- **Secure Passwords**: bcrypt password hashing
+- **JWT Authentication**: Secure identity verification
 
-### 🔧 Technical Features
+### 🔧 Technical Highlights
 
-- **Astro 7**: Next-generation static site generator
+- **Astro 7**: Next-gen static site generator
 - **Svelte 5**: Lightweight frontend framework
-- **TailwindCSS 4**: Atomic CSS framework
+- **TailwindCSS 4**: Utility-first CSS framework
 - **TypeScript**: Type-safe development
-- **Serverless Ready**: Supports Cloudflare Pages deployment
+- **Serverless Ready**: Deployable on Cloudflare Pages
 
 ## 🚀 Quick Start
 
-### Requirements
+### Prerequisites
 
 - Node.js ≥ 20
 - pnpm ≥ 9
 
 ### Frontend Blog
 
-```bash
+```
 # Install dependencies
 pnpm install
 
-# Start development server
+# Start dev server
 pnpm dev
 
-# Build production version
+# Build production assets
 pnpm build
 ```
 
-Development server runs at `http://localhost:4321`.
+The development server will run at `http://localhost:4321`.
 
-### Admin Panel
+### Backend Admin
 
-```bash
+```
 # Enter admin directory
 cd admin
 
 # Install dependencies
 npm install
 
-# Initialize admin password (required for first run)
+# Initialize admin password (required for first launch)
 node scripts/init-password.js
 
-# Start development server
+# Start dev server
 npm run dev
 ```
 
-Admin service runs at `http://localhost:9998`.
+The admin service will run at `http://localhost:9998`.
 
-> ⚠️ **Security Notice**: Please change your admin password after first login!
+>
+> ⚠️ **Security Notice**: Please change your administrator password after your first login!
 
-### Create New Post
+### Create a New Post
 
-```bash
-pnpm new-post <title>
+```
+pnpm new-post <Article Title>
 ```
 
 Example:
 
-```bash
+```
 pnpm new-post "My First Blog Post"
 ```
 
@@ -120,7 +127,7 @@ pnpm new-post "My First Blog Post"
 
 ```
 Firefly/
-├── src/                          # Frontend source
+├── src/                          # Frontend source code
 │   ├── components/               # Components
 │   │   ├── layout/               # Layout components
 │   │   ├── widget/               # Sidebar widgets
@@ -128,59 +135,59 @@ Firefly/
 │   │   ├── features/             # Feature components
 │   │   └── pages/                # Page-specific components
 │   ├── config/                   # Configuration files
-│   │   ├── siteConfig.ts         # Site configuration
-│   │   ├── navBarConfig.ts       # Navigation config
-│   │   ├── themeConfig.ts        # Theme config
+│   │   ├── siteConfig.ts         # Website settings
+│   │   ├── navBarConfig.ts       # Navigation bar settings
+│   │   ├── themeConfig.ts        # Theme appearance settings
 │   │   └── ...
 │   ├── content/                  # Content files
-│   │   ├── posts/                # Blog posts
+│   │   ├── posts/                # Blog articles
 │   │   ├── books/                # Book data
 │   │   ├── movies/               # Movie data
 │   │   ├── games/                # Game data
-│   │   ├── bangumi/              # Bangumi data
-│   │   ├── travel/               # Travel data
-│   │   ├── plans/                # Plans data
-│   │   ├── notebooks/            # Notebook data
-│   │   └── changelog/            # Changelog
+│   │   ├── bangumi/              # Anime data
+│   │   ├── travel/               # Travel records
+│   │   ├── plans/                # Todo plans
+│   │   ├── notebooks/            # Notebook entries
+│   │   └── changelog/            # Update logs
 │   ├── pages/                    # Page routes
-│   ├── styles/                   # Style files
+│   ├── styles/                   # Style assets
 │   └── utils/                    # Utility functions
-├── admin/                        # Admin panel
+├── admin/                        # Backend admin system
 │   ├── controllers/              # Controllers
-│   ├── routes/                   # Routes
-│   ├── services/                 # Service layer
+│   ├── routes/                   # API routes
+│   ├── services/                 # Business logic services
 │   ├── middleware/               # Middleware
 │   └── public/                   # Static assets
 ├── docs/                         # Documentation
-├── scripts/                      # Scripts
+├── scripts/                      # Helper scripts
 └── package.json
 ```
 
-## ⚙️ Configuration
+## ⚙️ Configuration Guide
 
 ### Main Configuration Files
 
 | File | Description |
-|------|-------------|
-| `src/config/siteConfig.ts` | Site basic info, page switches, navigation config |
-| `src/config/themeConfig.ts` | Theme color, font, layout visual config |
-| `src/config/backgroundWallpaper.ts` | Background wallpaper config |
-| `src/config/commentConfig.ts` | Comment system config (Artalk, Giscus, Waline, etc.) |
-| `src/config/musicConfig.ts` | Music player config |
-| `src/config/analyticsConfig.ts` | Analytics config |
+| --- | --- |
+| `src/config/siteConfig.ts` | Basic site info, page toggles, navigation settings |
+| `src/config/themeConfig.ts` | Theme color, font, layout visual settings |
+| `src/config/backgroundWallpaper.ts` | Wallpaper background settings |
+| `src/config/commentConfig.ts` | Comment system setup (Artalk, Giscus, Waline etc.) |
+| `src/config/musicConfig.ts` | Music player configuration |
+| `src/config/analyticsConfig.ts` | Analytics service configuration |
 
 ### Configuration Example
 
-Modify site basic information:
+Modify basic site information:
 
-```typescript
+```
 // src/config/siteConfig.ts
 export const siteConfig = {
   title: 'My Blog',
-  subtitle: 'Recording life, sharing technology',
+  subtitle: 'Record life, share technology',
   url: 'https://example.com',
-  description: 'A technology blog',
-  keywords: ['tech', 'programming', 'life'],
+  description: 'A technical blog',
+  keywords: ['technology', 'programming', 'life'],
 };
 ```
 
@@ -188,28 +195,28 @@ export const siteConfig = {
 
 ### Cloudflare Pages
 
-1. Login to Cloudflare Dashboard
-2. Create new Pages project
-3. Connect GitHub repository
-4. Configure build command: `pnpm build`
-5. Configure output directory: `dist`
+1. Sign in to the Cloudflare dashboard
+2. Create a new Pages project
+3. Connect your GitHub repository
+4. Build command: `pnpm build`
+5. Output directory: `dist`
 6. Deploy!
 
 ### Vercel
 
-1. Login to Vercel Dashboard
-2. Create new project
-3. Connect GitHub repository
-4. Vercel automatically detects Astro project config
+1. Sign in to the Vercel dashboard
+2. Create a new project
+3. Connect your GitHub repository
+4. Vercel will auto-detect Astro project settings
 5. Deploy!
 
-### Self-hosted
+### Self-hosting
 
-```bash
-# Build project
+```
+# Build project assets
 pnpm build
 
-# Start with static server
+# Launch static server
 npx serve dist
 ```
 
@@ -217,7 +224,7 @@ npx serve dist
 
 ### Comment Systems
 
-Support multiple comment systems, configured in `src/config/commentConfig.ts`:
+Multiple comment services configurable inside `src/config/commentConfig.ts`:
 
 - Artalk
 - Giscus
@@ -225,9 +232,9 @@ Support multiple comment systems, configured in `src/config/commentConfig.ts`:
 - Twikoo
 - Disqus
 
-### Analytics
+### Analytics Services
 
-Support multiple analytics services:
+Supported tracking platforms:
 
 - Google Analytics
 - Umami Analytics
@@ -243,36 +250,36 @@ Support multiple analytics services:
 
 ## 📝 Development Guide
 
-### Add New Page
+### Add a New Page
 
-1. Create new page in `src/pages/`
-2. Add page config in `src/config/siteConfig.ts`
+1. Create a new page file under `src/pages/`
+2. Add page settings in `src/config/siteConfig.ts`
 3. Add navigation link in `src/config/navBarConfig.ts`
 
-### Add New Component
+### Add a New Component
 
-1. Create new component in `src/components/`
-2. Choose appropriate subdirectory based on component purpose
+1. Create component file under `src/components/`
+2. Select the proper subdirectory based on component usage
 
-### Modify Theme Color
+### Change Primary Theme Color
 
-1. Modify `primaryColor` in `src/config/themeConfig.ts`
-2. Modify related variables in `src/styles/variables.styl`
+1. Update `primaryColor` inside `src/config/themeConfig.ts`
+2. Modify relevant variables in `src/styles/variables.styl`
 
 ## 🔒 Security
 
-- Post encryption using AES-256
-- Admin password stored with bcrypt hash
-- JWT Token authentication
+- Article encryption using AES-256
+- Admin passwords stored as bcrypt hashes
+- JWT token authentication
 - Automatic input sanitization
 
 ## 📄 License
 
-This project is licensed under the [MIT License](LICENSE).
+This project is open-source under the [MIT License](LICENSE).
 
 ## 🤝 Contributing
 
-Welcome to submit issues or pull requests!
+Issues and Pull Requests are welcome!
 
 ## 📞 Contact
 
