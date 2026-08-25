@@ -4,6 +4,7 @@ import { Icon } from "astro-icon/components";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import Markdown from "@/components/common/Markdown.astro";
 
 export async function getStaticPaths() {
 	const entries = await getCollection("travel", ({ id }) => 
@@ -61,9 +62,9 @@ const dateStr = entry.data.date instanceof Date
 				</div>
 
 				{entry.body && (
-					<article class="place-content mb-6">
+					<Markdown class="mb-6">
 						<Content />
-					</article>
+					</Markdown>
 				)}
 
 				<div class="mt-6 flex items-center gap-4">
@@ -95,91 +96,5 @@ const dateStr = entry.data.date instanceof Date
 
 	.stat-pill :global(svg) {
 		color: var(--primary);
-	}
-
-	.place-content {
-		font-size: 0.95rem;
-		line-height: 1.8;
-		color: var(--deep-text);
-	}
-
-	.place-content :global(p) {
-		margin-bottom: 1rem;
-		color: var(--deep-text);
-	}
-
-	.place-content :global(h1),
-	.place-content :global(h2),
-	.place-content :global(h3),
-	.place-content :global(h4),
-	.place-content :global(h5),
-	.place-content :global(h6) {
-		color: var(--deep-text);
-		font-weight: 600;
-		margin-top: 1.5rem;
-		margin-bottom: 0.75rem;
-	}
-
-	.place-content :global(strong),
-	.place-content :global(b) {
-		color: var(--deep-text);
-	}
-
-	.place-content :global(em),
-	.place-content :global(i) {
-		color: var(--deep-text);
-	}
-
-	.place-content :global(a) {
-		color: var(--primary);
-		text-decoration: underline;
-	}
-
-	.place-content :global(ul),
-	.place-content :global(ol) {
-		padding-left: 1.5rem;
-		margin-bottom: 1rem;
-		color: var(--deep-text);
-	}
-
-	.place-content :global(li) {
-		margin-bottom: 0.5rem;
-		color: var(--deep-text);
-	}
-
-	.place-content :global(blockquote) {
-		border-left: 3px solid var(--primary);
-		padding-left: 1rem;
-		margin-left: 0;
-		margin-bottom: 1rem;
-		color: var(--content-meta);
-		font-style: italic;
-	}
-
-	.place-content :global(code) {
-		background: var(--btn-regular-bg);
-		padding: 0.125rem 0.375rem;
-		border-radius: 4px;
-		font-size: 0.875em;
-		color: var(--deep-text);
-	}
-
-	.place-content :global(pre) {
-		background: var(--btn-regular-bg);
-		padding: 1rem;
-		border-radius: var(--radius-md);
-		overflow-x: auto;
-		margin-bottom: 1rem;
-	}
-
-	.place-content :global(pre code) {
-		background: transparent;
-		padding: 0;
-	}
-
-	.place-content :global(img) {
-		max-width: 100%;
-		border-radius: var(--radius-md);
-		margin-bottom: 1rem;
 	}
 </style>

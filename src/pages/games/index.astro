@@ -88,6 +88,14 @@ const gameItems: GameItem[] = customBangumi
 			},
 		};
 	})
+	.sort((a, b) => {
+		// 状态顺序：在玩(3) > 玩过(2) > 想玩(1) > 搁置(4) > 抛弃(5)；同状态按评分降序
+		const STATUS_PRIORITY: Record<number, number> = { 3: 0, 2: 1, 1: 2, 4: 3, 5: 4 };
+		const sa = STATUS_PRIORITY[a.type] ?? 99;
+		const sb = STATUS_PRIORITY[b.type] ?? 99;
+		if (sa !== sb) return sa - sb;
+		return (b.rate || 0) - (a.rate || 0);
+	})
 
 
 const statusCounts: Record<string, number> = {};
@@ -196,6 +204,7 @@ const filters = [
 						{gameItems.map((item: GameItem) => (
 							<div
 								class="games-item"
+								data-item-section="all"
 								data-item-status={statusMap[item.type] || "unknown"}
 							>
 								<MovieGameCard item={item as any} link={item.link} />
@@ -222,17 +231,17 @@ const filters = [
 		</div>
 	</div>
 	<Comment customPath="/games/" />
-</MainGridLayout>
 
-<script is:inline>
+	<script is:inline>
 	(function() {
 		function applyGamesFilters() {
 			var searchQuery = document.getElementById('games-search-input')?.value.toLowerCase() || '';
-			var activeFilter = document.querySelector('.games-filter-btn.bg-(--primary)')?.dataset.filter || 'all';
+			var activeBtn = Array.from(document.querySelectorAll('.games-filter-btn')).find(function(b) { return b.classList.contains('bg-(--primary)'); });
+			var activeFilter = activeBtn ? activeBtn.dataset.filter : 'all';
 			
 			document.querySelectorAll('.games-item').forEach(function(item) {
 				var statusMatch = activeFilter === 'all' || item.dataset.itemStatus === activeFilter;
-				var title = item.querySelector('.mg-item-title')?.textContent.toLowerCase() || '';
+				var title = item.querySelector('.mg-title')?.textContent.toLowerCase() || '';
 				var searchMatch = !searchQuery || title.includes(searchQuery);
 				var match = statusMatch && searchMatch;
 				item.classList.toggle('hidden', !match);
@@ -264,7 +273,8 @@ const filters = [
 			}
 		});
 	})();
-</script>
+	</script>
+</MainGridLayout>
 
 <style>
 	.games-page-wrapper {

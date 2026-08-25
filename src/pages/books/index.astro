@@ -18,20 +18,18 @@ const buildTime = formatDateI18nWithTime(new Date());
 
 const customBangumi = await getCollection("bangumi");
 
-function sortByDateAndTime(a: any, b: any) {
-	const dateA = a.data.date?.getTime() || 0;
-	const dateB = b.data.date?.getTime() || 0;
-	if (dateA !== dateB) {
-		return dateB - dateA;
-	}
-	const timeA = a.data.time || "00:00";
-	const timeB = b.data.time || "00:00";
-	return timeB.localeCompare(timeA);
+// 状态显示顺序：在读(3) > 读过(2) > 想读(1) > 搁置(4) > 抛弃(5)；同状态按评分降序
+const STATUS_PRIORITY: Record<number, number> = { 3: 0, 2: 1, 1: 2, 4: 3, 5: 4 };
+
+function sortByStatusScore(a: any, b: any) {
+	const sa = STATUS_PRIORITY[a.status] ?? 99;
+	const sb = STATUS_PRIORITY[b.status] ?? 99;
+	if (sa !== sb) return sa - sb;
+	return (b.score || 0) - (a.score || 0);
 }
 
 const bookItems = customBangumi
 	.filter((item) => item.data.category === "book")
-	.sort(sortByDateAndTime)
 	.map((item) => {
 		const imageSrc =
 			typeof item.data.image === "string"
@@ -47,7 +45,8 @@ const bookItems = customBangumi
 			status: item.data.status,
 			score: item.data.score || 0,
 		};
-	});
+	})
+	.sort(sortByStatusScore);
 
 const readCount = bookItems.filter((b) => b.status === 2).length;
 const readingCount = bookItems.filter((b) => b.status === 3).length;
@@ -141,13 +140,13 @@ const filters = [
 	</div>
 
 	<Comment customPath="/books/" />
-</MainGridLayout>
 
-<script is:inline>
+	<script is:inline>
 	(function() {
 		function applyFilters() {
 			var searchQuery = document.getElementById('books-search-input')?.value.toLowerCase() || '';
-			var activeFilter = document.querySelector('.books-filter-btn.bg-(--primary)')?.dataset.filter || 'all';
+			var activeBtn = Array.from(document.querySelectorAll('.books-filter-btn')).find(function(b) { return b.classList.contains('bg-(--primary)'); });
+			var activeFilter = activeBtn ? activeBtn.dataset.filter : 'all';
 			
 			document.querySelectorAll('.book-item').forEach(function(item) {
 				var statusMatch = activeFilter === 'all' || item.dataset.bookStatus === activeFilter;
@@ -176,7 +175,8 @@ const filters = [
 			}
 		});
 	})();
-</script>
+	</script>
+</MainGridLayout>
 
 <style>
 	.books-page-wrapper {

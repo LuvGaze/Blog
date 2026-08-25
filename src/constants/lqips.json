@@ -1,5 +1,4 @@
 {
-  "src:assets/images/firefly.png": "72d3af9ee699aced93",
   "src:assets/images/cover.avif": "7c6f966a628a816e82",
   "src:assets/images/avatar.avif": "dcd8d5d1cecabea9a9",
   "src:assets/images/DesktopWallpaper/d6.avif": "d9e5ec9ca7aebda9b0",
@@ -31,8 +30,8 @@
   "src:content/posts/images/both-grid.avif": "d5d6d3e6e7e3d8d9e3",
   "src:content/posts/images/1.avif": "b5b0b3bcb6bbe0e0df",
   "src:content/posts/guide/cover.avif": "c8bca9dde6d2babfb5",
-  "src:assets/picture.png": "e3d2c5ebd7cebea099",
-  "src:assets/images/picture.png": "e3d2c5ebd7cebea099",
   "src:assets/images/DesktopWallpaper/d7.avif": "2482e55dadf864c0c9",
-  "public:assets/images/sponsor/alipay.jpg": "8fb1df8eb0de6993cd"
+  "public:assets/images/sponsor/alipay.jpg": "8fb1df8eb0de6993cd",
+  "src:assets/images/picture.webp": "ccc0b4c7bbb4a48982",
+  "src:assets/images/firefly.webp": "ccc0b4c7bbb4a48982"
 }

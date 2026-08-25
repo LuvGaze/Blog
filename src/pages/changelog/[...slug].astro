@@ -6,6 +6,7 @@ import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { siteConfig } from "@/config";
 import { removeFileExtension } from "@/utils/url-utils";
+import Markdown from "@/components/common/Markdown.astro";
 
 if (!siteConfig.pages.changelog) {
 	return Astro.redirect("/404/");
@@ -82,9 +83,7 @@ const dateStr = entry.data.date.toISOString().slice(0, 10);
 				</div>
 
 				{entry.body && (
-					<article class="prose dark:prose-invert prose-sm max-w-none mb-6">
-						<Content />
-					</article>
+					<Markdown class="mb-6"><Content /></Markdown>
 				)}
 
 				<div class="mt-6 flex items-center gap-4">

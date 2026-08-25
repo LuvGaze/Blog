@@ -4,6 +4,7 @@ import { Icon } from "astro-icon/components";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import Markdown from "@/components/common/Markdown.astro";
 
 const routinesEntries = await getCollection("routines");
 
@@ -17,13 +18,13 @@ const sortedEntries = [...filteredEntries].sort((a, b) => {
 	if (aOrder !== bOrder) {
 		return aOrder - bOrder;
 	}
-	const aTime = a.data.updatedAt?.getTime() || 0;
-	const bTime = b.data.updatedAt?.getTime() || 0;
+	const aTime = a.data.updated?.getTime() || 0;
+	const bTime = b.data.updated?.getTime() || 0;
 	return bTime - aTime;
 });
 
 const lastUpdated = filteredEntries
-	.map((e) => e.data.updatedAt)
+	.map((e) => e.data.updated)
 	.filter((t): t is Date => !!t)
 	.reduce((latest, current) => current.getTime() > latest.getTime() ? current : latest, new Date(0));
 
@@ -36,8 +37,7 @@ const entriesWithContent = await Promise.all(
 			name: entry.data.name || "未命名",
 			time: entry.data.time || "",
 			description: entry.data.description || "",
-			icon: entry.data.icon || "📋",
-			color: entry.data.color || "var(--primary)",
+			cover: entry.data.cover || "",
 		};
 	}),
 );
@@ -87,7 +87,11 @@ const totalEntries = entriesWithContent.length;
 							<article class="routine-card">
 								<div class="routine-card-header">
 									<div class="routine-icon-wrap">
-										<span class="text-xl">{entry.icon}</span>
+										{entry.cover ? (
+											<img src={entry.cover} alt={entry.name} class="w-full h-full object-cover" />
+										) : (
+											<Icon is:inline name="material-symbols:checklist" class="text-xl text-(--primary)" />
+										)}
 									</div>
 									<div class="flex-1 min-w-0">
 										<div class="flex items-center gap-2 flex-wrap">
@@ -100,9 +104,9 @@ const totalEntries = entriesWithContent.length;
 									</div>
 								</div>
 								<div class="routine-card-body">
-									<div class="routine-content">
+									<Markdown class="mb-6">
 										<entry.Content />
-									</div>
+									</Markdown>
 								</div>
 							</article>
 						))}
@@ -160,6 +164,7 @@ const totalEntries = entriesWithContent.length;
 		border-radius: 12px;
 		background: var(--btn-plain-bg-hover);
 		flex-shrink: 0;
+		overflow: hidden;
 	}
 
 	.routine-title {
@@ -194,62 +199,6 @@ const totalEntries = entriesWithContent.length;
 		padding: 1rem 1.25rem 1.5rem;
 		border-top: 1px solid var(--line-divider);
 		margin-top: 0.75rem;
-	}
-
-	.routine-content {
-		color: var(--deep-text);
-		line-height: 1.8;
-		font-size: 0.9375rem;
-	}
-
-	.routine-content :global(h1),
-	.routine-content :global(h2),
-	.routine-content :global(h3) {
-		color: var(--deep-text);
-		font-weight: 600;
-		margin-top: 1.5em;
-		margin-bottom: 0.5em;
-	}
-	.routine-content :global(h1) {
-		font-size: 1.15rem;
-	}
-	.routine-content :global(h2) {
-		font-size: 1.05rem;
-	}
-	.routine-content :global(h3) {
-		font-size: 0.95rem;
-	}
-
-	.routine-content :global(p) {
-		margin-bottom: 0.75em;
-	}
-
-	.routine-content :global(ul),
-	.routine-content :global(ol) {
-		padding-left: 1.25em;
-		margin-bottom: 0.75em;
-	}
-
-	.routine-content :global(li) {
-		margin-bottom: 0.375em;
-	}
-
-	.routine-content :global(strong) {
-		color: var(--primary);
-		font-weight: 600;
-	}
-
-	.routine-content :global(blockquote) {
-		border-left: 3px solid var(--primary);
-		padding-left: 1em;
-		margin-left: 0;
-		color: var(--content-meta);
-	}
-
-	.routine-content :global(hr) {
-		border: none;
-		border-top: 1px solid var(--line-divider);
-		margin: 1.25em 0;
 	}
 
 	@media (max-width: 640px) {

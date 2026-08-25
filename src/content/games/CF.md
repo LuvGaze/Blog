@@ -1,7 +1,7 @@
 ---
 title: 穿越火线
 category: game
-image: "https://t.alcy.cc/fj"
+image: "https://image.luvgaze.com/d/Blog/CF.webp?sign=12SJEKErf6WOEWpnClTFVJhoEPX-pDUhrPksPYWRENA=:0"
 score: 9
 status: 3
 comment: 经典多人FPS枪战竞技，爆破突围，兄弟并肩征战火线

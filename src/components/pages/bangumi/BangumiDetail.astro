@@ -8,6 +8,7 @@ import { Icon } from "astro-icon/components";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import Markdown from "@/components/common/Markdown.astro";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 
 interface Props {
@@ -153,9 +154,7 @@ const imageSrc = typeof entry.data.image === "string" ? entry.data.image : entry
 			</div>
 
 			<div class="mt-8 pt-8 border-t border-(--line-divider)">
-				<article class="prose dark:prose-invert prose-sm max-w-none">
-					<Content />
-				</article>
+				<Markdown class=""><Content /></Markdown>
 			</div>
 
 			<div class="mt-6 flex items-center gap-4">

@@ -34,7 +34,7 @@ const posts = await getSortedPosts();
 const categories = await getCategoryList();
 const tags = await getTagList();
 
-// 统计全站正文总字数：src/content 下所有集合的 md 正文（文章/笔记本/规划/足迹/关于/友链等）
+// 统计全站正文总字数：src/content 下所有集合的 md 正文（文章/笔记本/规划/足迹/关于/友链/相册等）
 const contentCollections = [
 	"posts",
 	"spec",
@@ -45,6 +45,7 @@ const contentCollections = [
 	"website",
 	"changelog",
 	"friends",
+	"gallery",
 ] as const;
 const allContentEntries = (await Promise.all(contentCollections.map((c) => getCollection(c)))).flat();
 
@@ -72,18 +73,18 @@ function formatNumber(num: number): string {
 	return num.toLocaleString();
 }
 
-// 获取「最后活动」时间：取每篇文章 published 与 updated 中较新的那个，再从全站所有文章里取最大值。这样新发文章和修改老文章都会刷新该字段。
-const getActivityDate = (post: (typeof posts)[number]): Date => {
-	const { published, updated } = post.data;
-	if (updated && updated > published) return updated;
-	return published;
-};
-
-const lastActivityDate = posts.reduce<Date | null>((latest, post) => {
-	const current = getActivityDate(post);
-	if (!latest || current > latest) return current;
-	return latest;
-}, null);
+// 「最后活动」时间：遍历全站所有内容，取各条目日期字段（published/updated/date）的最大值。
+// 这样任何 content 集合新建或修改（更新日期字段）都会刷新该统计，而不只依赖文章。
+const activityDateKeys = ["published", "updated", "date"] as const;
+let lastActivityDate: Date | null = null;
+for (const entry of allContentEntries) {
+	for (const key of activityDateKeys) {
+		const v = entry.data[key];
+		if (v instanceof Date && (!lastActivityDate || v > lastActivityDate)) {
+			lastActivityDate = v;
+		}
+	}
+}
 
 const lastPostDate = lastActivityDate ? lastActivityDate.toISOString() : null;
 

@@ -1,7 +1,7 @@
 ---
 title: Minecraft
 category: game
-image: "https://t.alcy.cc/fj"
+image: "https://image.luvgaze.com/d/Blog/MC.webp?sign=SCx5zlgsJseEsASrBVWlzerf8uz6GsGjBg6FC-ngutw=:0"
 score: 10
 status: 3
 comment: 无限自由的方块宇宙，创造与生存永不落幕

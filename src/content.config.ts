@@ -98,9 +98,8 @@ const routinesCollection = defineCollection({
 		name: z.string(),
 		time: z.string().optional().default(""),
 		description: z.string().optional().default(""),
-		icon: z.string().optional().default("📌"),
-		color: z.string().optional().default(""),
-		updatedAt: z.coerce.date().optional(),
+		cover: z.string().optional().default(""),
+		updated: z.coerce.date().optional(),
 	}),
 });
 

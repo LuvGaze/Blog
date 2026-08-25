@@ -131,7 +131,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 					// 显示标签数
 					showTagCount: false,
 					// 显示全站总字数（统计 src/content 下全部 md 正文）
-					showTotalWords: false,
+					showTotalWords: true,
 					// 显示运行时长
 					showRunningDays: true,
 					// 显示最后活动

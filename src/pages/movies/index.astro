@@ -95,6 +95,21 @@ const mgItems: MgItem[] = customBangumi
 			},
 		};
 	})
+	.sort((a, b) => {
+		// 状态顺序：在看(3) > 看过(2) > 想看(1) > 搁置(4) > 抛弃(5)；同状态按评分降序
+		const STATUS_PRIORITY: Record<number, number> = { 3: 0, 2: 1, 1: 2, 4: 3, 5: 4 };
+		const sa = STATUS_PRIORITY[a.type] ?? 99;
+		const sb = STATUS_PRIORITY[b.type] ?? 99;
+		if (sa !== sb) return sa - sb;
+		const scoreA = a.rate || 0;
+		const scoreB = b.rate || 0;
+		if (scoreA !== scoreB) return scoreB - scoreA;
+		// 同评分：电影 > 电视剧 > 动漫 > 纪录片
+		const SUB_PRIORITY: Record<string, number> = { movie: 0, tv: 1, anime: 2, documentary: 3 };
+		const ca = SUB_PRIORITY[getItemSubcategory(a)] ?? 99;
+		const cb = SUB_PRIORITY[getItemSubcategory(b)] ?? 99;
+		return ca - cb;
+	})
 
 function getItemSubcategory(item: MgItem): string {
 	if (item._subcategory) return item._subcategory;
@@ -311,9 +326,8 @@ const activeTab = sections[0]?.tabKey || "all";
 		</div>
 	</div>
 	<Comment customPath="/movies/" />
-</MainGridLayout>
 
-<script is:inline>
+	<script is:inline>
 	(function() {
 		function updateIndicator(indicator, btn) {
 			if (!indicator || !btn) return;
@@ -361,7 +375,7 @@ const activeTab = sections[0]?.tabKey || "all";
 			
 			document.querySelectorAll('[data-item-section]').forEach(function(item) {
 				var sectionMatch = item.dataset.itemSection === activeTab;
-				var title = item.querySelector('.mg-item-title')?.textContent.toLowerCase() || '';
+				var title = item.querySelector('.mg-title')?.textContent.toLowerCase() || '';
 				var searchMatch = !searchQuery || title.includes(searchQuery);
 				var match = sectionMatch && searchMatch;
 				item.classList.toggle('hidden', !match);
@@ -398,6 +412,13 @@ const activeTab = sections[0]?.tabKey || "all";
 					}
 				}
 				applyMoviesFilters();
+				var newPagination = document.querySelector('[data-pagination-section="' + targetTab + '"]');
+				if (newPagination) {
+					var visibleItems = document.querySelectorAll('[data-item-section="' + targetTab + '"]:not(.hidden)');
+					newPagination.dispatchEvent(new CustomEvent('updatePagination', {
+						detail: { visibleCount: visibleItems.length }
+					}));
+				}
 				return;
 			}
 
@@ -427,7 +448,8 @@ const activeTab = sections[0]?.tabKey || "all";
 			}
 		});
 	})();
-</script>
+	</script>
+</MainGridLayout>
 
 <style>
 	.mg-page-wrapper {
