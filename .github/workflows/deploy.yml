@@ -1,4 +1,4 @@
-name: Astro博客部署‑服务器保留基准增量版
+name: 博客部署
 on:
   push:
     branches:
