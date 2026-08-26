@@ -1,4 +1,4 @@
-name: 博客部署
+name: 博客自动部署
 on:
   push:
     branches:
