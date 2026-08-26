@@ -72,7 +72,7 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 网站创建日期（用于计算网站运行时长）
-	siteStartDate: "2025-01-01",
+	siteStartDate: "2024-10-01",
 	// 时区设置（用于日期显示）
 	timezone: "Asia/Shanghai",
 
@@ -137,7 +137,7 @@ export const siteConfig: SiteConfig = {
 		// 是否启用分享海报功能
 		sharePoster: true,
 		// 是否自动生成OG图片（用于社交分享）
-		generateOgImages: false,
+		generateOgImages: true,
 	},
 
 	// 番组计划（Bangumi）配置
