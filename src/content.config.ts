@@ -78,6 +78,7 @@ const notebooksCollection = defineCollection({
 	}),
 	schema: z.object({
 		name: z.string().optional().default("未命名日记本"),
+		title: z.string().optional().default(""),
 		cover: z.string().optional().default(""),
 		summary: z.string().optional().default(""),
 		image: z

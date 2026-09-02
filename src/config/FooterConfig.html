@@ -1,5 +1,10 @@
 <!--这里是HTML注入示例，你可以在这个文件中添加自定义的HTML内容-->
 <!-- src/config/FooterConfig.html 示例 -->
-<div style="text-align: center; font-size: 12px;">
-  <a href="https://beian.miit.gov.cn/" target="_blank">豫ICP备2024089716号</a>
+<div style="text-align: center; font-size: 12px; line-height: 2.0;">
+  <a href="https://beian.miit.gov.cn/" target="_blank" style="font-size:12px;font-weight:normal;">豫ICP备2024089716号</a>
+  <br>
+  <span style="font-size:16px;font-weight:normal;">© 2024‑<span id="currentYear"></span> <a href="https://github.com/LuvGaze" target="_blank" style="text-decoration:none;color:inherit;">LuvGaze</a>. All Rights Reserved.</span>
 </div>
+<script>
+  document.getElementById('currentYear').textContent = new Date().getFullYear();
+</script>

@@ -224,7 +224,7 @@ const sortedEntriesWithImages = isNotebookIndex
 		</div>
 	</MainGridLayout>
 ) : (
-	<MainGridLayout title={item.data.title || item.data.name || "日记"}>
+	<MainGridLayout title={item.data.title || folderName}>
 		<div class="diary-detail-page">
 			<article class="diary-paper">
 				<a href={`/notebooks/${folderName}/`} class="diary-paper-back">
@@ -233,7 +233,7 @@ const sortedEntriesWithImages = isNotebookIndex
 				</a>
 
 				<h1 class="diary-paper-title">
-					{item.data.title || item.data.name && item.data.name !== "未命名日记本" ? item.data.name : item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题"}
+					{item.data.title || (item.data.name && item.data.name !== "未命名日记本" ? item.data.name : item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题")}
 				</h1>
 
 				<div class="diary-paper-content">
