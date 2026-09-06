@@ -32,8 +32,8 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 
 	// Meting API配置（用于加载远程音乐，server/type/id 即默认歌单）
 	meting: {
-		// Meting API地址（支持占位符替换）
-		api: "https://api.injahow.cn/meting/?server=:server&type=:type&id=:id&r=:r",
+		// Meting API地址（支持占位符替换；主 API 建议用当前稳定可用的，避免来回切换失败）
+		api: "https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id&r=:r",
 		// 默认服务器
 		server: "netease",
 		// 默认类型
@@ -44,8 +44,8 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 		auth: "",
 		// 备用API列表（当主API不可用时使用）
 		fallbackApis: [
-			"https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
 			"https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
+			"https://api.injahow.cn/meting/?server=:server&type=:type&id=:id&r=:r",
 		],
 	},
 

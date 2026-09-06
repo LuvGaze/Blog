@@ -67,11 +67,9 @@ const showXLabels = data.filter((_, i) => i % 3 === 0);
 </div>
 <style>
 @reference "../../styles/main.css";
-.trend-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.75rem 0.85rem 0.6rem; min-height:15.5rem; display:flex; flex-direction:column; }
-:root.dark .trend-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.trend-card{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.75rem; padding:0.75rem 0.85rem 0.6rem; min-height:15.5rem; display:flex; flex-direction:column; }
 .trend-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem; }
-.trend-title{ font-size:0.82rem; font-weight:700; }
-:root.dark .trend-title{ color: oklch(0.90 0 0); }
+.trend-title{ font-size:0.82rem; font-weight:700; color: var(--deep-text); }
 .trend-chart-wrap{ position:relative; flex:1; display:flex; flex-direction:column; }
 .trend-svg{ width:100%; height:auto; display:block; flex:1; min-height:0; }
 .trend-tooltip{ position:absolute; top:6px; background:#2d2d2d; color:#fff; font-size:0.62rem; border-radius:0.4rem; padding:0.4rem 0.55rem; line-height:1.3; pointer-events:none; }
@@ -81,6 +79,5 @@ const showXLabels = data.filter((_, i) => i % 3 === 0);
 .dot-income{ background:#f97316; }
 .dot-expense{ background:#14b8a6; }
 .trend-xlabels{ display:flex; justify-content:space-between; font-size:0.6rem; color:var(--guestbook-muted); padding:0 0.2rem; margin-top:0.15rem; }
-.x-hl{ background:#fff; border:1px solid oklch(0 0 0 / 0.08); border-radius:0.3rem; padding:0.05rem 0.3rem; color:var(--deep-text); font-weight:600; box-shadow:0 1px 4px oklch(0 0 0 / 0.06); }
-:root.dark .x-hl{ background: oklch(0.22 0 0); border-color: oklch(1 0 0 / 0.1); color: oklch(0.88 0 0); }
+.x-hl{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.3rem; padding:0.05rem 0.3rem; color:var(--deep-text); font-weight:600; box-shadow:0 1px 4px oklch(0 0 0 / 0.06); }
 </style>

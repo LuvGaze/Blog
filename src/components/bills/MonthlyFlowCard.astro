@@ -47,116 +47,97 @@ const icons: Record<string, string> = {
 <div class="flow-card" data-flow-card data-current-month={currentMonth}>
   <div class="flow-head">
     <h3 class="flow-title">本月流水</h3>
-    <select class="flow-month-select" aria-label="筛选月份">
-      {months.map((m) => (
-        <option value={m.key} selected={m.key === currentMonth}>{m.label}</option>
-      ))}
-    </select>
+    <div class="flow-head-right">
+      <div class="flow-types" aria-label="筛选类型">
+        <button type="button" class="ftype is-active" data-type="all">全部</button>
+        <button type="button" class="ftype" data-type="expense">支出</button>
+        <button type="button" class="ftype" data-type="income">收入</button>
+      </div>
+      <select class="flow-month-select" aria-label="筛选月份">
+        {months.map((m) => (
+          <option value={m.key} selected={m.key === currentMonth}>{m.label}</option>
+        ))}
+      </select>
+    </div>
   </div>
   {months.map((m) => (
     <div class="flow-month" data-month-block={m.key} hidden={m.key !== currentMonth}>
       {m.days.length === 0 ? (
         <p class="flow-empty">这个月还没有记账</p>
       ) : (
-        <div class="flow-days">
-          {m.days.map((day) => (
-            <div class="flow-day">
-              <div class="flow-day-head">
-                <span class="flow-day-date">{day.label}</span>
-                <span class="flow-day-sum">支 ¥{fmt(day.expense)} 收 ¥{fmt(day.income)}</span>
-              </div>
-              <ul class="flow-list">
-                {day.entries.map((e) => (
-                  <li class="flow-row">
-                    <span class="flow-row-icon" aria-hidden="true">{icons[e.cat] ?? "🧾"}</span>
-                    <div class="flow-row-main">
-                      <div class="flow-row-cat">{e.cat}{e.desc && e.desc !== e.cat ? ` · ${e.desc}` : ""}</div>
-                      <div class="flow-row-time">{e.time}</div>
-                    </div>
-                    <b class="flow-row-amt" data-type={e.type}>
-                      {e.type === "income" ? "+" : "-"}{fmt(Math.abs(e.amount))}
-                    </b>
-                  </li>
-                ))}
-              </ul>
+        m.days.map((day) => (
+          <div class="flow-day" data-day>
+            <div class="flow-day-head">
+              <span class="flow-day-date">{day.label}</span>
+              <span class="flow-day-sum">支 ¥{fmt(day.expense)} 收 ¥{fmt(day.income)}</span>
             </div>
-          ))}
-        </div>
-      )}
-      {m.days.length > 2 && (
-        <div class="flow-pager">
-          <button type="button" data-dir="-1" aria-label="上一页">‹</button>
-          <span class="flow-pager-info">1 / {Math.ceil(m.days.length / 2)}</span>
-          <button type="button" data-dir="1" aria-label="下一页">›</button>
-        </div>
+            <div class="flow-entries">
+              {day.entries.map((e) => (
+                <span class="flow-entry" data-type={e.type}>
+                  <span class="fe-ico" aria-hidden="true">{icons[e.cat] ?? "🧾"}</span>
+                  <span class="fe-cat">{e.cat}{e.desc && e.desc !== e.cat ? ` · ${e.desc}` : ""}</span>
+                  <b class="fe-amt">{e.type === "income" ? "+" : "-"}{fmt(Math.abs(e.amount))}</b>
+                </span>
+              ))}
+            </div>
+          </div>
+        ))
       )}
     </div>
   ))}
 </div>
 <script is:inline>
 (function(){
-  var DAYS_PER_PAGE = 2;
-  function initPager(monthEl){
-    if(monthEl.dataset.pagerInit === "1") return;
-    monthEl.dataset.pagerInit = "1";
-    monthEl.dataset.page = "1";
-    var days = Array.from(monthEl.querySelectorAll('.flow-day'));
-    var pages = Math.max(1, Math.ceil(days.length / DAYS_PER_PAGE));
-    var pager = monthEl.querySelector('.flow-pager');
-    if(pages <= 1 || !pager) return;
-    var info = pager.querySelector('.flow-pager-info');
-    var btns = Array.from(pager.querySelectorAll('button'));
-    function render(){
-      var page = Number(monthEl.dataset.page) || 1;
-      days.forEach(function(el, i){
-        var p = Math.floor(i / DAYS_PER_PAGE) + 1;
-        el.style.display = p === page ? '' : 'none';
-      });
-      if(info) info.textContent = page + ' / ' + pages;
-      btns.forEach(function(b){
-        var dir = Number(b.dataset.dir);
-        b.disabled = (dir === -1 && page <= 1) || (dir === 1 && page >= pages);
-        b.style.opacity = b.disabled ? '0.35' : '1';
-      });
-    }
-    btns.forEach(function(b){
-      b.addEventListener('click', function(){
-        var dir = Number(b.dataset.dir);
-        var page = Number(monthEl.dataset.page) || 1;
-        monthEl.dataset.page = String(Math.max(1, Math.min(pages, page + dir)));
-        render();
-      });
-    });
-    monthEl.__renderPager = render;
-    render();
-  }
   function init(root){
     if(!root || root.dataset.flowInit === "1") return;
+    root.dataset.flowInit = "1";
     var select = root.querySelector('.flow-month-select');
     var title = root.querySelector('.flow-title');
-    if(!select) return;
+    var ftypeBtns = Array.from(root.querySelectorAll('.ftype'));
     var currentMonth = root.dataset.currentMonth || "";
+    var activeType = 'all';
+
+    function visibleType(el){
+      return activeType === 'all' || el.dataset.type === activeType;
+    }
+
+    function applyDayVisibility(monthEl){
+      monthEl.querySelectorAll('[data-day]').forEach(function(day){
+        var entries = Array.from(day.querySelectorAll('.flow-entry'));
+        var none = entries.every(function(e){ return !visibleType(e); });
+        day.style.display = none ? 'none' : '';
+        if(!none){
+          entries.forEach(function(e){ e.style.display = visibleType(e) ? '' : 'none'; });
+        }
+      });
+    }
+
     function apply(){
       var month = select.value;
       root.querySelectorAll('[data-month-block]').forEach(function(el){
         el.hidden = el.dataset.monthBlock !== month;
+        if(el.dataset.monthBlock === month) applyDayVisibility(el);
       });
       if(title){
         var opt = select.selectedOptions[0];
         title.textContent = month === currentMonth ? '本月流水' : (opt ? opt.textContent : '') + '流水';
       }
     }
+
     select.addEventListener('change', function(){
       apply();
-      root.querySelectorAll('[data-month-block]:not([hidden])').forEach(function(el){
-        el.dataset.page = "1";
-        if(typeof el.__renderPager === 'function') el.__renderPager();
-      });
       document.dispatchEvent(new CustomEvent('bills:month-change', { detail: { month: select.value } }));
     });
-    root.dataset.flowInit = "1";
+
+    ftypeBtns.forEach(function(btn){
+      btn.addEventListener('click', function(){
+        activeType = btn.dataset.type;
+        ftypeBtns.forEach(function(b){ b.classList.toggle('is-active', b === btn); });
+        root.querySelectorAll('[data-month-block]:not([hidden])').forEach(applyDayVisibility);
+      });
+    });
+
     apply();
-    root.querySelectorAll('[data-month-block]').forEach(initPager);
   }
   function scan(){ document.querySelectorAll('[data-flow-card]').forEach(init); }
   scan();
@@ -165,34 +146,26 @@ const icons: Record<string, string> = {
 </script>
 <style>
 @reference "../../styles/main.css";
-.flow-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.8rem 0.95rem; }
-:root.dark .flow-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
-.flow-head{ display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.55rem; }
-.flow-title{ font-size:0.82rem; font-weight:700; margin:0; }
-:root.dark .flow-title{ color: oklch(0.90 0 0); }
-.flow-month-select{ font-size:0.68rem; color:var(--deep-text); background:#fff; border:1px solid oklch(0 0 0 / 0.12); border-radius:0.4rem; padding:0.22rem 0.45rem; cursor:pointer; }
-:root.dark .flow-month-select{ background: oklch(0.22 0 0 / 0.9); border-color: oklch(1 0 0 / 0.14); color: oklch(0.9 0 0); }
-.flow-day + .flow-day{ margin-top:0.75rem; }
-.flow-day-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; padding:0.3rem 0.15rem 0.4rem; }
-.flow-day-date{ font-size:0.76rem; font-weight:700; }
-:root.dark .flow-day-date{ color: oklch(0.90 0 0); }
-.flow-day-sum{ font-size:0.64rem; color:var(--guestbook-muted); white-space:nowrap; }
-.flow-list{ list-style:none; margin:0; padding:0; }
-.flow-row{ display:flex; align-items:center; gap:0.55rem; padding:0.42rem 0.1rem; border-top:1px solid oklch(0 0 0 / 0.05); }
-:root.dark .flow-row{ border-color: oklch(1 0 0 / 0.06); }
-.flow-row-icon{ width:1.6rem; height:1.6rem; flex-shrink:0; display:flex; align-items:center; justify-content:center; background:#fef9ec; border:1px solid #fef3c7; border-radius:0.4rem; font-size:0.85rem; }
-:root.dark .flow-row-icon{ background: oklch(0.22 0.6 80 / 0.15); border-color: transparent; }
-.flow-row-main{ min-width:0; flex:1; }
-.flow-row-cat{ font-size:0.76rem; font-weight:600; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
-:root.dark .flow-row-cat{ color: oklch(0.90 0 0); }
-.flow-row-time{ font-size:0.62rem; color:var(--guestbook-muted); font-variant-numeric:tabular-nums; }
-.flow-row-amt{ font-weight:700; white-space:nowrap; font-size:0.8rem; }
-.flow-row-amt[data-type="expense"]{ color:#0e7490; }
-.flow-row-amt[data-type="income"]{ color:#ef4444; }
-.flow-empty{ margin:0.4rem 0; padding:0.6rem 0; text-align:center; font-size:0.74rem; color:var(--guestbook-muted); }
-.flow-pager{ display:flex; align-items:center; justify-content:center; gap:0.6rem; padding-top:0.55rem; margin-top:0.3rem; border-top:1px solid oklch(0 0 0 / 0.06); }
-:root.dark .flow-pager{ border-color: oklch(1 0 0 / 0.06); }
-.flow-pager button{ width:1.6rem; height:1.6rem; border-radius:9999px; border:1px solid oklch(0 0 0 / 0.08); background:#fff; cursor:pointer; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; }
-:root.dark .flow-pager button{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.12); color:#fff; }
-.flow-pager-info{ font-size:0.68rem; color:var(--guestbook-muted); min-width:2.5rem; text-align:center; }
+.flow-card{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.75rem; padding:0.8rem 0.95rem; }
+.flow-head{ display:flex; align-items:center; justify-content:space-between; gap:0.6rem; margin-bottom:0.5rem; flex-wrap:wrap; }
+.flow-title{ font-size:0.82rem; font-weight:700; margin:0; color: var(--deep-text); }
+.flow-head-right{ display:flex; align-items:center; gap:0.5rem; flex-wrap:wrap; }
+.flow-types{ display:flex; gap:0.2rem; background:var(--line-divider); border-radius:9999px; padding:0.16rem; }
+.ftype{ border:none; background:transparent; color:var(--content-meta); font-size:0.66rem; padding:0.2rem 0.6rem; border-radius:9999px; cursor:pointer; line-height:1.3; }
+.ftype:hover{ color:var(--deep-text); }
+.ftype.is-active{ background:var(--card-bg); color:var(--deep-text); font-weight:600; box-shadow:0 1px 4px oklch(0 0 0 / 0.1); }
+.flow-month-select{ font-size:0.68rem; color:var(--deep-text); background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.4rem; padding:0.2rem 0.4rem; cursor:pointer; }
+.flow-day{ padding:0.4rem 0; border-bottom:1px solid var(--line-divider); }
+.flow-day:last-child{ border-bottom:none; }
+.flow-day-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.28rem; }
+.flow-day-date{ font-size:0.72rem; font-weight:700; color: var(--deep-text); }
+.flow-day-sum{ font-size:0.62rem; color: var(--content-meta); white-space:nowrap; font-variant-numeric:tabular-nums; }
+.flow-entries{ display:flex; flex-wrap:wrap; gap:0.32rem; }
+.flow-entry{ display:inline-flex; align-items:center; gap:0.28rem; font-size:0.66rem; padding:0.16rem 0.55rem; border-radius:0.4rem; border:1px solid var(--line-divider); background:color-mix(in oklab, var(--card-bg) 80%, var(--primary) 5%); color: var(--deep-text); line-height:1.25; cursor:default; }
+.flow-entry[data-type="expense"] .fe-amt{ color:#0e7490; }
+.flow-entry[data-type="income"] .fe-amt{ color:#ef4444; }
+.fe-ico{ font-size:0.72rem; }
+.fe-cat{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:14rem; }
+.fe-amt{ font-variant-numeric:tabular-nums; white-space:nowrap; }
+.flow-empty{ margin:0.4rem 0; padding:0.6rem 0; text-align:center; font-size:0.74rem; color: var(--content-meta); }
 </style>

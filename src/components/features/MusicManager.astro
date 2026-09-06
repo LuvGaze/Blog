@@ -65,8 +65,9 @@ const managerConfigStr = JSON.stringify({
 	playMode: config.playMode ?? "list",
 	autoplay: config.autoplay ?? false,
 	showLyrics: config.showLyrics ?? true,
-		lyricsFixedBottom: !!config.lyricsFixedBottom,
-		i18n: {
+	lyricsFixedBottom: !!config.lyricsFixedBottom,
+	lyrics: config.lyrics ?? {},
+	i18n: {
 			noPlaying: i18n(I18nKey.musicNoPlaying),
 		lyrics: i18n(I18nKey.musicLyrics),
 		volume: i18n(I18nKey.musicVolume),
@@ -295,25 +296,36 @@ const managerConfigStr = JSON.stringify({
     // ── Meting track resolution（bangumi 条目 metingId → 音频/封面/歌词）──
     async function resolveMetingTracks(playlist) {
         var base = (metingApiBase || 'https://mu.tsh520.cn/api') + '?server=';
+        // 依次尝试主 API 与所有备用 API，主 API 被限流/失效时仍能解析音频
+        var apiBases = [base.split('?')[0]];
+        var fb = (config.meting && config.meting.fallbackApis) || [];
+        for (var f = 0; f < fb.length; f++) {
+            if (!fb[f]) continue;
+            var b = fb[f].split('?')[0];
+            if (apiBases.indexOf(b) === -1) apiBases.push(b);
+        }
         for (var i = 0; i < playlist.length; i++) {
             var track = playlist[i];
             if (track.metingServer && track.metingId && !track.url) {
-                try {
-                    var s = encodeURIComponent(track.metingServer);
-                    var id = encodeURIComponent(track.metingId);
-                    var res = await fetch(base + s + '&type=song&id=' + id);
-                    if (!res.ok) throw new Error('HTTP ' + res.status);
-                    var raw = await res.json();
-                    var data = Array.isArray(raw) ? raw[0] : raw;
-                    if (data) {
-                        if (data.url) track.url = data.url;
-                        if (data.pic && !track.pic) track.pic = data.pic;
-                        if (data.lrc && !track.lrc) track.lrc = data.lrc;
-                        track.artist = track.artist || data.author || data.artist || '';
-                        track.name = (track.name && track.name !== track.metingId) ? track.name : (data.title || track.name);
+                var s = encodeURIComponent(track.metingServer);
+                var id = encodeURIComponent(track.metingId);
+                for (var a = 0; a < apiBases.length; a++) {
+                    try {
+                        var res = await fetch(apiBases[a] + '?server=' + s + '&type=song&id=' + id);
+                        if (!res.ok) throw new Error('HTTP ' + res.status);
+                        var raw = await res.json();
+                        var data = Array.isArray(raw) ? raw[0] : raw;
+                        if (data && typeof data === 'object') {
+                            if (data.url) track.url = data.url;
+                            if (data.pic && !track.pic) track.pic = data.pic;
+                            if (data.lrc && !track.lrc) track.lrc = data.lrc;
+                            track.artist = track.artist || data.author || data.artist || '';
+                            track.name = (track.name && track.name !== track.metingId) ? track.name : (data.title || track.name);
+                            break;
+                        }
+                    } catch (e) {
+                        console.warn('[MusicManager] Meting resolve failed:', track.name, apiBases[a], e);
                     }
-                } catch(e) {
-                    console.warn('[MusicManager] Meting resolve failed:', track.name, e);
                 }
             }
         }

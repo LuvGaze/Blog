@@ -91,29 +91,22 @@ const icons: Record<string, string> = {
 </script>
 <style>
 @reference "../../styles/main.css";
-.rank-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.7rem 0.85rem 0.55rem; height:25rem; display:flex; flex-direction:column; }
-:root.dark .rank-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.rank-card{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.75rem; padding:0.7rem 0.85rem 0.55rem; height:25rem; display:flex; flex-direction:column; }
 .rank-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.5rem; }
-.rank-title{ font-size:0.82rem; font-weight:700; white-space:nowrap; }
-:root.dark .rank-title{ color: oklch(0.90 0 0); }
-.rank-sub{ font-size:0.62rem; color:var(--guestbook-muted); white-space:nowrap; }
+.rank-title{ font-size:0.82rem; font-weight:700; white-space:nowrap; color: var(--deep-text); }
+.rank-sub{ font-size:0.62rem; color:var(--content-meta); white-space:nowrap; }
 .rank-list{ display:flex; flex-direction:column; flex:1; min-height:17.2rem; }
-.bill-pager{ display:flex; align-items:center; justify-content:center; gap:0.6rem; padding-top:0.55rem; margin-top:auto; border-top:1px solid oklch(0 0 0 / 0.06); }
-:root.dark .bill-pager{ border-color: oklch(1 0 0 / 0.06); }
-.pager-btn{ width:1.6rem; height:1.6rem; border-radius:9999px; border:1px solid oklch(0 0 0 / 0.08); background:#fff; cursor:pointer; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; }
-:root.dark .pager-btn{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.12); color:#fff; }
-.pager-info{ font-size:0.68rem; color:var(--guestbook-muted); min-width:2.5rem; text-align:center; }
-.bill-rank-num{ font-size:0.72rem; color:var(--guestbook-muted); text-align:center; }
-.rank-row{ display:grid; grid-template-columns:1rem 1.5rem 1fr auto; gap:0.5rem; align-items:center; padding:0.58rem 0; border-bottom:1px solid oklch(0 0 0 / 0.06); }
-:root.dark .rank-row{ border-color: oklch(1 0 0 / 0.06); }
+.bill-pager{ display:flex; align-items:center; justify-content:center; gap:0.6rem; padding-top:0.55rem; margin-top:auto; border-top:1px solid var(--line-divider); }
+.pager-btn{ width:1.6rem; height:1.6rem; border-radius:9999px; border:1px solid var(--line-divider); background:var(--card-bg); color: var(--deep-text); cursor:pointer; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; }
+.pager-info{ font-size:0.68rem; color:var(--content-meta); min-width:2.5rem; text-align:center; }
+.bill-rank-num{ font-size:0.72rem; color:var(--content-meta); text-align:center; }
+.rank-row{ display:grid; grid-template-columns:1rem 1.5rem 1fr auto; gap:0.5rem; align-items:center; padding:0.58rem 0; border-bottom:1px solid var(--line-divider); }
 .rank-row:last-child{ border-bottom:none; }
-.rank-icon{ width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center; background:#fef9ec; border:1px solid #fef3c7; border-radius:0.4rem; font-size:0.85rem; }
-:root.dark .rank-icon{ background: oklch(0.22 0.6 80 / 0.15); border-color: transparent; }
+.rank-icon{ width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center; background:var(--line-divider); border:1px solid var(--line-divider); border-radius:0.4rem; font-size:0.85rem; }
 .rank-main{ min-width:0; }
-.rank-cat{ font-size:0.78rem; font-weight:600; }
-:root.dark .rank-cat{ color: oklch(0.92 0 0); }
-.rank-cat-sub{ font-size:0.62rem; color:var(--guestbook-muted); }
-.rank-amounts{ display:flex; flex-direction:column; align-items:flex-end; font-size:0.62rem; color:var(--guestbook-muted); gap:0.1rem; }
+.rank-cat{ font-size:0.78rem; font-weight:600; color: var(--deep-text); }
+.rank-cat-sub{ font-size:0.62rem; color:var(--content-meta); }
+.rank-amounts{ display:flex; flex-direction:column; align-items:flex-end; font-size:0.62rem; color:var(--content-meta); gap:0.1rem; }
 .rank-amt{ color:#0e7490; font-weight:700; }
-.rank-empty{ font-size:0.78rem; color:var(--guestbook-muted); text-align:center; padding:0.6rem 0; }
+.rank-empty{ font-size:0.78rem; color:var(--content-meta); text-align:center; padding:0.6rem 0; }
 </style>

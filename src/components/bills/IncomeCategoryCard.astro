@@ -94,29 +94,22 @@ const subMap: Record<string, string> = {
 </script>
 <style>
 @reference "../../styles/main.css";
-.income-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.7rem 0.85rem 0.55rem; height:25rem; display:flex; flex-direction:column; }
-:root.dark .income-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.income-card{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.75rem; padding:0.7rem 0.85rem 0.55rem; height:25rem; display:flex; flex-direction:column; }
 .income-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.4rem; }
-.income-title{ font-size:0.82rem; font-weight:700; }
-:root.dark .income-title{ color: oklch(0.90 0 0); }
-.income-sub{ font-size:0.62rem; color:var(--guestbook-muted); white-space:nowrap; }
+.income-title{ font-size:0.82rem; font-weight:700; color: var(--deep-text); }
+.income-sub{ font-size:0.62rem; color:var(--content-meta); white-space:nowrap; }
 .income-total{ color:#ef4444; font-weight:700; }
 .income-list{ display:flex; flex-direction:column; flex:1; min-height:17.2rem; }
-.bill-pager{ display:flex; align-items:center; justify-content:center; gap:0.6rem; padding-top:0.55rem; margin-top:auto; border-top:1px solid oklch(0 0 0 / 0.06); }
-:root.dark .bill-pager{ border-color: oklch(1 0 0 / 0.06); }
-.pager-btn{ width:1.6rem; height:1.6rem; border-radius:9999px; border:1px solid oklch(0 0 0 / 0.08); background:#fff; cursor:pointer; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; }
-:root.dark .pager-btn{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.12); color:#fff; }
-.pager-info{ font-size:0.68rem; color:var(--guestbook-muted); min-width:2.5rem; text-align:center; }
-.income-row{ display:grid; grid-template-columns:1rem 1.5rem 1fr auto; gap:0.5rem; align-items:center; padding:0.58rem 0; border-bottom:1px solid oklch(0 0 0 / 0.06); }
-.bill-rank-num{ font-size:0.72rem; color:var(--guestbook-muted); text-align:center; }
-:root.dark .income-row{ border-color: oklch(1 0 0 / 0.06); }
+.bill-pager{ display:flex; align-items:center; justify-content:center; gap:0.6rem; padding-top:0.55rem; margin-top:auto; border-top:1px solid var(--line-divider); }
+.pager-btn{ width:1.6rem; height:1.6rem; border-radius:9999px; border:1px solid var(--line-divider); background:var(--card-bg); color: var(--deep-text); cursor:pointer; font-size:1rem; line-height:1; display:flex; align-items:center; justify-content:center; }
+.pager-info{ font-size:0.68rem; color:var(--content-meta); min-width:2.5rem; text-align:center; }
+.income-row{ display:grid; grid-template-columns:1rem 1.5rem 1fr auto; gap:0.5rem; align-items:center; padding:0.58rem 0; border-bottom:1px solid var(--line-divider); }
+.bill-rank-num{ font-size:0.72rem; color:var(--content-meta); text-align:center; }
 .income-row:last-child{ border-bottom:none; }
-.income-icon{ width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center; background:#fef2f2; border:1px solid #fee2e2; border-radius:0.4rem; font-size:0.85rem; }
-:root.dark .income-icon{ background: oklch(0.25 0.12 25 / 0.2); border-color: transparent; }
+.income-icon{ width:1.5rem; height:1.5rem; display:flex; align-items:center; justify-content:center; background:var(--line-divider); border:1px solid var(--line-divider); border-radius:0.4rem; font-size:0.85rem; }
 .income-main{ min-width:0; }
-.income-cat{ font-size:0.78rem; font-weight:600; }
-:root.dark .income-cat{ color: oklch(0.92 0 0); }
-.income-cat-sub{ font-size:0.62rem; color:var(--guestbook-muted); }
-.income-amounts{ display:flex; flex-direction:column; align-items:flex-end; font-size:0.62rem; color:var(--guestbook-muted); gap:0.1rem; }
+.income-cat{ font-size:0.78rem; font-weight:600; color: var(--deep-text); }
+.income-cat-sub{ font-size:0.62rem; color:var(--content-meta); }
+.income-amounts{ display:flex; flex-direction:column; align-items:flex-end; font-size:0.62rem; color:var(--content-meta); gap:0.1rem; }
 .income-amt{ color:#ef4444; font-weight:700; }
 </style>

@@ -8,8 +8,6 @@ const { income, expense, balance } = Astro.props;
 const fmt = (n: number) => n.toFixed(2);
 ---
 <div class="balance-card">
-  <div class="balance-card__bg" aria-hidden="true"></div>
-  <div class="balance-card__overlay"></div>
   <div class="balance-card__content">
     <div class="balance-card__label">年度结余</div>
     <div class="balance-card__value">
@@ -25,16 +23,18 @@ const fmt = (n: number) => n.toFixed(2);
 </div>
 <style>
 @reference "../../styles/main.css";
-.balance-card{ position:relative; height:10.2rem; border-radius:0.75rem; overflow:hidden; background:#87c7e8; }
-.balance-card__bg{ position:absolute; inset:0; background-image:url("https://img.tsh520.cn/file/blog/随机封面图/1787466729659_【哲风壁纸】奶牛-树木-牛.webp"); background-size:cover; background-position:center 35%; }
-.balance-card__overlay{ position:absolute; inset:0; background: linear-gradient(90deg, oklch(0 0 0 / 0.28) 0%, oklch(0 0 0 / 0.06) 45%, transparent 65%); }
-.balance-card__content{ position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:center; gap:0.35rem; padding:1.1rem 1.2rem; color:#fff; }
-.balance-card__label{ font-size:0.72rem; opacity:0.92; letter-spacing:0.04em; }
+.balance-card{ position:relative; height:10.2rem; border-radius:0.75rem; overflow:hidden; border:1px solid var(--line-divider); background-image:
+  linear-gradient(135deg, color-mix(in oklab, var(--card-bg) 86%, transparent) 0%, color-mix(in oklab, var(--card-bg) 40%, transparent) 100%),
+  url("https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=a%20bright%20airy%20abstract%20background%20with%20soft%20teal%20and%20cyan%20gradient%20waves%20and%20gentle%20light%2C%20high%20key%2C%20clean%20minimal%2C%20no%20text&image_size=landscape_16_9");
+  background-size: cover, cover;
+  background-position: center; }
+.balance-card__content{ position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:center; gap:0.35rem; padding:1.1rem 1.2rem; color: var(--deep-text); }
+.balance-card__label{ font-size:0.72rem; opacity:0.78; letter-spacing:0.04em; }
 .balance-card__value{ display:flex; align-items:center; gap:0.45rem; line-height:1; }
-.balance-card__num{ font-size:1.9rem; font-weight:800; letter-spacing:-0.02em; text-shadow:0 1px 8px oklch(0 0 0 / 0.18); }
-.balance-card__eye{ font-size:0.95rem; opacity:0.9; }
-.balance-card__sub{ display:flex; align-items:center; gap:0.5rem; font-size:0.7rem; opacity:0.92; margin-top:0.15rem; }
-.balance-card__divider{ opacity:0.6; }
+.balance-card__num{ font-size:1.9rem; font-weight:800; letter-spacing:-0.02em; line-height:1.1; }
+.balance-card__eye{ font-size:0.95rem; opacity:0.55; }
+.balance-card__sub{ display:flex; align-items:center; gap:0.5rem; font-size:0.7rem; color: var(--content-meta); margin-top:0.15rem; }
+.balance-card__divider{ opacity:0.5; }
 @media(max-width:768px){
   .balance-card{ height:9rem; }
   .balance-card__num{ font-size:1.6rem; }

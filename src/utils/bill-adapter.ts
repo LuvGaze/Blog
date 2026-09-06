@@ -201,16 +201,5 @@ export function categoryIncomeList(
 		.map(([category, v]) => ({ category, ...v }))
 		.sort((a, b) => b.amount - a.amount)
 		.slice(0, limit);
-	// 若不足 3，用固定占位补齐（保持卡片不少于 3 行，避免过空）
-	if (sorted.length < 3) {
-		const fixed = ["职业收入", "人情收礼", "其他收入"];
-		for (const cat of fixed) {
-			if (sorted.length >= 3) break;
-			if (!sorted.find((r) => r.category === cat)) {
-				const v = map.get(cat) || { amount: 0, count: 0 };
-				sorted.push({ category: cat, ...v });
-			}
-		}
-	}
-	return sorted.slice(0, limit);
+	return sorted;
 }

@@ -15,6 +15,9 @@
             // 存放所有独立解析出的多边形（大陆及岛屿）
             this.regionPolygons = [];
             this.isEnabled = true;
+            // url -> 解析后的 Feature[]（缓存，缩放切换时不再重新请求）
+            this._featuresByUrl = {};
+            this._currentUrls = [];
         }
 
         getSafeStyle(styleObj) {
@@ -24,35 +27,68 @@
             return safeStyle;
         }
 
+        _collectUrls() {
+            const set = [];
+            (this.config.geojsonUrls || []).forEach(u => { if (set.indexOf(u) === -1) set.push(u); });
+            (this.config.coarseUrls || []).forEach(u => { if (set.indexOf(u) === -1) set.push(u); });
+            (this.config.detailUrls || []).forEach(u => { if (set.indexOf(u) === -1) set.push(u); });
+            return set;
+        }
+
         async init() {
             try {
-                const fetchPromises = this.config.geojsonUrls.map(url => 
+                const fetchPromises = this._collectUrls().map(url =>
                     fetch(url).then(res => res.json()).catch(e => { console.warn(`加载区域数据失败: ${url}`, e); return null; })
                 );
                 const results = await Promise.all(fetchPromises);
-                this.drawRegions(results.filter(g => g !== null));
+                const urls = this._collectUrls();
+                urls.forEach((url, i) => {
+                    const g = results[i];
+                    if (g) {
+                        this._featuresByUrl[url] = g.features || (g.type === 'Feature' ? [g] : []);
+                    }
+                });
+                this.rebuild();
+                // 缩放级别变化时，在省界/市界之间动态切换，避免线条过多
+                this.map.on('zoomend', () => this.rebuild());
             } catch (e) {
                 console.error('插件数据解析异常:', e);
             }
         }
 
-        drawRegions(geojsonDataArray) {
+        // 根据当前缩放级别决定显示省界还是市界
+        _resolveDetail() {
+            const threshold = (this.config.zoomDetailThreshold === undefined) ? 6 : this.config.zoomDetailThreshold;
+            return this.map.getZoom() >= threshold;
+        }
+
+        rebuild() {
+            const useDetail = this._resolveDetail();
+            // 仅当概览/明细层级真正切换时才重建，避免每次缩放都重建大量多边形
+            if (this._detail === useDetail) return;
+            this._detail = useDetail;
+            const urls = [...(useDetail ? (this.config.detailUrls || []) : (this.config.coarseUrls || []))];
+            this._currentUrls = urls;
+            this.drawRegions(urls);
+        }
+
+        drawRegions(urls) {
             const safeDefaultStyle = this.getSafeStyle(this.config.style.default);
-            
+            const labelSet = this._labelSet || (this._labelSet = ['中国', 'china', "people's republic of china", '中华人民共和国']);
+
             if (this.regionPolygons.length > 0) {
                 this.map.remove(this.regionPolygons);
             }
             this.regionPolygons = [];
 
-            geojsonDataArray.forEach(geojsonData => {
-                const features = geojsonData.features || (geojsonData.type === 'Feature' ? [geojsonData] : []);
-                
+            urls.forEach(url => {
+                const features = this._featuresByUrl[url] || [];
                 features.forEach(feature => {
                     const props = feature.properties || {};
                     const pName = String(props.name || props.ADMIN || props.name_zh || '').toLowerCase();
                     
                     // 排除世界地图的中国板块
-                    if (['中国', 'china', "people's republic of china", '中华人民共和国'].includes(pName)) {
+                    if (labelSet.indexOf(pName) !== -1) {
                         return; 
                     }
 

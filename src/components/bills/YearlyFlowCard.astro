@@ -68,11 +68,9 @@ const totalBalance = totalIncome - totalExpense;
 </div>
 <style>
 @reference "../../styles/main.css";
-.yearly-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.75rem 0.85rem 0.6rem; display:flex; flex-direction:column; min-height:15.5rem; }
-:root.dark .yearly-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.yearly-card{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.75rem; padding:0.75rem 0.85rem 0.6rem; display:flex; flex-direction:column; min-height:15.5rem; }
 .yearly-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.35rem; flex-wrap:wrap; }
-.yearly-title{ font-size:0.82rem; font-weight:700; }
-:root.dark .yearly-title{ color: oklch(0.90 0 0); }
+.yearly-title{ font-size:0.82rem; font-weight:700; color: var(--deep-text); }
 .yearly-sub{ font-size:0.62rem; color:var(--guestbook-muted); white-space:nowrap; }
 .yearly-chart-wrap{ position:relative; flex:1; display:flex; flex-direction:column; }
 .yearly-svg{ width:100%; height:auto; display:block; flex:1; }
@@ -83,11 +81,9 @@ const totalBalance = totalIncome - totalExpense;
 .dot-income{ background:#f97316; }
 .dot-expense{ background:#14b8a6; }
 .yearly-xlabels{ display:flex; justify-content:space-between; font-size:0.58rem; color:var(--guestbook-muted); padding:0 0.2rem; margin-top:0.15rem; }
-.x-hl{ background:#fff; border:1px solid oklch(0 0 0 / 0.08); border-radius:0.3rem; padding:0.05rem 0.3rem; color:var(--deep-text); font-weight:600; box-shadow:0 1px 4px oklch(0 0 0 / 0.06); position:absolute; right:0.2rem; top:auto; }
-:root.dark .x-hl{ background: oklch(0.22 0 0); border-color: oklch(1 0 0 / 0.1); color: oklch(0.88 0 0); }
+.x-hl{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.3rem; padding:0.05rem 0.3rem; color:var(--deep-text); font-weight:600; box-shadow:0 1px 4px oklch(0 0 0 / 0.06); position:absolute; right:0.2rem; top:auto; }
 .yearly-xlabels{ position:relative; }
-.yearly-foot{ display:flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.62rem; color:var(--guestbook-muted); margin-top:0.4rem; padding-top:0.4rem; border-top:1px solid oklch(0 0 0 / 0.06); }
-:root.dark .yearly-foot{ border-color: oklch(1 0 0 / 0.06); }
+.yearly-foot{ display:flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.62rem; color:var(--content-meta); margin-top:0.4rem; padding-top:0.4rem; border-top:1px solid var(--line-divider); }
 .foot-val.positive{ color:#ef4444; }
 .foot-val.negative{ color:#0e7490; }
 .foot-dot{ opacity:0.4; }

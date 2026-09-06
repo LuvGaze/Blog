@@ -33,20 +33,33 @@
         // [新增] 高亮插件系统核心配置
         HIGHLIGHT: {
             // 模式选择：'none' (不开启), 'hover' (悬浮联动高亮), 'visited' (永久点亮去过的地方)
-            mode: 'none', 
+            mode: 'visited', 
             
-            // 数据源：支持同时加载中国省份和世界国家边界
+            // 数据源：全部需要加载并缓存（用于按缩放级别切换显示）
             geojsonUrls: [
+                '/footprint/static/data/provinces.geojson',
+                '/footprint/static/data/cities.geojson',
+                '/footprint/static/data/world.geojson'
+            ],
+            // 概览（低缩放）显示的边界：国界 + 省界（避免线过多）
+            coarseUrls: [
                 '/footprint/static/data/provinces.geojson',
                 '/footprint/static/data/world.geojson'
             ],
+            // 明细（高缩放）显示的边界：国界 + 市界（动态切换）
+            detailUrls: [
+                '/footprint/static/data/cities.geojson',
+                '/footprint/static/data/world.geojson'
+            ],
+            // 缩放级别超过该值后由省界切换为市界
+            zoomDetailThreshold: 6,
             // 排除高亮的标签（包含以下纯标签的足迹点不会点亮所在区域）
             excludeTags: ['计划'], 
             
             // 样式配置
             style: {
                 default: {
-                    strokeColor: '#ffffff', strokeOpacity: 0, strokeWeight: 0,
+                    strokeColor: 'rgba(120,136,152,0.55)', strokeOpacity: 0.55, strokeWeight: 0.8,
                     fillColor: '#ffffff', fillOpacity: 0, zIndex: 1
                 },
                 active: {
@@ -217,9 +230,9 @@
                 const s = document.createElement('script');
                 s.src = `https://webapi.amap.com/maps?v=2.0&key=${this.apiKey}`;
                 s.onload = () => {
-                    // 若页面已在加载脚本前注册了安全密钥，则沿用，避免被清空；否则用容器上的 data-amap-security
+                    // 仅当配置了安全码时才设置，避免空码导致底图不加载（INVALID_USER_SCODE）
                     const code = (this.container && this.container.dataset.amapSecurity) || '';
-                    if (!window._AMapSecurityConfig || !window._AMapSecurityConfig.securityJsCode) {
+                    if (code && (!window._AMapSecurityConfig || !window._AMapSecurityConfig.securityJsCode)) {
                         window._AMapSecurityConfig = { securityJsCode: code };
                     }
                     resolve();
@@ -403,24 +416,7 @@
         addBtn(icons.full, (e, btn) => { const full = container.classList.toggle('is-fullscreen'); btn.innerHTML = full ? icons.exit : icons.full; setTimeout(() => controls.resize(), 100); if(full && container.requestFullscreen) container.requestFullscreen().catch(()=>{}); else if(!full && document.exitFullscreen) document.exitFullscreen().catch(()=>{}); });
         document.addEventListener('fullscreenchange', () => { container.classList.toggle('is-fullscreen', document.fullscreenElement === container); setTimeout(() => controls.resize(), 100); });
         addBtn(icons.reset, () => controls.fitView()); addBtn(icons.plus, () => controls.zoomIn()); addBtn(icons.minus, () => controls.zoomOut()); container.appendChild(ctrlWrap);
-
-        const togWrap = document.createElement('div'); togWrap.className = 'footprint-map__cluster-toggle';
-        let enabled = true;
-        const btn = document.createElement('button'); btn.className = 'toggle-switch'; btn.innerHTML = '<span class="toggle-knob"></span>';
-        btn.onclick = () => { enabled = !enabled; btn.classList.toggle('is-off', !enabled); controls.setClusterEnabled(enabled); };
-        const label = document.createElement('span'); label.className = 'toggle-label'; label.textContent = '集群显示';
-        togWrap.append(label, btn); container.appendChild(togWrap);
-
-        // 如果配置开启了插件高亮，则渲染高亮控制开关
-        if (CONFIG.HIGHLIGHT.mode !== 'none') {
-            const hWrap = document.createElement('div'); hWrap.className = 'footprint-map__province-toggle';
-            const hLabel = document.createElement('span'); hLabel.className = 'toggle-label';
-            hLabel.textContent = CONFIG.HIGHLIGHT.mode === 'hover' ? '区域高亮' : '区域高亮';
-            const hBtn = document.createElement('button'); hBtn.className = 'toggle-switch'; hBtn.innerHTML = '<span class="toggle-knob"></span>';
-            let hEnabled = true;
-            hBtn.onclick = () => { hEnabled = !hEnabled; hBtn.classList.toggle('is-off', !hEnabled); controls.toggleHighlightPlugin(hEnabled); };
-            hWrap.append(hLabel, hBtn); container.appendChild(hWrap);
-        }
+        // 集群显示与区域高亮均常开，无需开关按钮
     }
 
     document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.footprint-map').forEach(initMap));

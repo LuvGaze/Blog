@@ -77,12 +77,10 @@ const WEEK_HEADS = ["日", "一", "二", "三", "四", "五", "六"];
 </script>
 <style>
 @reference "../../styles/main.css";
-.cal-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.8rem 0.95rem; }
-:root.dark .cal-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.cal-card{ background:var(--card-bg); border:1px solid var(--line-divider); border-radius:0.75rem; padding:0.8rem 0.95rem; }
 .cal-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.55rem; }
-.cal-title{ font-size:0.82rem; font-weight:700; margin:0; }
-:root.dark .cal-title{ color: oklch(0.90 0 0); }
-.cal-sub{ font-size:0.62rem; color:var(--guestbook-muted); white-space:nowrap; }
+.cal-title{ font-size:0.82rem; font-weight:700; margin:0; color: var(--deep-text); }
+.cal-sub{ font-size:0.62rem; color:var(--content-meta); white-space:nowrap; }
 .cal-grid{ display:grid; grid-template-columns:repeat(7, 1fr); gap:0.4rem; }
 .cal-grid + .cal-grid{ margin-top:0.4rem; }
 .cal-week-heads{ margin-bottom:0.15rem; }

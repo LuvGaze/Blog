@@ -195,9 +195,10 @@ function _fpInit() {
 		window.FootprintMap.CONFIG.HIGHLIGHT.mode = 'visited';
 	}
 
-	// 高德 JS API 2.0 需要提前注册安全密钥，否则地图底图无法加载
-	if (!window._AMapSecurityConfig) {
-		window._AMapSecurityConfig = { securityJsCode: amapSecurityCode || '' };
+	// 高德 JS API 2.0 需要提前注册安全密钥，否则地图底图无法加载；
+	// 仅在配置了安全码时才设置，避免空码导致底图白屏（INVALID_USER_SCODE）
+	if (amapSecurityCode && !window._AMapSecurityConfig) {
+		window._AMapSecurityConfig = { securityJsCode: amapSecurityCode };
 	}
 
 	mapEl.classList.add('footprint-map--loading');
@@ -209,6 +210,10 @@ function _fpInit() {
 		_fpLoadScript('/footprint/static/js/plugin-visited.js'),
 		_fpLoadScript('/footprint/static/js/plugin-hover.js')
 	]).then(function () {
+		// 脚本加载完成后、初始化之前，确保「点亮去过区域」模式生效
+		if (window.FootprintMap && window.FootprintMap.CONFIG) {
+			window.FootprintMap.CONFIG.HIGHLIGHT.mode = 'visited';
+		}
 		if (window.FootprintMap && window.FootprintMap.bootstrapMap) {
 			window.FootprintMap.bootstrapMap(mapEl);
 		}

@@ -8,8 +8,6 @@ const { income, expense, balance } = Astro.props;
 const fmt = (n: number) => n.toFixed(2);
 ---
 <div class="monthly-card">
-  <div class="monthly-bg" aria-hidden="true"></div>
-  <div class="monthly-overlay"></div>
   <div class="monthly-content">
     <div class="monthly-label">本月收支情况</div>
     <div class="monthly-value">
@@ -25,17 +23,18 @@ const fmt = (n: number) => n.toFixed(2);
 </div>
 <style>
 @reference "../../styles/main.css";
-.monthly-card{ position:relative; height:10.2rem; border-radius:0.75rem; overflow:hidden; background:#7cc8d8; border:1px solid oklch(0 0 0 / 0.06); }
-:root.dark .monthly-card{ border-color: oklch(1 0 0 / 0.08); }
-.monthly-bg{ position:absolute; inset:0; background-image:url("https://img.tsh520.cn/file/blog/随机封面图/1787466742620_【哲风壁纸】3D-卡通-可爱.webp"); background-size:cover; background-position:center 38%; opacity:0.9; }
-.monthly-overlay{ position:absolute; inset:0; background: linear-gradient(90deg, oklch(0 0 0 / 0.22) 0%, oklch(0 0 0 / 0.05) 50%, transparent 68%); }
-.monthly-content{ position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:center; gap:0.35rem; padding:1.1rem 1.2rem; color:#fff; }
-.monthly-label{ font-size:0.72rem; opacity:0.92; }
+.monthly-card{ position:relative; height:10.2rem; border-radius:0.75rem; overflow:hidden; border:1px solid var(--line-divider); background-image:
+  linear-gradient(225deg, color-mix(in oklab, var(--card-bg) 86%, transparent) 0%, color-mix(in oklab, var(--card-bg) 40%, transparent) 100%),
+  url("https://trae-api-cn.mchost.guru/api/ide/v1/text_to_image?prompt=a%20bright%20airy%20abstract%20background%20with%20soft%20warm%20orange%20and%20peach%20gradient%20glow%2C%20high%20key%2C%20clean%20minimal%2C%20no%20text&image_size=landscape_16_9");
+  background-size: cover, cover;
+  background-position: center; }
+.monthly-content{ position:relative; z-index:1; height:100%; display:flex; flex-direction:column; justify-content:center; gap:0.35rem; padding:1.1rem 1.2rem; color: var(--deep-text); }
+.monthly-label{ font-size:0.72rem; color: var(--content-meta); }
 .monthly-value{ display:flex; align-items:center; gap:0.45rem; line-height:1; }
-.monthly-num{ font-size:1.9rem; font-weight:800; letter-spacing:-0.02em; text-shadow:0 1px 8px oklch(0 0 0 / 0.18); }
-.monthly-eye{ font-size:0.95rem; opacity:0.9; }
-.monthly-sub{ display:flex; align-items:center; gap:0.5rem; font-size:0.7rem; opacity:0.92; margin-top:0.15rem; }
-.monthly-divider{ opacity:0.6; }
+.monthly-num{ font-size:1.9rem; font-weight:800; letter-spacing:-0.02em; line-height:1.1; }
+.monthly-eye{ font-size:0.95rem; opacity:0.55; }
+.monthly-sub{ display:flex; align-items:center; gap:0.5rem; font-size:0.7rem; color: var(--content-meta); margin-top:0.15rem; }
+.monthly-divider{ opacity:0.5; }
 @media(max-width:768px){
   .monthly-card{ height:9rem; }
   .monthly-num{ font-size:1.6rem; }
