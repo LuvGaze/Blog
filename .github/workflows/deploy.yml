@@ -32,6 +32,20 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-pnpm-lock-
 
+      # 从 GitHub Secrets 写入 .env 构建配置（构建期读取：地图 Key、账单密码）
+      # 前提：先在仓库 Settings → Secrets and variables → Actions 中新建同名 Secrets
+      - name: 写入 .env 构建配置
+        shell: bash
+        run: |
+          set -e
+          printf '%s\n' \
+            'PUBLIC_AMAP_KEY_PLACES=${{ secrets.PUBLIC_AMAP_KEY_PLACES }}' \
+            'PUBLIC_AMAP_SECURITY_JS_CODE=${{ secrets.PUBLIC_AMAP_SECURITY_JS_CODE }}' \
+            'PUBLIC_AMAP_GEO_KEY=${{ secrets.PUBLIC_AMAP_GEO_KEY }}' \
+            'PUBLIC_AMAP_GEO_SECRET=${{ secrets.PUBLIC_AMAP_GEO_SECRET }}' \
+            'GATE_PASSWORD=${{ secrets.GATE_PASSWORD }}' \
+            > .env
+
       - name: 安装依赖并构建项目
         run: |
           pnpm install --no-frozen-lockfile
