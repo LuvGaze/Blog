@@ -103,4 +103,13 @@ export type BackgroundWallpaperConfig = {
 	fullscreen?: {
 		position?: string; // 壁纸位置，支持CSS object-position的所有值
 	};
+	/**
+	 * 封面底部内容区域背景图（全局统一一张）
+	 * 开启后将在顶部封面下方的整块内容区域铺一层底图，可在后台调整开关与图片
+	 */
+	content?: {
+		enable: boolean; // 是否启用封面底部内容区背景图
+		src?: string; // 底图地址，支持 public("/"开头)、src(不以"/"开头)与远程URL
+		opacity?: number; // 底图不透明度，0-1之间，默认0.5，值越大越清晰
+	};
 };

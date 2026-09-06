@@ -82,6 +82,11 @@ const isOverlayMode = backgroundWallpaper.mode === "overlay";
 const isBackgroundEnabled = backgroundWallpaper.mode !== "none";
 const isWallpaperSwitchable = backgroundWallpaper.switchable ?? true;
 
+// 封面底部内容区域背景图（全局统一一张）
+const contentBgEnabled = backgroundWallpaper.content?.enable && !!backgroundWallpaper.content?.src;
+const contentBgSrc = backgroundWallpaper.content?.src || "";
+const contentBgOpacity = backgroundWallpaper.content?.opacity ?? 0.5;
+
 // 检查是否启用水波纹动画效果
 const wavesConfig = backgroundWallpaper.common?.waves?.enable;
 const wavesSwitchable = backgroundWallpaper.common?.waves?.switchable ?? false;
@@ -171,6 +176,9 @@ const sidebarConfig = getResponsiveSidebarConfig();
 // 侧边栏是否在文章详情页显示（默认 true）
 const hideSidebarOnPostPage =
 	sidebarLayoutConfig.hideSidebarOnPostPage === true;
+
+// 是否全屏靠边：内容区铺满视口宽度，左右侧边栏贴边
+const fullWidthLayout = sidebarLayoutConfig.fullWidth === true;
 
 // 在文章页面且启用了showBothSidebarsOnPostPage时，确保对侧组件参与网格计算
 const shouldShowBothSidebarsOnPostPage: boolean =
@@ -295,7 +303,7 @@ const hasMultipleImages =
     class="z-50 pointer-events-none relative transition-all duration-700 mx-auto"
     class:list={[
         stickyNavbar ? "h-18 fixed top-0 left-0 right-0 z-80" : "",
-        navbarWidthFull ? "" : "w-full xl:w-[92vw] max-w-(--page-width) px-0 md:px-4",
+        (navbarWidthFull || fullWidthLayout) ? "" : "w-full xl:w-[92vw] max-w-(--page-width) px-0 md:px-4",
     ]}
 >
     <div
@@ -806,9 +814,28 @@ const hasMultipleImages =
 <!-- Main content -->
 <div class={`absolute w-full z-30 pointer-events-none ${mobileNonHomeBannerClass ? 'mobile-main-no-banner' : ''} ${!(isBannerMode && isBackgroundEnabled) ? 'no-banner-layout' : ''}`} style={isFullscreenMode ? 'top: 0;' : `top: ${finalMainPanelTop}`}>
     <!-- The pointer-events-none here prevent blocking the click event of the TOC -->
-    <div class="relative w-full xl:w-[92vw] max-w-(--page-width) mx-auto pointer-events-auto">
+    <div class:list={[
+        "relative w-full pointer-events-auto",
+        fullWidthLayout ? "" : "xl:w-[92vw] max-w-(--page-width) mx-auto",
+    ]}>
+        <!-- 封面底部内容区域背景图（全局统一一张） -->
+        {contentBgEnabled && (
+            <div id="content-backdrop" class="absolute inset-0 z-0 rounded-(--radius-large) overflow-hidden pointer-events-none" style={`opacity: ${contentBgOpacity};`}>
+                <ImageWrapper
+                    alt=""
+                    class="object-cover h-full w-full"
+                    src={contentBgSrc}
+                    position="center"
+                    widths={[1280, 1920, 2560]}
+                    sizes="100vw"
+                    loading="eager"
+                    quality={configQuality}
+                />
+            </div>
+        )}
         <div id="main-grid"
-          class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 px-2 md:px-4 ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
+          class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 ${fullWidthLayout ? 'px-0' : 'px-2 md:px-4'} ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
+          style="position: relative; z-index: 1;"
           data-sidebar-enable={sidebarLayoutConfig.enable ? "true" : "false"}
           data-grid-hide-sidebar-on-post={hideSidebarOnPostPage ? "true" : "false"}
           data-sidebar-position={sidebarLayoutConfig.position}

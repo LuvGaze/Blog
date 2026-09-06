@@ -85,6 +85,7 @@ export type AdConfig = {
 
 export type SidebarLayoutConfig = {
 	enable: boolean; // 是否启用侧边栏
+	fullWidth?: boolean; // 是否全屏靠边：内容区铺满整个视口宽度，左右侧边栏贴边，默认 false
 	position: "left" | "right" | "both"; // 侧边栏位置：左侧、右侧或双侧
 	tabletSidebar?: "left" | "right"; // 平板端(769-1279px)显示哪侧侧边栏，仅position为both时生效，默认left
 	hideSidebarOnPostPage?: boolean; // 文章详情页隐藏侧边栏，设为 true 则只在首页等非文章页显示，默认 false

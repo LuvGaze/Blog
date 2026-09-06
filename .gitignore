@@ -25,7 +25,6 @@ pnpm-debug.log*
 .DS_Store
 
 .vercel
-
 package-lock.json
 bun.lockb
 yarn.lock
@@ -33,14 +32,8 @@ yarn.lock
 # ide
 .idea
 *.iml
-.claude
-
-# docs
-Firefly-docs/
-
 cache/
 package/
-.obsidian/
 
 # backend
 admin/

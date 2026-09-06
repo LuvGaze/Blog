@@ -278,4 +278,15 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
         // 图片位置
         position: "center",
     },
+    // 封面底部内容区域背景图（全局统一一张，可在后台调整开关与图片）
+    // 开启后将在顶部封面下方的整块内容区域铺一层底图
+    // src 支持：public目录("/"开头)、src目录(不以"/"开头)与远程URL
+    content: {
+        // 是否启用封面底部内容区背景图
+        enable: false,
+        // 底图地址
+        src: "https://image.luvgaze.com/d/%E6%A2%85%E8%8A%B1%E8%90%BD/010.jpg?sign=HqZ0XHJi3Dgx7i9Ch3LnkYCUYK086VItKU_LoxpTTMs=:0",
+        // 底图不透明度，0-1之间，值越大越清晰，默认0.5以保证内容可读性
+        opacity: 0.5,
+    },
 };

@@ -213,6 +213,7 @@ const managerConfigStr = JSON.stringify({
 
     // ── State ────────────────────────────────────────────────
     var loadVersion = 0; // incremented on each loadTrack to discard stale play() results
+    var skipAttempts = 0; // 连续自动跳歌计数，防止全部音频损坏时死循环
     var state = {
         playlist: [],
         currentIndex: 0,
@@ -540,9 +541,35 @@ const managerConfigStr = JSON.stringify({
         playNext(true);
     });
 
+    // 收到“Audio playback error”时立即自动切歌，直到命中最先可正常播放的一首
+    function autoSkipBrokenTrack() {
+        if (!state.playlist || state.playlist.length === 0) return;
+        skipAttempts += 1;
+        // 连续失败过多则停手，避免整个歌单都不好时无限循环
+        if (skipAttempts > Math.min(30, state.playlist.length)) {
+            skipAttempts = 0;
+            state.error = (config.i18n && config.i18n.noSongs) || 'Audio playback error';
+            emit('fm:error', { message: state.error });
+            return;
+        }
+        var nextIndex;
+        if (state.playMode === 2) {
+            nextIndex = Math.floor(Math.random() * state.playlist.length);
+        } else {
+            nextIndex = (state.currentIndex + 1) % state.playlist.length;
+        }
+        loadTrack(nextIndex, true);
+    }
+
     audio.addEventListener('error', function () {
         state.error = 'Audio playback error';
         emit('fm:error', { message: state.error });
+        autoSkipBrokenTrack();
+    });
+
+    // 一旦某首歌真正开始播放，说明已回到正常轨道，重置跳歌计数
+    audio.addEventListener('playing', function () {
+        skipAttempts = 0;
     });
 
     // ── Init (idempotent) ────────────────────────────────────

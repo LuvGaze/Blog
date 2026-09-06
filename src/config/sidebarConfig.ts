@@ -7,6 +7,9 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 	// 是否启用侧边栏功能
 	enable: true,
 
+	// 是否全屏靠边：true 时内容区铺满整个视口宽度，左右侧边栏贴到屏幕边缘
+	fullWidth: false,
+
 	// 侧边栏位置：
 	// left: 仅显示左侧边栏
 	// right: 仅显示右侧边栏
@@ -143,7 +146,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：站点信息组件
 			type: "siteInfo",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 组件位置
 			position: "top",
 			// 是否在文章详情页显示
