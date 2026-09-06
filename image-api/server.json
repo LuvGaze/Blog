@@ -1,0 +1,58 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Luvgaze Blog随机图床API",
+    "description": "获取全部图片列表 / 获取随机一张图片",
+    "version": "1.0.0"
+  },
+  "servers": [
+    {
+      "url": "https://image.luvgaze.com"
+    }
+  ],
+  "paths": {
+    "/api/blog/images": {
+      "get": {
+        "summary": "获取Blog全部图片列表",
+        "responses": {
+          "200": {
+            "description": "成功",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "total": {"type": "integer"},
+                    "images": {"type": "array", "items": {"type": "string"}}
+                  }
+                }
+              }
+            }
+          },
+          "404": {"description": "目录无图片或不存在"}
+        }
+      }
+    },
+    "/api/blog/random-image": {
+      "get": {
+        "summary": "随机返回一张Blog图片链接",
+        "responses": {
+          "200": {
+            "description": "成功返回随机图片地址",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "url": {"type": "string", "example": "https://image.luvgaze.com/Blog/demo.webp"}
+                  }
+                }
+              }
+            }
+          },
+          "404": {"description": "没有图片"}
+        }
+      }
+    }
+  }
+}

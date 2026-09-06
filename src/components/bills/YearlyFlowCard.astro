@@ -1,0 +1,94 @@
+---
+interface Props {
+	year: number;
+	data: { month: string; income: number; expense: number; balance: number }[];
+}
+const { year, data } = Astro.props;
+const fmt = (n: number) => n.toFixed(2);
+const maxVal = Math.max(...data.map((d) => Math.max(d.income, d.expense)), 1);
+const width = 640;
+const height = 180;
+const pad = { l: 28, r: 12, t: 12, b: 22 };
+const innerW = width - pad.l - pad.r;
+const innerH = height - pad.t - pad.b;
+function xFor(i: number) {
+	return pad.l + (innerW / Math.max(1, data.length - 1)) * i;
+}
+function yFor(v: number) {
+	return pad.t + innerH - (v / maxVal) * innerH;
+}
+const incomePoints = data
+	.map((d, i) => `${xFor(i)},${yFor(d.income)}`)
+	.join(" ");
+const expensePoints = data
+	.map((d, i) => `${xFor(i)},${yFor(d.expense)}`)
+	.join(" ");
+const now = new Date();
+const curMonthIdx =
+	now.getFullYear() === year
+		? Math.min(now.getMonth(), data.length - 1)
+		: data.length - 1;
+const curX = xFor(curMonthIdx);
+const totalIncome = data.reduce((s, d) => s + d.income, 0);
+const totalExpense = data.reduce((s, d) => s + d.expense, 0);
+const totalBalance = totalIncome - totalExpense;
+---
+<div class="yearly-card">
+  <div class="yearly-head">
+    <h3 class="yearly-title">本年流水情况</h3>
+    <span class="yearly-sub">{year}年 · 总收入 {fmt(totalIncome)} · 总支出 {fmt(totalExpense)}</span>
+  </div>
+  <div class="yearly-chart-wrap">
+    <svg viewBox={`0 0 ${width} ${height}`} class="yearly-svg" role="img" aria-label="本年每月流水">
+      <line x1={pad.l} y1={pad.t + innerH/2} x2={width-pad.r} y2={pad.t + innerH/2} stroke="var(--guestbook-line)" stroke-width="1" stroke-dasharray="3 4" opacity="0.6" />
+      <line x1={pad.l} y1={pad.t} x2={width-pad.r} y2={pad.t} stroke="var(--guestbook-line)" stroke-width="1" stroke-dasharray="3 4" opacity="0.35" />
+      <line x1={pad.l} y1={pad.t+innerH} x2={width-pad.r} y2={pad.t+innerH} stroke="var(--guestbook-line)" stroke-width="1" stroke-dasharray="3 4" opacity="0.35" />
+      <line x1={pad.l} y1={yFor(0)} x2={width-pad.r} y2={yFor(0)} stroke="#f43f5e" stroke-width="1.8" opacity="0.95" />
+      <polyline fill="none" stroke="#f97316" stroke-width="1.6" opacity="0.9" points={incomePoints} />
+      <polyline fill="none" stroke="#14b8a6" stroke-width="1.6" opacity="0.9" points={expensePoints} />
+      <line x1={curX} y1={pad.t} x2={curX} y2={pad.t+innerH} stroke="#94a3b8" stroke-width="1" opacity="0.55" />
+      <circle cx={curX} cy={yFor(data[curMonthIdx]?.expense ?? 0)} r="6" fill="#14b8a6" stroke="#fff" stroke-width="2" />
+      <circle cx={curX} cy={yFor(data[curMonthIdx]?.income ?? 0)} r="3" fill="#f97316" stroke="#fff" stroke-width="1.5" />
+      <text x="2" y={yFor(0)+3} font-size="10" fill="var(--guestbook-muted)">0</text>
+    </svg>
+    <div class="yearly-tooltip" style={`left: calc(${curX/width*100}% - 42px)`}>
+      <div class="tooltip-row"><span class="dot dot-income"></span>收入 {fmt(data[curMonthIdx]?.income ?? 0)}</div>
+      <div class="tooltip-row"><span class="dot dot-expense"></span>支出 {fmt(data[curMonthIdx]?.expense ?? 0)}</div>
+    </div>
+    <div class="yearly-xlabels">
+      {data.map((d) => <span>{d.month}</span>)}
+      <span class="x-hl">{data[curMonthIdx]?.month}</span>
+    </div>
+  </div>
+  <div class="yearly-foot">
+    <span class="foot-item">年结余 <b class:list={["foot-val", totalBalance>=0 ? "positive" : "negative"]}>{fmt(totalBalance)}</b></span>
+    <span class="foot-dot">·</span>
+    <span class="foot-item">月均收入 {fmt(totalIncome/12)}</span>
+  </div>
+</div>
+<style>
+@reference "../../styles/main.css";
+.yearly-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.75rem 0.85rem 0.6rem; display:flex; flex-direction:column; min-height:15.5rem; }
+:root.dark .yearly-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.yearly-head{ display:flex; align-items:baseline; justify-content:space-between; gap:0.6rem; margin-bottom:0.35rem; flex-wrap:wrap; }
+.yearly-title{ font-size:0.82rem; font-weight:700; }
+:root.dark .yearly-title{ color: oklch(0.90 0 0); }
+.yearly-sub{ font-size:0.62rem; color:var(--guestbook-muted); white-space:nowrap; }
+.yearly-chart-wrap{ position:relative; flex:1; display:flex; flex-direction:column; }
+.yearly-svg{ width:100%; height:auto; display:block; flex:1; }
+.yearly-tooltip{ position:absolute; top:6px; background:#2d2d2d; color:#fff; font-size:0.62rem; border-radius:0.4rem; padding:0.4rem 0.55rem; line-height:1.3; pointer-events:none; }
+.yearly-tooltip::after{ content:""; position:absolute; left:50%; bottom:-5px; transform:translateX(-50%); width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-top:5px solid #2d2d2d; }
+.tooltip-row{ display:flex; align-items:center; gap:0.3rem; white-space:nowrap; }
+.dot{ width:0.5rem; height:0.5rem; border-radius:9999px; border:1.5px solid #fff; }
+.dot-income{ background:#f97316; }
+.dot-expense{ background:#14b8a6; }
+.yearly-xlabels{ display:flex; justify-content:space-between; font-size:0.58rem; color:var(--guestbook-muted); padding:0 0.2rem; margin-top:0.15rem; }
+.x-hl{ background:#fff; border:1px solid oklch(0 0 0 / 0.08); border-radius:0.3rem; padding:0.05rem 0.3rem; color:var(--deep-text); font-weight:600; box-shadow:0 1px 4px oklch(0 0 0 / 0.06); position:absolute; right:0.2rem; top:auto; }
+:root.dark .x-hl{ background: oklch(0.22 0 0); border-color: oklch(1 0 0 / 0.1); color: oklch(0.88 0 0); }
+.yearly-xlabels{ position:relative; }
+.yearly-foot{ display:flex; align-items:center; justify-content:center; gap:0.5rem; font-size:0.62rem; color:var(--guestbook-muted); margin-top:0.4rem; padding-top:0.4rem; border-top:1px solid oklch(0 0 0 / 0.06); }
+:root.dark .yearly-foot{ border-color: oklch(1 0 0 / 0.06); }
+.foot-val.positive{ color:#ef4444; }
+.foot-val.negative{ color:#0e7490; }
+.foot-dot{ opacity:0.4; }
+</style>

@@ -1,0 +1,218 @@
+---
+import { getCollection } from "astro:content";
+import { Solar } from "lunar-javascript";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import BillsDashboard from "@/components/bills/BillsDashboard.astro";
+import EncryptedContent from "@/components/features/EncryptedContent.astro";
+import { billsConfig } from "@/config/billsConfig";
+import {
+	categoryExpenseRank,
+	categoryIncomeList,
+	dailyIncomeExpense,
+	getTodayMonthYearStats,
+	groupBillsByDay,
+	yearlyMonthlyFlow,
+} from "@/utils/bill-adapter";
+import { lunarLabel } from "@/utils/lunar";
+
+// 未启用则重定向
+if (!billsConfig.enabled) {
+	return Astro.redirect("/404/");
+}
+
+const bills = await getCollection("bills");
+const sorted = [...bills].sort(
+	(a, b) => b.data.date.getTime() - a.data.date.getTime(),
+);
+const now = new Date();
+const period = getTodayMonthYearStats(sorted, now);
+const year = now.getFullYear();
+const month = now.getMonth() + 1;
+const daily = dailyIncomeExpense(sorted, year, month);
+const yearly = yearlyMonthlyFlow(sorted, year);
+const expenseRank = categoryExpenseRank(sorted, year, month, 100);
+const incomeList = categoryIncomeList(sorted, year, month, 100);
+const monthIncome = period.month.income;
+const monthExpense = period.month.expense;
+const monthBalance = monthIncome - monthExpense;
+const yearStats = period.year;
+const yearBalance = yearStats.income - yearStats.expense;
+
+// 月度流水：全部账单按月分桶，月内按天分组（降序），天按 time 降序
+const WEEKDAYS = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+const nowMonth = `${year}-${String(month).padStart(2, "0")}`;
+const monthsMap = new Map<
+	string,
+	{
+		key: string;
+		label: string;
+		days: {
+			key: string;
+			label: string;
+			income: number;
+			expense: number;
+			entries: {
+				cat: string;
+				desc: string;
+				time: string;
+				amount: number;
+				type: string;
+			}[];
+		}[];
+	}
+>();
+for (const [dayKey, entries] of groupBillsByDay(sorted)) {
+	const monthKey = dayKey.slice(0, 7);
+	let bucket = monthsMap.get(monthKey);
+	if (!bucket) {
+		const [y, m] = monthKey.split("-").map(Number);
+		bucket = { key: monthKey, label: `${y}年${m}月`, days: [] };
+		monthsMap.set(monthKey, bucket);
+	}
+	const d = entries[0].data.date;
+	const dayEntries = [...entries]
+		.sort((a, b) => (b.data.time || "").localeCompare(a.data.time || ""))
+		.map((e) => ({
+			cat: e.data.category || "其他",
+			desc: e.data.description || e.data.title || "",
+			time: e.data.time || "",
+			amount: e.data.amount,
+			type: e.data.type,
+		}));
+	bucket.days.push({
+		key: dayKey,
+		label: `${d.getMonth() + 1}月${d.getDate()}日(${WEEKDAYS[d.getDay()]})`,
+		income: dayEntries
+			.filter((e) => e.type === "income")
+			.reduce((s, e) => s + e.amount, 0),
+		expense: dayEntries
+			.filter((e) => e.type === "expense")
+			.reduce((s, e) => s + Math.abs(e.amount), 0),
+		entries: dayEntries,
+	});
+}
+// 确保按月份名倒序
+const flowMonths = [...monthsMap.values()].sort((a, b) =>
+	b.key.localeCompare(a.key),
+);
+if (flowMonths.length === 0 || !flowMonths.some((m) => m.key === nowMonth)) {
+	flowMonths.push({
+		key: nowMonth,
+		label: `${year}年${month}月`,
+		days: [],
+	});
+}
+
+// 账单日历：农历（初一显示月名）+ 每日收支，前后补齐整周
+function calLunarLabel(y: number, m: number, d: number): string {
+	try {
+		const lunar = Solar.fromYmd(y, m, d).getLunar();
+		if (lunar.getDayInChinese() === "初一") {
+			return `${lunar.getMonthInChinese()}月`;
+		}
+	} catch {
+		// 农历换算失败时回退普通标签
+	}
+	return lunarLabel(y, m, d);
+}
+const calendar = flowMonths.map((fm) => {
+	const [y, m] = fm.key.split("-").map(Number);
+	const totals = new Map(
+		fm.days.map((d) => [d.key, { income: d.income, expense: d.expense }]),
+	);
+	const lead = new Date(y, m - 1, 1).getDay();
+	const daysInMonth = new Date(y, m, 0).getDate();
+	type Cell = {
+		day: number;
+		lunar: string;
+		inMonth: boolean;
+		income: number;
+		expense: number;
+		dateKey: string;
+	};
+	const cells: Cell[] = [];
+	const push = (date: Date, inMonth: boolean) => {
+		const key = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+		const t = inMonth ? totals.get(key) : undefined;
+		cells.push({
+			day: date.getDate(),
+			lunar: calLunarLabel(
+				date.getFullYear(),
+				date.getMonth() + 1,
+				date.getDate(),
+			),
+			inMonth,
+			income: t?.income ?? 0,
+			expense: t?.expense ?? 0,
+			dateKey: key,
+		});
+	};
+	for (let i = lead - 1; i >= 0; i--) push(new Date(y, m - 1, 1 - i), false);
+	for (let d = 1; d <= daysInMonth; d++) push(new Date(y, m - 1, d), true);
+	let tail = 1;
+	while (cells.length % 7 !== 0) {
+		push(new Date(y, m - 1, daysInMonth + tail), false);
+		tail++;
+	}
+	const weeks: Cell[][] = [];
+	for (let i = 0; i < cells.length; i += 7) weeks.push(cells.slice(i, i + 7));
+	return { key: fm.key, label: fm.label, weeks };
+});
+
+const expenseTotal = expenseRank.reduce((s, r) => s + r.amount, 0);
+const expenseCount = expenseRank.reduce((s, r) => s + r.count, 0);
+const incomeTotalCount = incomeList.reduce((s, r) => s + r.count, 0);
+const incomeTotalAmt = incomeList.reduce((s, r) => s + r.amount, 0);
+---
+
+<MainGridLayout title="账单" description="账单仪表盘">
+	{billsConfig.password ? (
+		<EncryptedContent
+			password={billsConfig.password}
+			slug="bills"
+			hint={billsConfig.passwordHint}
+		>
+			<BillsDashboard
+				yearStats={yearStats}
+				yearBalance={yearBalance}
+				monthIncome={monthIncome}
+				monthExpense={monthExpense}
+				monthBalance={monthBalance}
+				flowMonths={flowMonths}
+				nowMonth={nowMonth}
+				calendar={calendar}
+				daily={daily}
+				incomeList={incomeList}
+				incomeTotalCount={incomeTotalCount}
+				incomeTotalAmt={incomeTotalAmt}
+				yearly={yearly}
+				expenseRank={expenseRank}
+				expenseCount={expenseCount}
+				expenseTotal={expenseTotal}
+				year={year}
+				month={month}
+			/>
+		</EncryptedContent>
+	) : (
+		<BillsDashboard
+			yearStats={yearStats}
+			yearBalance={yearBalance}
+			monthIncome={monthIncome}
+			monthExpense={monthExpense}
+			monthBalance={monthBalance}
+			flowMonths={flowMonths}
+			nowMonth={nowMonth}
+			calendar={calendar}
+			daily={daily}
+			incomeList={incomeList}
+			incomeTotalCount={incomeTotalCount}
+			incomeTotalAmt={incomeTotalAmt}
+			yearly={yearly}
+			expenseRank={expenseRank}
+			expenseCount={expenseCount}
+			expenseTotal={expenseTotal}
+			year={year}
+			month={month}
+		/>
+	)}
+</MainGridLayout>

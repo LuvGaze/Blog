@@ -1,0 +1,86 @@
+---
+interface Props {
+	year: number;
+	month: number;
+	data: { day: string; income: number; expense: number }[];
+}
+const { year, month, data } = Astro.props;
+const maxVal = Math.max(...data.map((d) => Math.max(d.income, d.expense)), 1);
+const width = 640;
+const height = 180;
+const pad = { l: 28, r: 12, t: 12, b: 22 };
+const innerW = width - pad.l - pad.r;
+const innerH = height - pad.t - pad.b;
+function xFor(i: number) {
+	return pad.l + (innerW / Math.max(1, data.length - 1)) * i;
+}
+function yFor(v: number) {
+	return pad.t + innerH - (v / maxVal) * innerH;
+}
+const incomePoints = data
+	.map((d, i) => `${xFor(i)},${yFor(d.income)}`)
+	.join(" ");
+const expensePoints = data
+	.map((d, i) => `${xFor(i)},${yFor(d.expense)}`)
+	.join(" ");
+const now = new Date();
+const isCurrentMonth =
+	now.getFullYear() === year && now.getMonth() + 1 === month;
+const midIdx = isCurrentMonth
+	? Math.min(now.getDate() - 1, data.length - 1)
+	: Math.min(14, data.length - 1);
+const midX = xFor(midIdx);
+const showXLabels = data.filter((_, i) => i % 3 === 0);
+---
+<div class="trend-card">
+  <div class="trend-head">
+    <h3 class="trend-title">本月每日收支</h3>
+  </div>
+  <div class="trend-chart-wrap">
+    <svg viewBox={`0 0 ${width} ${height}`} class="trend-svg" role="img" aria-label="本月每日收支">
+      <!-- grid -->
+      <line x1={pad.l} y1={pad.t + innerH/2} x2={width-pad.r} y2={pad.t + innerH/2} stroke="var(--guestbook-line)" stroke-width="1" stroke-dasharray="3 4" opacity="0.6" />
+      <line x1={pad.l} y1={pad.t} x2={width-pad.r} y2={pad.t} stroke="var(--guestbook-line)" stroke-width="1" stroke-dasharray="3 4" opacity="0.35" />
+      <line x1={pad.l} y1={pad.t+innerH} x2={width-pad.r} y2={pad.t+innerH} stroke="var(--guestbook-line)" stroke-width="1" stroke-dasharray="3 4" opacity="0.35" />
+      <!-- zero baseline -->
+      <line x1={pad.l} y1={yFor(0)} x2={width-pad.r} y2={yFor(0)} stroke="#f43f5e" stroke-width="1.8" opacity="0.95" />
+      <!-- income line -->
+      <polyline fill="none" stroke="#f97316" stroke-width="1.6" opacity="0.9" points={incomePoints} />
+      <!-- expense line -->
+      <polyline fill="none" stroke="#14b8a6" stroke-width="1.6" opacity="0.9" points={expensePoints} />
+      <!-- vertical indicator -->
+      <line x1={midX} y1={pad.t} x2={midX} y2={pad.t+innerH} stroke="#94a3b8" stroke-width="1" opacity="0.55" />
+      <circle cx={midX} cy={yFor(0)} r="6" fill="#14b8a6" stroke="#fff" stroke-width="2" />
+      <circle cx={midX} cy={yFor(0)} r="3" fill="#f97316" />
+      <!-- y label -->
+      <text x="2" y={yFor(0)+3} font-size="10" fill="var(--guestbook-muted)">0</text>
+    </svg>
+    <div class="trend-tooltip" style={`left: calc(${midX/width*100}% - 42px)`}>
+      <div class="tooltip-row"><span class="dot dot-income"></span>收入 {data[midIdx]?.income.toFixed(2) ?? "0.00"}</div>
+      <div class="tooltip-row"><span class="dot dot-expense"></span>支出 {data[midIdx]?.expense.toFixed(2) ?? "0.00"}</div>
+    </div>
+    <div class="trend-xlabels">
+      {showXLabels.map(d => <span>{d.day}</span>)}
+      <span class="x-hl">{data[midIdx]?.day}</span>
+    </div>
+  </div>
+</div>
+<style>
+@reference "../../styles/main.css";
+.trend-card{ background:#fff; border:1px solid oklch(0 0 0 / 0.06); border-radius:0.75rem; padding:0.75rem 0.85rem 0.6rem; min-height:15.5rem; display:flex; flex-direction:column; }
+:root.dark .trend-card{ background: oklch(0.16 0 0 / 0.86); border-color: oklch(1 0 0 / 0.08); }
+.trend-head{ display:flex; align-items:center; justify-content:space-between; margin-bottom:0.35rem; }
+.trend-title{ font-size:0.82rem; font-weight:700; }
+:root.dark .trend-title{ color: oklch(0.90 0 0); }
+.trend-chart-wrap{ position:relative; flex:1; display:flex; flex-direction:column; }
+.trend-svg{ width:100%; height:auto; display:block; flex:1; min-height:0; }
+.trend-tooltip{ position:absolute; top:6px; background:#2d2d2d; color:#fff; font-size:0.62rem; border-radius:0.4rem; padding:0.4rem 0.55rem; line-height:1.3; pointer-events:none; }
+.trend-tooltip::after{ content:""; position:absolute; left:50%; bottom:-5px; transform:translateX(-50%); width:0; height:0; border-left:5px solid transparent; border-right:5px solid transparent; border-top:5px solid #2d2d2d; }
+.tooltip-row{ display:flex; align-items:center; gap:0.3rem; white-space:nowrap; }
+.dot{ width:0.5rem; height:0.5rem; border-radius:9999px; border:1.5px solid #fff; }
+.dot-income{ background:#f97316; }
+.dot-expense{ background:#14b8a6; }
+.trend-xlabels{ display:flex; justify-content:space-between; font-size:0.6rem; color:var(--guestbook-muted); padding:0 0.2rem; margin-top:0.15rem; }
+.x-hl{ background:#fff; border:1px solid oklch(0 0 0 / 0.08); border-radius:0.3rem; padding:0.05rem 0.3rem; color:var(--deep-text); font-weight:600; box-shadow:0 1px 4px oklch(0 0 0 / 0.06); }
+:root.dark .x-hl{ background: oklch(0.22 0 0); border-color: oklch(1 0 0 / 0.1); color: oklch(0.88 0 0); }
+</style>
