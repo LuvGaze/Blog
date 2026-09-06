@@ -63,23 +63,23 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			...(siteConfig.pages.movies ? [LinkPresets.Movies] : []),
 			...(siteConfig.pages.games ? [LinkPresets.Games] : []),
 			...(siteConfig.pages.musicPage ? [LinkPresets.MusicPage] : []),
-			...(siteConfig.pages.changelog ? [LinkPresets.Changelog] : []),
 			...(siteConfig.pages.routines ? [LinkPresets.Routines] : []),
 			...(siteConfig.pages.places ? [LinkPresets.Places] : []),
 			...(siteConfig.pages.bills ? [LinkPresets.Bills] : []),
 		].filter(Boolean),
 	});
 
-	// 「关于」下拉菜单：包含打赏、关于我
+	// 「关于」下拉菜单：包含更新日志、关于我、归档、打赏
 	links.push({
 		name: "关于",
 		url: "#",
 		icon: "material-symbols:info",
 		children: [
+			...(siteConfig.pages.changelog ? [LinkPresets.Changelog] : []),
 			LinkPresets.About,
 			LinkPresets.Archive,
 			LinkPresets.Sponsor,
-		],
+		].filter(Boolean),
 	});
 
 	// 「链接」下拉菜单：外部链接（GitHub、Gitee、文档）

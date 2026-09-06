@@ -1,78 +1,68 @@
-# ⭐魔改的Firefly博客项目⭐
-- 基于 Firefly 博客系统进行二次开发
-- 本项目可搭配专属配套后端项目 [Admin](https://github.com/LuvGaze/Blog-Admin) 共同使用
+# 🔥 魔改版 Firefly 博客
 
+> 基于 [Firefly](https://github.com/CuteLeaf) 博客系统二次开发，可搭配专属后台 [Blog-Admin](https://github.com/LuvGaze/Blog-Admin) 使用。
 
-# 🔥 Firefly
+一个功能丰富、高度可定制的现代化个人博客：基于 **Astro 7 + Svelte 5**，文章、书架、影视、游戏、番组、音乐、相册、足迹、规划、账单、更新日志等一应俱全，并配有 Express + TypeScript 后台。
 
-> 一只发光的萤火虫，照亮你的数字花园
-
-Firefly 是一个功能丰富、高度可定制的现代化个人博客系统，基于 Astro 7 + Svelte 5 构建。它不仅是一个博客模板，更是一个完整的个人内容管理平台，支持文章、书籍、影视、游戏、番组、旅行、规划、笔记本等多种内容类型，并配有强大的后台管理系统。
+---
 
 ## ✨ 特色功能
 
-### 🎨 视觉设计
+### 🎨 视觉与交互
 
-- **响应式布局**：完美适配桌面端和移动端
-- **深色/浅色主题**：一键切换，自动跟随系统设置
-- **动态壁纸**：支持横幅、全屏、透明覆盖等多种模式，可切换图片或视频背景
-- **毛玻璃效果**：现代化的视觉层次设计
-- **自定义主题色**：支持自定义全站主题色
+- **响应式布局**：桌面 / 移动端自适应
+- **深色 / 浅色主题**：一键切换，跟随系统
+- **动态壁纸**：图片或视频横幅，多种覆盖模式
+- **毛玻璃 + 自定义主题色**：现代化视觉层次
+- **樱花飘落 / 打字机 / 图片灯箱 / Live2D 看板娘** 等趣味特效
 
-### 📝 内容管理
+### 📚 多内容支持（Markdown 管理，无需写代码）
 
-- **Markdown 支持**：完整的 Markdown 语法，支持代码高亮、数学公式、图表等
-- **文章加密**：支持对敏感文章设置访问密码
-- **文章置顶**：重要文章优先展示
-- **分类与标签**：灵活的内容组织方式
-- **搜索功能**：基于 Pagefind 的全文搜索
+| 模块 | 存放目录 | 说明 |
+| --- | --- | --- |
+| 📝 文章 | `src/content/posts/` | 支持 Markdown、代码高亮、数学公式、文章加密 |
+| 📚 书架 | `src/content/books/` | 书籍封面、评分、阅读状态 |
+| 🎬 影视 | `src/content/movies/` | 电影/剧/动漫/纪录片，分类与评分 |
+| 🎮 游戏 | `src/content/games/` | 游戏管理与评分 |
+| 🔖 番组 / 追番 | `src/content/movies/` | `category: real` + `subcategory: anime` |
+| 🎵 音乐 | `src/content/movies/` | Meting 接入音频/封面/自动歌词 |
+| 🖼️ 相册 | `src/content/gallery/` | 支持 `images` 数组或扫描本地目录 |
+| 🧭 足迹 | `src/content/travel/` | 高德足迹地图，省/市界按缩放显示 |
+| 📋 规划 | `src/content/plans/` | 待办规划 |
+| 💰 账单 | `src/content/bills/` | 收支流水、月度统计、分类排行 | 
+| 🕘 更新日志 | `src/content/changelog/` | 版本更新记录 |
+| 🤝 友链 | `src/content/friends/` | 友情链接 |
 
-### 🎮 互动体验
+> 各内容类型的写法和字段示例，可直接参考站内教程文章《博客功能使用教程》。
 
-- **Live2D 看板娘**：可配置的虚拟角色互动
-- **音乐播放器**：内置音乐播放器，支持可视化效果
-- **樱花飘落**：浪漫的视觉特效
-- **打字机效果**：横幅文字打字机动画
-- **图片灯箱**：Fancybox 图片浏览
+### 🖥️ 后台管理（配套项目 Agent/子目录）
 
-### 📚 多内容支持
+- 完整管理面板：文章、作品、账单、相册、足迹、友链等全模块
+- 配置可视化编辑（站点、导航、音乐、评论、页脚等）
+- Markdown 文件上传自动解析、JWT 认证、bcrypt 密码加密
 
-| 模块 | 说明 |
-|------|------|
-| **博客文章** | 支持 Markdown、MDX、代码高亮、数学公式 |
-| **书架** | 书籍管理，支持封面、评分、阅读状态 |
-| **影视** | 电影/电视剧管理，支持分类、评分 |
-| **游戏** | 游戏管理，支持平台、评分 |
-| **番组** | 番剧管理，支持批量导入 |
-| **相册** | 图片相册，支持分类浏览 |
-| **足迹** | 旅行地点记录，支持地图展示 |
-| **规划** | 待办事项，支持状态切换 |
-| **笔记本** | 日记/笔记管理，支持分类 |
-| **更新日志** | 项目更新记录 |
+---
 
-### 🖥️ 后台管理
+## 🔧 技术栈
 
-- **完整的管理面板**：基于 Express + TypeScript 构建
-- **内容管理**：文章、书籍、影视、游戏等全模块管理
-- **配置管理**：可视化编辑网站配置
-- **文件上传**：支持 Markdown 文件上传自动解析
-- **密码安全**：使用 bcrypt 加密存储密码
-- **JWT 认证**：安全的身份验证机制
+| 类别 | 技术 |
+| --- | --- |
+| 框架 | Astro 7 · Svelte 5 |
+| 样式 | TailwindCSS 4 · 原生 CSS 变量主题 |
+| 语言 | TypeScript |
+| 搜索 | Pagefind |
+| 静态图标 | 构建期自动生成 `material-symbols` / `fa7` 图标集 |
+| 图片体验 | 构建期自动生成 LQIP 占位图 |
+| 部署 | Cloudflare Pages（@astrojs/cloudflare） |
 
-### 🔧 技术特性
-
-- **Astro 7**：下一代静态站点生成器
-- **Svelte 5**：轻量级前端框架
-- **TailwindCSS 4**：原子化 CSS 框架
-- **TypeScript**：类型安全开发
-- **Serverless Ready**：支持 Cloudflare Pages 部署
+---
 
 ## 🚀 快速开始
 
 ### 环境要求
 
 - Node.js ≥ 20
-- pnpm ≥ 9
+- pnpm ≥ 9（项目强制使用 pnpm）
 
 ### 前端博客
 
@@ -80,209 +70,128 @@ Firefly 是一个功能丰富、高度可定制的现代化个人博客系统，
 # 安装依赖
 pnpm install
 
-# 启动开发服务器
+# 启动开发服务器（http://localhost:4321）
 pnpm dev
 
-# 构建生产版本
+# 构建生产版本（输出到 dist/）
 pnpm build
+
+# 预览生产版本
+pnpm preview
 ```
 
-开发服务器将在 `http://localhost:4321` 启动。
+> ⏱️ `pnpm build` 会依次执行：生成图标常量 → 生成 LQIP → `astro build` → 字体子集化 → Pagefind 索引。
+> 其中生成的 `src/constants/icons.ts`、`src/constants/lqips.json` 等为构建产物，已加入 `.gitignore`，无需上传仓库。
 
 ### 后台管理
 
 ```bash
-# 进入后台目录
 cd admin
-
-# 安装依赖
 npm install
-
-# 初始化管理员密码（首次运行必须）
-node scripts/init-password.js
-
-# 启动开发服务器
-npm run dev
+node scripts/init-password.js   # 首次初始化管理员密码
+npm run dev                     # 后台 @ http://localhost:8899/admin
 ```
 
-后台服务将在 `http://localhost:9998` 启动。
+> ⚠️ **安全提示**：首次登录后请务必修改管理员密码。
 
-> ⚠️ **安全提示**：首次登录后，请务必修改管理员密码！
+### 常用脚本
 
-### 创建文章
+| 命令 | 说明 |
+| --- | --- |
+| `pnpm dev` / `pnpm start` | 开发服务器 |
+| `pnpm build` | 生产构建（含图标/LQIP/字体/搜索） |
+| `pnpm preview` | 预览构建产物 |
+| `pnpm check` | 类型与诊断检查 |
+| `pnpm type-check` | 仅 TypeScript 检查 |
+| `pnpm new-post "标题"` | 快速新建文章 |
+| `pnpm lint` / `pnpm format` | Biome 检查 / 格式化 |
 
-```bash
-pnpm new-post <文章标题>
+---
+
+## 📁 主要目录结构
+
+```
+Blog/
+├── src/
+│   ├── content/            # 📄 全部内容（.md / .json）
+│   │   ├── posts/  website/  notebooks/  books/  movies/
+│   │   ├── games/  gallery/  travel/     plans/  bills/
+│   │   └── changelog/  friends/  spec/
+│   ├── content.config.ts   # 内容集合 schema（字段定义）
+│   ├── components/         # 布局 / 页面 / 特性组件
+│   ├── config/             # 站点、主题、导航、评论、音乐等配置
+│   ├── pages/              # 页面路由
+│   ├── styles/  utils/  types/  constants/
+│   ├── astro.config.*      # Astro 与 Cloudflare 配置
+│   └── .pages.yml          # Cloudflare Pages 配置
+├── admin/                  # 后台管理（另行部署，独立运行）
+├── scripts/                # 构建 / 新建文章等脚本
+├── public/                 # 静态资源
+└── .github/workflows/      # GitHub Actions 部署工作流
 ```
 
-例如：
+---
 
-```bash
-pnpm new-post "我的第一篇博客"
+## ⚙️ 核心配置（`src/config/`）
+
+| 文件 | 作用 |
+| --- | --- |
+| `siteConfig.ts` | 站点信息、功能开关（`pages.xxx`） |
+| `navBarConfig.ts` | 导航栏菜单结构与 `LinkPresets` |
+| `themeConfig.ts` | 主题色、字体、布局 |
+| `commentConfig.ts` | 评论系统（Artalk / Giscus / Waline …） |
+| `musicConfig.ts` | 音乐播放器、歌单、Meting API、歌词颜色 |
+| `footerConfig.ts` | 页脚内容与版权开关（`FooterConfig.html`） |
+| `billsConfig.ts` | 账单页参数 |
+| `backgroundWallpaper.ts` | 背景壁纸 |
+
+> 友情提示：绝大部分内容不需要改代码，直接改 `src/content/` 下的 Markdown 或通过后台即可。
+
+---
+
+## 🗺️ 足迹地图环境变量
+
+足迹页使用高德（AMap）JS API，构建时需注入以下环境变量（本地开发时写入 `.env`，CI 中通过仓库 Secrets 注入）：
+
+```
+PUBLIC_AMAP_KEY_PLACES=你的高德Web端Key
+PUBLIC_AMAP_SECURITY_JS_CODE=对应的安全密钥
 ```
 
-## 📁 项目结构
+> 本地开发时写入 `.env`，CI 中通过仓库 Secrets 注入；若安全码为空，会导致底图白屏。
 
-```
-Firefly/
-├── src/                          # 前端源码
-│   ├── components/               # 组件
-│   │   ├── layout/               # 布局组件
-│   │   ├── widget/               # 侧边栏组件
-│   │   ├── comment/              # 评论组件
-│   │   ├── features/             # 特色功能组件
-│   │   └── pages/                # 页面特定组件
-│   ├── config/                   # 配置文件
-│   │   ├── siteConfig.ts         # 站点配置
-│   │   ├── navBarConfig.ts       # 导航栏配置
-│   │   ├── themeConfig.ts        # 主题配置
-│   │   └── ...
-│   ├── content/                  # 内容文件
-│   │   ├── posts/                # 博客文章
-│   │   ├── books/                # 书籍数据
-│   │   ├── movies/               # 影视数据
-│   │   ├── games/                # 游戏数据
-│   │   ├── bangumi/              # 番组数据
-│   │   ├── travel/               # 旅行数据
-│   │   ├── plans/                # 规划数据
-│   │   ├── notebooks/            # 笔记本数据
-│   │   └── changelog/            # 更新日志
-│   ├── pages/                    # 页面路由
-│   ├── styles/                   # 样式文件
-│   └── utils/                    # 工具函数
-├── admin/                        # 后台管理系统
-│   ├── controllers/              # 控制器
-│   ├── routes/                   # 路由
-│   ├── services/                 # 服务层
-│   ├── middleware/               # 中间件
-│   └── public/                   # 静态资源
-├── docs/                         # 文档
-├── scripts/                      # 脚本
-└── package.json
-```
+| 变量 | 用途 |
+| --- | --- |
+| `PUBLIC_AMAP_KEY_PLACES` | 足迹地图 Web 端 Key |
+| `PUBLIC_AMAP_SECURITY_JS_CODE` | 对应安全密钥 |
+| `PUBLIC_AMAP_GEO_KEY` / `PUBLIC_AMAP_GEO_SECRET` | 位置/地理相关统计
 
-## ⚙️ 配置说明
-
-### 主要配置文件
-
-| 文件 | 说明 |
-|------|------|
-| `src/config/siteConfig.ts` | 站点基本信息、页面开关、导航栏配置 |
-| `src/config/themeConfig.ts` | 主题色、字体、布局等视觉配置 |
-| `src/config/backgroundWallpaper.ts` | 背景壁纸配置 |
-| `src/config/commentConfig.ts` | 评论系统配置（Artalk、Giscus、Waline 等） |
-| `src/config/musicConfig.ts` | 音乐播放器配置 |
-| `src/config/analyticsConfig.ts` | 统计分析配置 |
-
-### 配置示例
-
-修改站点基本信息：
-
-```typescript
-// src/config/siteConfig.ts
-export const siteConfig = {
-  title: '我的博客',
-  subtitle: '记录生活，分享技术',
-  url: 'https://example.com',
-  description: '一个技术博客',
-  keywords: ['技术', '编程', '生活'],
-};
-```
+---
 
 ## 📦 部署
 
-### Cloudflare Pages
+项目内置 `@astrojs/cloudflare` 适配器与 GitHub Actions 工作流：
 
-1. 登录 Cloudflare 控制台
-2. 创建新的 Pages 项目
-3. 连接 GitHub 仓库
-4. 配置构建命令：`pnpm build`
-5. 配置输出目录：`dist`
-6. 部署！
+1. 将本仓库推送到 GitHub
+2. 在仓库 **Settings → Secrets and variables → Actions** 配置所需密钥（如 AMap Key / 安全码等）
+3. 推送触发 `deploy` 工作流，自动构建并部署到 Cloudflare Pages
 
-### Vercel
+> 也可以手动构建后使用任意静态托管（`dist/` 目录）。
 
-1. 登录 Vercel 控制台
-2. 创建新项目
-3. 连接 GitHub 仓库
-4. Vercel 会自动检测 Astro 项目配置
-5. 部署！
-
-### 自托管
-
-```bash
-# 构建项目
-pnpm build
-
-# 使用静态服务器启动
-npx serve dist
-```
-
-## 🧩 插件与集成
-
-### 评论系统
-
-支持多种评论系统，在 `src/config/commentConfig.ts` 中配置：
-
-- Artalk
-- Giscus
-- Waline
-- Twikoo
-- Disqus
-
-### 统计分析
-
-支持多种统计分析服务：
-
-- Google Analytics
-- Umami Analytics
-- Microsoft Clarity
-- 51La
-
-### 图标库
-
-- Material Symbols
-- Font Awesome 7
-- Simple Icons
-- Mingcute Icons
-
-## 📝 开发指南
-
-### 添加新页面
-
-1. 在 `src/pages/` 目录下创建新页面
-2. 在 `src/config/siteConfig.ts` 中添加页面配置
-3. 在 `src/config/navBarConfig.ts` 中添加导航链接
-
-### 添加新组件
-
-1. 在 `src/components/` 目录下创建新组件
-2. 根据组件用途选择合适的子目录
-
-### 修改主题色
-
-1. 修改 `src/config/themeConfig.ts` 中的 `primaryColor`
-2. 修改 `src/styles/variables.styl` 中的相关变量
+---
 
 ## 🔒 安全
 
-- 文章加密使用 AES-256 加密
-- 后台密码使用 bcrypt 哈希存储
-- JWT Token 认证机制
-- 输入内容自动清理
+- 文章加密：AES-256
+- 后台密码：bcrypt 哈希存储
+- 认证：JWT Token
+- 先天性输入清理
+
+---
 
 ## 📄 许可协议
 
 本项目遵循 [MIT License](LICENSE) 开源协议。
-
-## 🤝 贡献
-
-欢迎提交 Issue 或 Pull Request！
-
-## 📞 联系方式
-
-- GitHub: [@CuteLeaf](https://github.com/CuteLeaf)
-- 博客: [https://cuteleaf.github.io](https://cuteleaf.github.io)
 
 ---
 

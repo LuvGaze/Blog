@@ -25,7 +25,7 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 		// 是否区分「已播放」与「未播放」字的颜色（卡拉OK式渐显）
 		progressFill: true,
 		// 已播放文字颜色
-		playedColor: "#EEDEB0",
+		playedColor: "#F9906F",
 		// 未播放文字颜色
 		unplayedColor: "rgba(170,185,200,0.85)",
 	},
