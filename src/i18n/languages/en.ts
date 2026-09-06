@@ -127,12 +127,12 @@ export const en: Translation = {
 	[Key.bangumiNoDataDescription]: "No items in this category",
 	[Key.bangumiEmpty]: "No Data",
 	[Key.bangumiEmptyReason]:
-		"Possible reasons: username does not exist, network connection issue, or API limit",
+		"Possible reasons: username does not exist, network connection issue, or image-api limit",
 	[Key.bangumiFetchError]: "Bangumi Data Fetch Failed",
 	[Key.bangumiFetchErrorDesc]:
-		"Failed to fetch data from Bangumi API during build. This page is temporarily unavailable.",
+		"Failed to fetch data from Bangumi image-api during build. This page is temporarily unavailable.",
 	[Key.bangumiUsername]: "Username",
-	[Key.bangumiApi]: "API",
+	[Key.bangumiApi]: "image-api",
 	[Key.bangumiConfigTip]:
 		"Tip: Please set the correct Bangumi username in the page configuration",
 	[Key.bangumiPrevPage]: "Previous",
@@ -173,7 +173,7 @@ export const en: Translation = {
 	[Key.animeViewDetails]: "View Details",
 	[Key.animeNotConfigured]: "Anime data source not configured",
 	[Key.animeNotConfiguredDesc]:
-		"Please configure Bilibili UID or TMDB API Key in src/config/siteConfig.ts",
+		"Please configure Bilibili UID or TMDB image-api Key in src/config/siteConfig.ts",
 	[Key.animeBilibiliAvg]: "Bilibili Avg",
 	[Key.animeTmdbAvg]: "TMDB Avg",
 	[Key.animeDualSynced]: "Dual Synced",

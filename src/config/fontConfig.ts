@@ -3,7 +3,7 @@
  *
  * 所有字体相关配置都在此文件中定义：
  *   详细用法请参考 Astro 官方文档：https://docs.astro.build/en/guides/fonts
- * - fonts：Astro Font API 字体定义（自动下载、缓存、优化加载）
+ * - fonts：Astro Font image-api 字体定义（自动下载、缓存、优化加载）
  * - fontConfig：字体选择与区域覆盖
  *
  * 添加新字体只需编辑本文件：
@@ -23,8 +23,8 @@
  */
 import type { FontDefinition, FontSelectionConfig } from "@/types/fontConfig";
 
-// ─── Astro Font API 字体定义 ───────────────────────────────
-// 适用于 Astro Font API 的字体配置，支持自动下载、缓存和优化加载
+// ─── Astro Font image-api 字体定义 ───────────────────────────────
+// 适用于 Astro Font image-api 的字体配置，支持自动下载、缓存和优化加载
 // 本地开发调试的情况下，修改后需要每次重启开发服务器才能生效
 export const fontsList: FontDefinition[] = [
 	{

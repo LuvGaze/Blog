@@ -1,10 +1,39 @@
 ---
+import { getCollection } from "astro:content";
 import { musicPlayerConfig } from "@/config/musicConfig";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { url } from "@/utils/url-utils";
 
 const config = musicPlayerConfig;
+
+// 与音乐页共享数据源：从 bangumi 集合构建播放列表，全局播放器也用它
+const metingApiBase = config.meting?.api
+	? config.meting.api.split("?")[0]
+	: "https://mu.tsh520.cn/api";
+const customBangumi = await getCollection("bangumi");
+const bangumiPlaylist = customBangumi
+	.filter((item) => item.data.category === "music")
+	.map((item) => {
+		const { data } = item;
+		const imageSrc =
+			typeof data.image === "string" ? data.image : data.image.src;
+		return {
+			name: data.title,
+			artist: data.artist || "",
+			url: data.audioUrl || "",
+			pic: imageSrc,
+			lrc: data.lrcUrl || "",
+			metingServer: data.metingServer || "",
+			metingId: data.metingId || "",
+			published: data.date?.toISOString() || "",
+		};
+	})
+	.filter((item) => item.url || item.metingId)
+	.sort(
+		(a, b) =>
+			new Date(b.published || 0).getTime() - new Date(a.published || 0).getTime(),
+	);
 
 const localPlaylist =
 	config.mode === "local" && config.local?.playlist
@@ -34,10 +63,11 @@ const managerConfigStr = JSON.stringify({
 	localPlaylist: localPlaylist,
 	volume: config.volume ?? 0.7,
 	playMode: config.playMode ?? "list",
+	autoplay: config.autoplay ?? false,
 	showLyrics: config.showLyrics ?? true,
-	playlists: config.playlists || [],
-	i18n: {
-		noPlaying: i18n(I18nKey.musicNoPlaying),
+		lyricsFixedBottom: !!config.lyricsFixedBottom,
+		i18n: {
+			noPlaying: i18n(I18nKey.musicNoPlaying),
 		lyrics: i18n(I18nKey.musicLyrics),
 		volume: i18n(I18nKey.musicVolume),
 		playMode: i18n(I18nKey.musicPlayMode),
@@ -57,12 +87,13 @@ const managerConfigStr = JSON.stringify({
 });
 ---
 
-<script is:inline data-swup-ignore-script define:vars={{ managerConfigStr }}>
+<script is:inline data-swup-ignore-script define:vars={{ managerConfigStr, bangumiPlaylistJson: JSON.stringify(bangumiPlaylist), metingApiBase }}>
 (function () {
     // Singleton guard – only create once
     if (window.__fireflyMusic) return;
 
     var config = JSON.parse(managerConfigStr);
+    var _externalLoaded = false;
 
     // ── Helpers ──────────────────────────────────────────────
     function formatTime(seconds) {
@@ -101,6 +132,83 @@ const managerConfigStr = JSON.stringify({
     audio.crossOrigin = 'anonymous';
     audio.style.display = 'none';
     document.body.appendChild(audio);
+
+    // ── Fixed bottom lyric bar（全局唯一，随音乐状态显示当前歌词）──
+    // 默认开启与否取决于配置，之后可通过 UI 开关动态切换（localStorage 记忆）
+    var fxLyricsEnabled = localStorage.getItem('music-fixed-lyrics');
+    if (fxLyricsEnabled === null) {
+        fxLyricsEnabled = !!config.lyricsFixedBottom;
+    } else {
+        fxLyricsEnabled = fxLyricsEnabled === '1';
+    }
+    var fxLyricsEl = document.createElement('div');
+    fxLyricsEl.className = 'music-fixed-lyrics';
+    fxLyricsEl.innerHTML =
+        '<p class="music-fixed-lyrics__line">' +
+            '<span class="music-fixed-lyrics__text"></span>' +
+            '<span class="music-fixed-lyrics__karaoke"></span>' +
+        '</p>';
+    var fxLyricsLine = fxLyricsEl.querySelector('.music-fixed-lyrics__line');
+    var fxLyricsText = fxLyricsEl.querySelector('.music-fixed-lyrics__text');
+    var fxLyricsKara = fxLyricsEl.querySelector('.music-fixed-lyrics__karaoke');
+    document.body.appendChild(fxLyricsEl);
+
+    // 底部歌词条配色（可在 admin 后端「音乐播放器配置」中设置）
+    var fxLyricsConfig = config.lyrics || {};
+    var fxProgressFill = fxLyricsConfig.progressFill !== false;
+    var fxPlayedColor = fxLyricsConfig.playedColor || '#ff4d4f';
+    var fxUnplayedColor = fxLyricsConfig.unplayedColor || 'rgba(160,175,195,0.85)';
+
+    function updateFixedBar() {
+        if (!fxLyricsEl || !fxLyricsLine) return;
+        var showing = fxLyricsEnabled && state.isPlaying
+            && state.currentLrcIndex >= 0 && state.currentLrcIndex < state.lyrics.length;
+        if (showing) {
+            var lineText = state.lyrics[state.currentLrcIndex].text;
+            if (!fxProgressFill) {
+                fxLyricsText.textContent = lineText;
+                if (fxLyricsLine.firstChild) fxLyricsLine.removeChild(fxLyricsKara);
+            } else {
+                if (fxLyricsLine.children.length < 2) fxLyricsLine.appendChild(fxLyricsKara);
+                fxLyricsText.textContent = lineText;
+                fxLyricsKara.textContent = lineText;
+                // 当前行内已播放 / 未播放进度（依据下句时间估算，范围 0~1）
+                var curLine = state.lyrics[state.currentLrcIndex];
+                var nxt = state.lyrics[state.currentLrcIndex + 1];
+                var span = (nxt ? nxt.time : audio.duration || curLine.time + 4000) - curLine.time;
+                var pct = span > 0 ? (audio.currentTime - curLine.time) / span : 0;
+                if (pct < 0) pct = 0;
+                if (pct > 1) pct = 1;
+                var grad = 'linear-gradient(to right, ' + fxPlayedColor + ' 0%, ' + fxPlayedColor + ' ' + (pct * 100) + '%, ' + fxUnplayedColor + ' ' + (pct * 100) + '%, ' + fxUnplayedColor + ' 100%)';
+                fxLyricsText.style.color = fxUnplayedColor;
+                fxLyricsKara.style.backgroundImage = grad;
+            }
+            fxLyricsEl.style.opacity = '1';
+            fxLyricsEl.style.transform = 'translateX(-50%) translateY(0)';
+        } else {
+            fxLyricsEl.style.opacity = '0';
+            fxLyricsEl.style.transform = 'translateX(-50%) translateY(14px)';
+        }
+    }
+
+    // ── 会话状态持久化：跨页面/刷新后仍能恢复曲目、进度与模式 ──
+    function persistState() {
+        try {
+            sessionStorage.setItem('music-session-state', JSON.stringify({
+                index: state.currentIndex,
+                time: audio.currentTime || 0,
+                playMode: state.playMode,
+                volume: state.volume,
+                muted: state.isMuted ? 1 : 0,
+                wasPlaying: state.isPlaying ? 1 : 0
+            }));
+        } catch (e) {}
+    }
+    var _lastPersist = 0;
+    function persistStateThrottled() {
+        var now = Date.now();
+        if (now - _lastPersist > 1000) { _lastPersist = now; persistState(); }
+    }
 
     // ── State ────────────────────────────────────────────────
     var loadVersion = 0; // incremented on each loadTrack to discard stale play() results
@@ -169,16 +277,13 @@ const managerConfigStr = JSON.stringify({
         throw new Error('All Meting APIs failed');
     }
 
-    async function switchPlaylist(playlistId) {
-        var playlist = config.playlists?.find(function(p) { return p.id === playlistId; });
-        if (!playlist) return;
-
+    async function switchPlaylist(server, type, id) {
         try {
-            var newPlaylist = await fetchMetingData(playlist.server, playlist.type, playlist.playlistId);
+            var newPlaylist = await fetchMetingData(server, type, id);
             if (newPlaylist && newPlaylist.length > 0) {
                 state.playlist = newPlaylist;
                 state.currentIndex = 0;
-                emit('fm:playlist-changed', { playlist: newPlaylist, playlistId: playlistId });
+                emit('fm:playlist-changed', { playlist: newPlaylist, server: server, type: type, id: id });
                 loadTrack(0, false);
             }
         } catch (e) {
@@ -187,10 +292,39 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
+    // ── Meting track resolution（bangumi 条目 metingId → 音频/封面/歌词）──
+    async function resolveMetingTracks(playlist) {
+        var base = (metingApiBase || 'https://mu.tsh520.cn/api') + '?server=';
+        for (var i = 0; i < playlist.length; i++) {
+            var track = playlist[i];
+            if (track.metingServer && track.metingId && !track.url) {
+                try {
+                    var s = encodeURIComponent(track.metingServer);
+                    var id = encodeURIComponent(track.metingId);
+                    var res = await fetch(base + s + '&type=song&id=' + id);
+                    if (!res.ok) throw new Error('HTTP ' + res.status);
+                    var raw = await res.json();
+                    var data = Array.isArray(raw) ? raw[0] : raw;
+                    if (data) {
+                        if (data.url) track.url = data.url;
+                        if (data.pic && !track.pic) track.pic = data.pic;
+                        if (data.lrc && !track.lrc) track.lrc = data.lrc;
+                        track.artist = track.artist || data.author || data.artist || '';
+                        track.name = (track.name && track.name !== track.metingId) ? track.name : (data.title || track.name);
+                    }
+                } catch(e) {
+                    console.warn('[MusicManager] Meting resolve failed:', track.name, e);
+                }
+            }
+        }
+        return playlist;
+    }
+
     // ── Lyrics ───────────────────────────────────────────────
     function loadLyrics(track) {
         state.lyrics = [];
         state.currentLrcIndex = -1;
+        updateFixedBar();
 
         if (!track.lrc) {
             emit('fm:lyrics', { lyrics: [], status: 'none' });
@@ -220,7 +354,7 @@ const managerConfigStr = JSON.stringify({
     }
 
     // ── Track loading ────────────────────────────────────────
-    function loadTrack(index, autoPlay) {
+    function loadTrack(index, autoPlay, restoreTime) {
         if (index < 0 || index >= state.playlist.length) return;
         state.currentIndex = index;
         var track = state.playlist[index];
@@ -228,15 +362,26 @@ const managerConfigStr = JSON.stringify({
 
         audio.src = track.url;
 
+        // 恢复上次会话的播放进度（跨页面/刷新恢复用）
+        if (restoreTime) {
+            var applyTime = function () {
+                try { audio.currentTime = Math.min(restoreTime, audio.duration || restoreTime); } catch(e) {}
+            };
+            if (audio.readyState >= 1) applyTime();
+            else audio.addEventListener('loadedmetadata', applyTime, { once: true });
+        }
+
         loadLyrics(track);
 
         emit('fm:track', { index: index, track: track, autoPlay: !!autoPlay });
+        persistState();
 
         if (autoPlay) {
             audio.play().then(function () {
                 if (ver !== loadVersion) return; // stale, discard
                 state.isPlaying = true;
                 emit('fm:play-state', { isPlaying: true });
+                updateFixedBar();
             }).catch(function (e) {
                 if (ver !== loadVersion) return; // stale, discard
                 if (e.name === 'AbortError') return; // interrupted by new load
@@ -245,6 +390,7 @@ const managerConfigStr = JSON.stringify({
         } else {
             state.isPlaying = false;
             emit('fm:play-state', { isPlaying: false });
+            updateFixedBar();
         }
     }
 
@@ -254,11 +400,15 @@ const managerConfigStr = JSON.stringify({
             audio.play().then(function () {
                 state.isPlaying = true;
                 emit('fm:play-state', { isPlaying: true });
+                updateFixedBar();
+                persistState();
             });
         } else {
             audio.pause();
             state.isPlaying = false;
             emit('fm:play-state', { isPlaying: false });
+            updateFixedBar();
+            persistState();
         }
     }
 
@@ -268,6 +418,7 @@ const managerConfigStr = JSON.stringify({
             audio.play();
             return;
         }
+        persistState();
         var nextIndex;
         if (state.playMode === 2) {
             nextIndex = Math.floor(Math.random() * state.playlist.length);
@@ -290,6 +441,7 @@ const managerConfigStr = JSON.stringify({
     function setPlayMode(mode) {
         state.playMode = mode;
         emit('fm:mode', { playMode: mode });
+        persistState();
     }
 
     function cyclePlayMode() {
@@ -304,22 +456,26 @@ const managerConfigStr = JSON.stringify({
         audio.muted = false;
         localStorage.setItem('music-player-volume', val.toString());
         emit('fm:volume', { volume: val, isMuted: false });
+        persistState();
     }
 
     function toggleMute() {
         state.isMuted = !state.isMuted;
         audio.muted = state.isMuted;
         emit('fm:volume', { volume: state.volume, isMuted: state.isMuted });
+        persistState();
     }
 
     function seek(percent) {
         if (!audio.duration) return;
         audio.currentTime = Math.max(0, Math.min(1, percent)) * audio.duration;
+        persistState();
     }
 
     function seekToTime(time) {
         if (!audio.duration) return;
         audio.currentTime = Math.max(0, Math.min(time, audio.duration));
+        persistState();
     }
 
     function playTrackByIndex(index) {
@@ -344,6 +500,14 @@ const managerConfigStr = JSON.stringify({
             currentTimeStr: formatTime(ct),
             durationStr: formatTime(dur)
         });
+        persistStateThrottled();
+
+        // 底部歌词条卡拉OK式填色随进度实时更新
+        if (fxLyricsEnabled && state.isPlaying
+            && state.currentLrcIndex >= 0 && state.currentLrcIndex < state.lyrics.length) {
+            updateFixedBar();
+        }
+
 
         // Lyrics sync
         if (state.lyrics.length > 0) {
@@ -355,6 +519,7 @@ const managerConfigStr = JSON.stringify({
             if (idx !== state.currentLrcIndex) {
                 state.currentLrcIndex = idx;
                 emit('fm:lrc-index', { index: idx });
+                updateFixedBar();
             }
         }
     });
@@ -374,22 +539,42 @@ const managerConfigStr = JSON.stringify({
         state.initializing = true;
 
         try {
-            if (config.playlists && config.playlists.length > 0) {
-                var firstPlaylist = config.playlists[0];
-                state.playlist = await fetchMetingData(firstPlaylist.server, firstPlaylist.type, firstPlaylist.playlistId);
-                emit('fm:playlist-changed', { playlist: state.playlist, playlistId: firstPlaylist.id });
-            } else if (config.mode === 'meting' && config.meting) {
+            if (config.mode === 'meting' && config.meting) {
                 state.playlist = await fetchMetingData(config.meting.server, config.meting.type, config.meting.id);
             } else if (config.mode === 'local') {
                 state.playlist = config.localPlaylist || [];
             }
 
+            // 自动加载 bangumi 播放列表（构建时注入，与音乐页共享同一数据源）
+            var bangumi = [];
+            try { bangumi = JSON.parse(bangumiPlaylistJson || '[]'); } catch(e) {}
+            if (bangumi.length > 0 && !_externalLoaded) {
+                var bangumiResolved = await resolveMetingTracks(bangumi);
+                state.playlist = bangumiResolved;
+                _externalLoaded = true;
+            }
+
             if (state.playlist.length > 0) {
+                // 恢复本次会话的播放模式与音量（刷新/跨页后仍保留用户设置）
+                var saved = null;
+                try { saved = JSON.parse(sessionStorage.getItem('music-session-state') || 'null'); } catch(e) {}
+                if (saved && typeof saved.playMode === 'number') state.playMode = saved.playMode;
+                if (saved && typeof saved.volume === 'number') state.volume = saved.volume;
+                if (saved && saved.muted) state.isMuted = true;
+
                 audio.volume = state.volume;
+                audio.muted = state.isMuted;
 
                 var startIndex = 0;
                 if (state.playMode === 2) {
                     startIndex = Math.floor(Math.random() * state.playlist.length);
+                }
+                // 若会话中有历史曲目且索引有效，则从该曲目恢复并还原进度
+                var restoreTime = 0;
+                if (saved && typeof saved.index === 'number'
+                    && saved.index >= 0 && saved.index < state.playlist.length) {
+                    startIndex = saved.index;
+                    restoreTime = saved.time || 0;
                 }
 
                 state.initialized = true;
@@ -401,7 +586,63 @@ const managerConfigStr = JSON.stringify({
                     isMuted: state.isMuted
                 });
 
-                loadTrack(startIndex, false);
+                loadTrack(startIndex, false, restoreTime);
+
+                // 自动播放/续播统一逻辑：开启自动播放时始终注册「首次交互兜底」，
+                // 解决刷新/首访后被浏览器拦截无感续播、导致还是要手动播放的问题。
+                var _intStarted = false;
+                var _intEvs = ['pointerdown', 'keydown', 'touchstart'];
+                function _startPlayback() {
+                    if (!audio.paused) {
+                        _intStarted = true;
+                        _removeIntListeners();
+                        return;
+                    }
+                    if (_intStarted) return;
+                    _intStarted = true;
+                    _removeIntListeners();
+                    audio.play().then(function () {
+                        state.isPlaying = true;
+                        emit('fm:play-state', { isPlaying: true });
+                        updateFixedBar();
+                        persistState();
+                    }).catch(function () {});
+                }
+                function _removeIntListeners() {
+                    for (var _x = 0; _x < _intEvs.length; _x++) {
+                        window.removeEventListener(_intEvs[_x], _startPlayback);
+                    }
+                    document.removeEventListener('visibilitychange', _onVisStart);
+                }
+                function _onVisStart() {
+                    if (!document.hidden) _startPlayback();
+                }
+
+                // 上一次会话在播放：立即尝试无感续播；若被拦截则交给首次交互兜底续播
+                if (saved && saved.wasPlaying) {
+                    function tryResume() {
+                        audio.play().then(function () {
+                            state.isPlaying = true;
+                            _intStarted = true;
+                            emit('fm:play-state', { isPlaying: true });
+                            updateFixedBar();
+                            persistState();
+                        }).catch(function () {
+                            // 被浏览器拦截：保留恢复的进度，等待首次交互时再续播
+                            _intStarted = false;
+                        });
+                    }
+                    if (audio.readyState >= 1) tryResume();
+                    else audio.addEventListener('loadedmetadata', tryResume, { once: true });
+                }
+
+                // 自动播放开关开启：始终挂首次交互续播，保证刷新/首访后也能自动开始
+                if (config.autoplay) {
+                    for (var _y = 0; _y < _intEvs.length; _y++) {
+                        window.addEventListener(_intEvs[_y], _startPlayback);
+                    }
+                    document.addEventListener('visibilitychange', _onVisStart);
+                }
             } else {
                 state.initialized = true;
                 emit('fm:init', {
@@ -427,8 +668,38 @@ const managerConfigStr = JSON.stringify({
         }
     }
 
+    // ── External playlist injection（音乐页面数据源）──────────
+    function loadExternalPlaylist(playlist) {
+        if (!playlist || playlist.length === 0) return;
+        _externalLoaded = true;
+        state.playlist = playlist;
+        state.currentIndex = 0;
+        if (!state.initialized) {
+            audio.volume = state.volume;
+            state.initialized = true;
+        }
+        emit('fm:init', {
+            playlist: state.playlist,
+            playMode: state.playMode,
+            volume: state.volume,
+            isMuted: state.isMuted
+        });
+        loadTrack(0, false);
+    }
+
+    // ── 固定底部歌词条开关 ──────────────────────────────────
+    function setFixedLyrics(enabled) {
+        fxLyricsEnabled = !!enabled;
+        try { localStorage.setItem('music-fixed-lyrics', fxLyricsEnabled ? '1' : '0'); } catch(e) {}
+        updateFixedBar();
+        emit('fm:fixed-lyrics', { enabled: fxLyricsEnabled });
+        try { sessionStorage.setItem('music-fixed-lyrics', fxLyricsEnabled ? '1' : '0'); } catch(e) {}
+    }
+
     // ── Public API ───────────────────────────────────────────
     window.__fireflyMusic = {
+        get _externalLoaded() { return _externalLoaded; },
+        set _externalLoaded(v) { _externalLoaded = v; },
         init: init,
         getState: function () {
             var track = state.playlist[state.currentIndex] || null;
@@ -449,6 +720,7 @@ const managerConfigStr = JSON.stringify({
                 currentLrcIndex: state.currentLrcIndex,
                 initialized: state.initialized,
                 error: state.error,
+                fixedLyrics: fxLyricsEnabled,
                 config: config
             };
         },
@@ -462,7 +734,69 @@ const managerConfigStr = JSON.stringify({
         seekToTime: seekToTime,
         playTrackByIndex: playTrackByIndex,
         loadTrack: loadTrack,
-        switchPlaylist: switchPlaylist
+        loadExternalPlaylist: loadExternalPlaylist,
+        switchPlaylist: switchPlaylist,
+        getFixedLyrics: function () { return fxLyricsEnabled; },
+        setFixedLyrics: setFixedLyrics,
+        toggleFixedLyrics: function () { setFixedLyrics(!fxLyricsEnabled); }
     };
 })();
 </script>
+
+<style is:global>
+    /* 固定底部歌词条（全局唯一，由 MusicManager 创建） */
+    .music-fixed-lyrics {
+        position: fixed;
+        bottom: max(1rem, env(safe-area-inset-bottom));
+        left: 50%;
+        z-index: 59;
+        max-width: min(90vw, 520px);
+        padding: 0.5rem 1.25rem;
+        border-radius: 9999px;
+        background: linear-gradient(135deg, rgba(255,255,255,0.62), rgba(240,248,255,0.5) 48%, rgba(255,255,255,0.55));
+        backdrop-filter: blur(18px) saturate(1.6);
+        -webkit-backdrop-filter: blur(18px) saturate(1.6);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.18);
+        color: rgba(5,14,28,0.85);
+        opacity: 0;
+        transform: translateX(-50%) translateY(14px);
+        transition: opacity 0.35s ease, transform 0.35s ease;
+        pointer-events: none;
+        text-align: center;
+    }
+    :root.dark .music-fixed-lyrics {
+        background: linear-gradient(135deg, rgba(30,35,48,0.82), rgba(20,26,38,0.78));
+        color: rgba(235,240,250,0.9);
+        box-shadow: 0 10px 40px rgba(0,0,0,0.45);
+    }
+    .music-fixed-lyrics__line {
+        margin: 0;
+        position: relative;
+        width: max-content;
+        max-width: 100%;
+        margin-inline: auto;
+        font-size: 0.9rem;
+        font-weight: 600;
+        line-height: 1.4;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+    .music-fixed-lyrics__text,
+    .music-fixed-lyrics__karaoke {
+        display: block;
+        white-space: nowrap;
+    }
+    .music-fixed-lyrics__karaoke {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        color: transparent;
+        -webkit-background-clip: text;
+        background-clip: text;
+        font: inherit;
+        line-height: inherit;
+    }
+</style>

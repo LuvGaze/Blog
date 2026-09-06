@@ -21,9 +21,9 @@ export interface CustomFontProvider {
 }
 
 /**
- * 字体定义（Astro Font API 配置项）
+ * 字体定义（Astro Font image-api 配置项）
  *
- * 适用于 Astro Font API 的字体配置，支持自动下载、缓存和优化加载。
+ * 适用于 Astro Font image-api 的字体配置，支持自动下载、缓存和优化加载。
  * 支持的 provider：google, fontsource, local, bunny, fontshare, npm 或自定义 provider
  */
 export type FontDefinition = {

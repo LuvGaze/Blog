@@ -1,18 +1,24 @@
 <script lang="ts">
 import { onDestroy, onMount } from "svelte";
 import { musicPlayerConfig } from "@/config/musicConfig";
-import { AudioAnalyzer } from "./AudioAnalyzer";
+import { audioAnalyzer } from "./AudioAnalyzer";
 import LyricsOverlay from "./LyricsOverlay.svelte";
 import ThreeScene from "./ThreeScene.svelte";
 import VisualizerControls from "./VisualizerControls.svelte";
 
-const audioAnalyzer = new AudioAnalyzer();
 let sceneReady = $state(false);
 let backgroundColor = $state(
 	musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15",
 );
 
 function syncPageBackground() {
+	if (musicPlayerConfig.visualizer?.followSiteTheme) {
+		const style = getComputedStyle(document.documentElement);
+		backgroundColor =
+			style.getPropertyValue("--card-bg").trim() ||
+			(musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15");
+		return;
+	}
 	backgroundColor = document.documentElement.classList.contains("dark")
 		? (musicPlayerConfig.visualizer?.background?.dark ?? "#0a0a15")
 		: (musicPlayerConfig.visualizer?.background?.light ?? "#ffffff");

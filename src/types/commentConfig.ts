@@ -28,7 +28,7 @@ export type CommentConfig = {
 		visitorCount?: boolean; // 是否统计访问量，true 启用访问量，false 关闭
 	};
 	artalk?: {
-		// 后端程序 API 地址
+		// 后端程序 image-api 地址
 		server: string;
 		/**
 		 * 语言，支持语言如下：

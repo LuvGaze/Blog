@@ -191,6 +191,29 @@ if (isLocalSrcLogo) {
 </div>
 
 <script>
+function initLinkPrefetch() {
+    // 悬停内链时预加载目标页，配合 Layout 中的 rel=prefetch 缓存，切换更跟手
+    var done = {};
+    document.addEventListener('mouseover', function (e) {
+        if (typeof window === 'undefined' || !window.swup || !window.swup.preload) return;
+        if (document.documentElement.classList.contains('is-page-transitioning')) return;
+        var t = e.target;
+        var a = t && t.closest ? t.closest('a[href]') : null;
+        if (!a) return;
+        var href = a.getAttribute('href');
+        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('//')) return;
+        var path = href.split('#')[0].split('?')[0];
+        if (!path.startsWith('/')) return;
+        if (path === window.location.pathname) return;
+        if (done[path]) return;
+        done[path] = true;
+        try {
+            window.swup.preload(path === '/' ? '/' : path.replace(/\/+$/, '') + '/');
+        } catch (e) {}
+    });
+}
+initLinkPrefetch();
+
 function loadButtonScript() {
     let settingBtn = document.getElementById("display-settings-switch");
     if (settingBtn) {

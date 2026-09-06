@@ -93,6 +93,7 @@ export type SiteConfig = {
 		routines: boolean; // 规划页面开关
 		places: boolean; // 足迹页面开关
 		notebooks: boolean; // 笔记本页面开关
+		bills: boolean; // 账单页面开关
 	};
 
 	// 分类导航栏开关
@@ -138,7 +139,7 @@ export type SiteConfig = {
 	bangumi?: {
 		userId?: string; // Bangumi用户ID
 		mode?: "static" | "dynamic"; // 数据模式：static=构建时获取，dynamic=客户端实时获取
-		apiUrl?: string; // Bangumi API 地址
+		apiUrl?: string; // Bangumi image-api 地址
 		subjectBaseUrl?: string; // 条目详情页地址
 		categoryOrder?: ("anime" | "game" | "book" | "music" | "real")[]; // 条目类型排序顺序
 	};
@@ -149,7 +150,7 @@ export type SiteConfig = {
 			uid: string; // Bilibili 用户 UID
 		};
 		tmdb?: {
-			apiKey: string; // TMDB API Key
+			apiKey: string; // TMDB image-api Key
 			listId: string; // TMDB 列表 ID
 		};
 	};

@@ -1,13 +1,3 @@
-export interface PlaylistConfig {
-	id: string;
-	name: string;
-	description: string;
-	server: "netease" | "tencent" | "kugou" | "xiami" | "baidu";
-	type: "playlist" | "album" | "artist";
-	playlistId: string;
-	cover?: string;
-}
-
 export type MusicPlayerConfig = {
 	mode?: "meting" | "local";
 	volume?: number;
@@ -15,12 +5,25 @@ export type MusicPlayerConfig = {
 	showLyrics?: boolean;
 	showInNavbar?: boolean;
 
-	playlists?: PlaylistConfig[];
-	currentPlaylistId?: string;
+	// 是否自动开始播放（受浏览器自动播放策略限制：通常在用户首次与页面交互后自动播放）
+	autoplay?: boolean;
 
-	// Meting API 配置
+	// 是否在页面底部固定显示歌词条（无论页面如何滚动都显示在当前歌词）
+	lyricsFixedBottom?: boolean;
+
+	// 底部固定歌词条配置
+	lyrics?: {
+		// 是否区分「已播放」与「未播放」字的颜色（卡拉OK式渐显）
+		progressFill?: boolean;
+		// 已播放文字颜色
+		playedColor?: string;
+		// 未播放文字颜色
+		unplayedColor?: string;
+	};
+
+	// Meting image-api 配置
 	meting?: {
-		// Meting API 地址
+		// Meting image-api 地址
 		api?: string;
 
 		// 音乐平台：netease=网易云音乐, tencent=QQ音乐, kugou=酷狗音乐, xiami=虾米音乐, baidu=百度音乐
@@ -35,7 +38,7 @@ export type MusicPlayerConfig = {
 		// 认证 token（可选）
 		auth?: string;
 
-		// 备用 API 配置（当主 API 失败时使用）
+		// 备用 image-api 配置（当主 image-api 失败时使用）
 		fallbackApis?: string[];
 	};
 
@@ -52,6 +55,9 @@ export type MusicPlayerConfig = {
 
 	// 音乐可视化配置
 	visualizer?: {
+		// 是否整站统一：true 使用站点主题色(--primary)与背景，false 使用下方独立的主题配置
+		followSiteTheme?: boolean;
+
 		// 背景颜色
 		background?: {
 			dark?: string;

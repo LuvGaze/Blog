@@ -78,9 +78,11 @@ export class AudioAnalyzer {
 		this.audioElement = audioEl;
 
 		if (this.audioCtx) {
+			// 复用已存在的 AudioContext：恢复挂起的分析链路
 			if (this.audioCtx.state === "suspended") {
 				this.audioCtx.resume();
 			}
+			this.ensureAnalyser();
 			return;
 		}
 
@@ -90,44 +92,45 @@ export class AudioAnalyzer {
 				.webkitAudioContext;
 		if (!AC) return;
 		this.audioCtx = new AC();
-		this.analyser = this.audioCtx.createAnalyser();
-		this.analyser.fftSize = 1024;
-		this.analyser.smoothingTimeConstant = 0.8;
-
 		this.gainNode = this.audioCtx.createGain();
 		this.gainNode.gain.value = 1;
 
 		try {
+			// 注意：createMediaElementSource 会接管 audio 元素的音频路由，
+			// 之后 audio 只能通过 AudioContext 输出。每个 audio 元素只能调用一次。
 			this.source = this.audioCtx.createMediaElementSource(audioEl);
 			this.source.connect(this.gainNode);
 			this.gainNode.connect(this.audioCtx.destination);
-			this.gainNode.connect(this.analyser);
 			this.connected = true;
 		} catch (e) {
+			// 已连接过（如第二次进入音乐页复用了单例外的实例）则尽力恢复
 			console.warn("AudioAnalyzer: Failed to connect to audio element", e);
 		}
+		this.ensureAnalyser();
+	}
 
+	/** 在已有 context/source 上重建 analyser 分析链路 */
+	private ensureAnalyser() {
+		if (!this.audioCtx || this.analyser) return;
+		this.analyser = this.audioCtx.createAnalyser();
+		this.analyser.fftSize = 1024;
+		this.analyser.smoothingTimeConstant = 0.8;
+		if (this.gainNode) {
+			this.gainNode.connect(this.analyser);
+		}
+		this.connected = !!this.source && !!this.analyser;
 		if (this.analyser) {
 			this.dataArray = new Uint8Array(this.analyser.frequencyBinCount);
 		}
 	}
 
 	disconnect() {
-		if (this.source) {
-			this.source.disconnect();
-			this.source = null;
-		}
-		if (this.gainNode) {
-			this.gainNode.disconnect();
-			this.gainNode = null;
-		}
+		// 重要：createMediaElementSource 之后 audio 的路由已被 AudioContext 接管，
+		// 断开 source 或关闭 context 会导致全局播放器静音（播放仍在进行但无声）。
+		// 因此这里只断开 analyser，保留 source→gain→destination 通路，保证音频持续输出。
 		if (this.analyser) {
 			this.analyser.disconnect();
 			this.analyser = null;
-		}
-		if (this.audioCtx) {
-			this.audioCtx.close();
-			this.audioCtx = null;
 		}
 		this.connected = false;
 	}
@@ -335,3 +338,10 @@ export class AudioAnalyzer {
 		this.events.onRipple?.(x, z, 1.5, false);
 	}
 }
+
+/**
+ * 全局共享的分析器单例。
+ * createMediaElementSource 对同一 audio 元素只能调用一次，且会接管其音频路由；
+ * 因此必须跨页面共享同一实例，避免重复连接导致失败或音频被中断。
+ */
+export const audioAnalyzer = new AudioAnalyzer();

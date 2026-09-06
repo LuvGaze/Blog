@@ -127,12 +127,12 @@ export const ru: Translation = {
 	[Key.bangumiNoDataDescription]: "В этой категории нет элементов",
 	[Key.bangumiEmpty]: "Нет данных",
 	[Key.bangumiEmptyReason]:
-		"Возможные причины: имя пользователя не существует, проблема с подключением к сети или ограничение API",
+		"Возможные причины: имя пользователя не существует, проблема с подключением к сети или ограничение image-api",
 	[Key.bangumiFetchError]: "Ошибка загрузки данных Bangumi",
 	[Key.bangumiFetchErrorDesc]:
-		"Не удалось загрузить данные из Bangumi API при сборке. Эта страница временно недоступна.",
+		"Не удалось загрузить данные из Bangumi image-api при сборке. Эта страница временно недоступна.",
 	[Key.bangumiUsername]: "Имя пользователя",
-	[Key.bangumiApi]: "API",
+	[Key.bangumiApi]: "image-api",
 	[Key.bangumiConfigTip]:
 		"Подсказка: установите правильное имя пользователя Bangumi в конфигурации страницы",
 	[Key.bangumiPrevPage]: "Предыдущая",
@@ -174,7 +174,7 @@ export const ru: Translation = {
 	[Key.animeViewDetails]: "Подробнее",
 	[Key.animeNotConfigured]: "Источник данных не настроен",
 	[Key.animeNotConfiguredDesc]:
-		"Настройте Bilibili UID или TMDB API Key в src/config/siteConfig.ts",
+		"Настройте Bilibili UID или TMDB image-api Key в src/config/siteConfig.ts",
 	[Key.animeBilibiliAvg]: "Bilibili ср.",
 	[Key.animeTmdbAvg]: "TMDB ср.",
 	[Key.animeDualSynced]: "Два источника",

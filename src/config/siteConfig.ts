@@ -88,11 +88,12 @@ export const siteConfig: SiteConfig = {
 		books: true,        // 书架页面
 		movies: true,       // 影视页面
 		games: true,        // 游戏页面
-		musicPage: false,    // 音乐页面
+		musicPage: true,    // 音乐页面
 		changelog: true,    // 更新日志页面
 		routines: true,     // 规划页面
 		places: true,       // 足迹页面
 		notebooks: true,    // 笔记本页面
+		bills: true,        // 账单页面
 	},
 
 	// 是否在主页显示分类栏（文章顶部的分类标签条）

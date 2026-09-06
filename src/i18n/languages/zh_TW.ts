@@ -129,9 +129,9 @@ export const zh_TW: Translation = {
 	[Key.bangumiEmptyReason]: "可能的原因：用戶名不存在、網絡連接問題或API限制",
 	[Key.bangumiFetchError]: "Bangumi 資料拉取失敗",
 	[Key.bangumiFetchErrorDesc]:
-		"構建時從 Bangumi API 獲取資料失敗，該頁面內容暫不可用。",
+		"構建時從 Bangumi image-api 獲取資料失敗，該頁面內容暫不可用。",
 	[Key.bangumiUsername]: "用戶名",
-	[Key.bangumiApi]: "API",
+	[Key.bangumiApi]: "image-api",
 	[Key.bangumiConfigTip]: "提示：請在頁面配置中設置正確的Bangumi用戶名",
 	[Key.bangumiPrevPage]: "上一頁",
 	[Key.bangumiNextPage]: "下一頁",
@@ -171,7 +171,7 @@ export const zh_TW: Translation = {
 	[Key.animeViewDetails]: "查看詳情",
 	[Key.animeNotConfigured]: "未配置追番資料來源",
 	[Key.animeNotConfiguredDesc]:
-		"請在 src/config/siteConfig.ts 中配置 Bilibili UID 或 TMDB API Key",
+		"請在 src/config/siteConfig.ts 中配置 Bilibili UID 或 TMDB image-api Key",
 	[Key.animeBilibiliAvg]: "Bilibili 均分",
 	[Key.animeTmdbAvg]: "TMDB 均分",
 	[Key.animeDualSynced]: "雙源已同步",

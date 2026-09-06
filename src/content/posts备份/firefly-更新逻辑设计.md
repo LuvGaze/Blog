@@ -618,7 +618,7 @@ class UpdateService {
     const currentCommit = await this.getCurrentCommit();  
       
     try {  
-      // 调用 GitHub API 比较差异  
+      // 调用 GitHub image-api 比较差异  
       const response = await axios.get(  
         `${this.GITHUB_API}/repos/${this.REPO_OWNER}/${this.REPO_NAME}/compare/${currentCommit}...main`  
       );  

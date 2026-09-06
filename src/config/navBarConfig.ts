@@ -66,6 +66,7 @@ const getDynamicNavBarConfig = (): NavBarConfig => {
 			...(siteConfig.pages.changelog ? [LinkPresets.Changelog] : []),
 			...(siteConfig.pages.routines ? [LinkPresets.Routines] : []),
 			...(siteConfig.pages.places ? [LinkPresets.Places] : []),
+			...(siteConfig.pages.bills ? [LinkPresets.Bills] : []),
 		].filter(Boolean),
 	});
 
@@ -249,6 +250,12 @@ export const LinkPresets: Record<string, NavBarLink> = {
 		name: "笔记本",
 		url: "/notebooks/",
 		icon: "material-symbols:menu-book-outline",
+	},
+	// 账单页：收支账单记录
+	Bills: {
+		name: "账单",
+		url: "/bills/",
+		icon: "material-symbols:account-balance-wallet",
 	},
 };
 

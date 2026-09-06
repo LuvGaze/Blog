@@ -15,6 +15,7 @@ const config = musicPlayerConfig;
 
 const viewConfigStr = JSON.stringify({
 	showLyrics: config.showLyrics ?? true,
+	lyricsFixedBottom: config.lyricsFixedBottom ?? false,
 	i18n: {
 		noPlaying: i18n(I18nKey.musicNoPlaying),
 		lyrics: i18n(I18nKey.musicLyrics),
@@ -58,6 +59,11 @@ const widgetId =
             <button class={`btn-lrc-toggle hover:text-(--primary) transition-all duration-300 p-0.5 pr-2 transform active:scale-95 text-neutral-400 shrink-0 ${!config.showLyrics ? 'hidden' : ''}`} title={i18n(I18nKey.musicLyrics)} aria-label={i18n(I18nKey.musicLyrics)}>
                 <Icon is:inline name="material-symbols:subtitles-off-outline-rounded" class="icon-lrc-off text-xl" aria-hidden="true" />
                 <Icon is:inline name="material-symbols:subtitles-outline-rounded" class="icon-lrc-on text-xl hidden" aria-hidden="true" />
+            </button>
+            <!-- Fixed Bottom Lyric Toggle -->
+            <button class="btn-pin-lyric hover:text-(--primary) transition-all duration-300 p-0.5 pr-2 transform active:scale-95 text-neutral-400 shrink-0" title="固定显示歌词" aria-label="固定显示歌词">
+                <Icon is:inline name="mdi:pin-outline" class="icon-pin-off text-xl" aria-hidden="true" />
+                <Icon is:inline name="mdi:pin" class="icon-pin-on text-xl hidden text-(--primary)" aria-hidden="true" />
             </button>
         </div>
 
@@ -220,6 +226,9 @@ const widgetId =
         btnLrc: widget.querySelector('.btn-lrc-toggle'),
         iconLrcOn: widget.querySelector('.icon-lrc-on'),
         iconLrcOff: widget.querySelector('.icon-lrc-off'),
+        btnPinLyric: widget.querySelector('.btn-pin-lyric'),
+        iconPinOn: widget.querySelector('.icon-pin-on'),
+        iconPinOff: widget.querySelector('.icon-pin-off'),
         lrcDrawer: widget.querySelector('.lrc-drawer'),
         lrcContainer: widget.querySelector('.lrc-container'),
         btnDrawer: widget.querySelector('.btn-drawer-toggle'),
@@ -228,11 +237,28 @@ const widgetId =
         itemTemplate: document.getElementById('playlist-item-template-' + widgetId)
     };
 
+    // ── Pin lyric (fixed bottom bar) toggle state ───────────
+    var pinnedLyrics = mgr.getState().fixedLyrics;
+    function refreshPinUI(enabled) {
+        if (enabled) {
+            ui.btnPinLyric.classList.add('text-(--primary)');
+            ui.btnPinLyric.classList.remove('text-neutral-400');
+            ui.iconPinOn.classList.remove('hidden');
+            ui.iconPinOff.classList.add('hidden');
+        } else {
+            ui.btnPinLyric.classList.remove('text-(--primary)');
+            ui.btnPinLyric.classList.add('text-neutral-400');
+            ui.iconPinOn.classList.add('hidden');
+            ui.iconPinOff.classList.remove('hidden');
+        }
+    }
+
     // Verify critical elements
     var _critical = [ui.btnPlay, ui.btnRepeat, ui.btnMute, ui.volContainer,
         ui.btnDrawer, ui.btnLrc, ui.lrcDrawer, ui.lrcContainer,
         ui.progressContainer, ui.btnNext, ui.btnPrev, ui.loading,
-        ui.cover, ui.title, ui.artist, ui.playlistContainer, ui.itemTemplate];
+        ui.cover, ui.title, ui.artist, ui.playlistContainer, ui.itemTemplate,
+        ui.btnPinLyric, ui.iconPinOn, ui.iconPinOff];
     if (_critical.some(function(el) { return !el; })) return;
 
     // ── Local state (drawers, user scrolling, virtual scroll) ──
@@ -619,6 +645,10 @@ const widgetId =
         renderLyricsUI(s.lyrics, s.lyrics.length > 0 ? 'loaded' : 'none');
         if (s.currentLrcIndex >= 0) updateLrcHighlight(s.currentLrcIndex);
 
+        // Pin lyric toggle state
+        if (typeof s.fixedLyrics === 'boolean') refreshPinUI(s.fixedLyrics);
+        else refreshPinUI(pinnedLyrics);
+
         // Cover image: if already set, show it
         if (s.track && s.track.pic && ui.cover.src && ui.cover.complete && ui.cover.naturalWidth > 0) {
             ui.cover.classList.remove('opacity-0');
@@ -682,6 +712,11 @@ const widgetId =
         updateLrcHighlight(e.detail.index);
     });
 
+    on('fm:fixed-lyrics', function (e) {
+        pinnedLyrics = e.detail.enabled;
+        refreshPinUI(pinnedLyrics);
+    });
+
     on('fm:error', function (e) {
         ui.title.innerText = e.detail.message || cfg.i18n.error;
     });
@@ -692,6 +727,9 @@ const widgetId =
     ui.btnPrev.addEventListener('click', function () { mgr.playPrev(); });
     ui.btnRepeat.addEventListener('click', function () { mgr.cyclePlayMode(); });
     ui.btnMute.addEventListener('click', function () { mgr.toggleMute(); });
+    ui.btnPinLyric.addEventListener('click', function () {
+        mgr.toggleFixedLyrics();
+    });
 
     ui.volContainer.addEventListener('click', function (e) {
         var rect = ui.volContainer.getBoundingClientRect();
@@ -836,6 +874,7 @@ const widgetId =
     }
 
     // ── Init: either sync existing state or trigger init ─────
+    refreshPinUI(pinnedLyrics);
     var currentState = mgr.getState();
     if (currentState.initialized) {
         // Manager already initialized (late mount) – sync all UI

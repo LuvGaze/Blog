@@ -78,6 +78,19 @@ if (siteConfig.post.generateOgImages && postSlug) {
 const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
+// 预加载目标页面（Swup 的 PreloadPlugin 会读取 rel=prefetch 并在后台预取+缓存，切换时秒开）
+// 优先预取会触发较重前端资源的页面（如 3D 音乐可视化页）
+const prefetchPages: { enabled: boolean; href: string }[] = [
+	{ enabled: siteConfig.pages.musicPage, href: "/music/" },
+	{ enabled: siteConfig.pages.friends, href: "/friends/" },
+	{ enabled: siteConfig.pages.guestbook, href: "/guestbook/" },
+	{ enabled: siteConfig.pages.sponsor, href: "/sponsor/" },
+	{ enabled: siteConfig.pages.bangumi, href: "/bangumi/" },
+	{ enabled: siteConfig.pages.gallery, href: "/gallery/" },
+	{ enabled: siteConfig.pages.anime, href: "/anime/" },
+	{ enabled: true, href: "/" },
+];
+
 // const siteLang = siteConfig.lang.replace('_', '-')
 if (!lang) {
 	lang = `${siteConfig.lang}`;
@@ -165,6 +178,13 @@ const siteLang = lang.replace("_", "-");
           media={favicon.theme && `(prefers-color-scheme: ${favicon.theme})`}
         />
       ))
+    }
+
+    <!-- 预取关键页面：Swup PreloadPlugin 会在后台预取并缓存，减少页面切换卡顿 -->
+    {
+      prefetchPages
+        .filter((p) => p.enabled)
+        .map((p) => <link rel="prefetch" href={url(p.href)} />)
     }
 
     <!-- 为特定域名的图片添加 referrerpolicy 以解决 403 问题 -->

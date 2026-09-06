@@ -1,96 +1,51 @@
 import type { MusicPlayerConfig } from "../types/musicConfig";
 
 /**
- * 播放列表配置接口
- */
-export interface PlaylistConfig {
-	// 播放列表唯一ID
-	id: string;
-	// 播放列表名称（显示在播放器中）
-	name: string;
-	// 播放列表描述
-	description: string;
-	// 音乐平台："netease"网易云，"tencent"QQ音乐，"kugou"酷狗，"xiami"虾米，"baidu"百度
-	server: "netease" | "tencent" | "kugou" | "xiami" | "baidu";
-	// 类型："playlist"歌单，"album"专辑，"artist"歌手
-	type: "playlist" | "album" | "artist";
-	// 歌单/专辑/歌手ID
-	playlistId: string;
-	// 封面图片URL（可选）
-	cover?: string;
-}
-
-/**
  * 音乐播放器配置
  * 用于侧边栏和导航栏的音乐播放器
  */
 export const musicPlayerConfig: MusicPlayerConfig = {
 	// 是否在导航栏显示音乐播放器按钮
-	showInNavbar: false,
-	// 播放器模式："meting"使用Meting API（支持网易云等平台），"local"本地音乐
+	showInNavbar: true,
+	// 播放器模式："meting"使用Meting image-api（支持网易云等平台），"local"本地音乐
 	mode: "meting",
 	// 默认音量（0-1）
 	volume: 0.65,
 	// 播放模式："random"随机，"single"单曲循环，"list"列表循环
 	playMode: "random",
+	// 是否自动开始播放（开启后会在首次用户交互时自动播放）
+	autoplay: true,
 	// 是否显示歌词
 	showLyrics: true,
+	// 是否在页面底部固定显示歌词条（无论页面如何滚动都显示当前歌词）
+	lyricsFixedBottom: true,
 
-	// 播放列表（通过Meting API加载的远程歌单）
-	playlists: [
-		{
-			id: "daily",
-			name: "每日推荐",
-			description: "网易云音乐每日精选",
-			server: "netease",
-			type: "playlist",
-			playlistId: "8659142201",
-		},
-		{
-			id: "anime",
-			name: "动漫原声",
-			description: "精选动漫主题曲与配乐",
-			server: "netease",
-			type: "playlist",
-			playlistId: "672310550",
-		},
-		{
-			id: "game",
-			name: "游戏音乐",
-			description: "游戏BGM精选合集",
-			server: "netease",
-			type: "playlist",
-			playlistId: "3105952877",
-		},
-		{
-			id: "classical",
-			name: "古典音乐",
-			description: "经典古典音乐作品",
-			server: "tencent",
-			type: "playlist",
-			playlistId: "5575587639",
-		},
-	],
+	// 底部固定歌词条配置
+	lyrics: {
+		// 是否区分「已播放」与「未播放」字的颜色（卡拉OK式渐显）
+		progressFill: true,
+		// 已播放文字颜色
+		playedColor: "#EEDEB0",
+		// 未播放文字颜色
+		unplayedColor: "rgba(170,185,200,0.85)",
+	},
 
-	// 当前选中的播放列表ID（对应playlists中的id）
-	currentPlaylistId: "daily",
-
-	// Meting API配置（用于加载远程音乐）
+	// Meting API配置（用于加载远程音乐，server/type/id 即默认歌单）
 	meting: {
 		// Meting API地址（支持占位符替换）
-		api: "https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
+		api: "https://api.injahow.cn/meting/?server=:server&type=:type&id=:id&r=:r",
 		// 默认服务器
 		server: "netease",
 		// 默认类型
 		type: "playlist",
 		// 默认歌单ID
-		id: "8659142201",
+		id: "866045961",
 		// 认证token（某些API需要）
 		auth: "",
 		// 备用API列表（当主API不可用时使用）
 		fallbackApis: [
-			"https://api.injahow.cn/meting/?server=:server&type=:type&id=:id",
 			"https://api.moeyao.cn/meting/?server=:server&type=:type&id=:id",
+			"https://api.i-meto.com/meting/api?server=:server&type=:type&id=:id&r=:r",
 		],
 	},
 
@@ -110,5 +65,45 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 				lrc: "",
 			},
 		],
+	},
+
+	// 3D 可视化器配置
+	visualizer: {
+		// 整站统一开关：false 使用下方独立主题；true 跟随站点主题色(--primary)/背景
+		followSiteTheme: false,
+		background: {
+			dark: "#0a0a15",
+			light: "#2D2D2D",
+		},
+		camera: {
+			position: {
+				x: 0,
+				y: 32,
+				z: 52,
+			},
+		},
+		autoRotate: true,
+		autoRotateSpeed: 0.3,
+		height: {
+			idle: 0.6,
+			subBass: 4.0,
+			bass: 3.0,
+			lowMid: 2.0,
+			mid: 2.5,
+			highMid: 2.0,
+			energy: 4.0,
+			ripple: 3.0,
+			rippleAccent: 1.0,
+		},
+		theme: {
+			base1: "#050810",
+			base2: "#0a0f1a",
+			coolCore: "#2255ff",
+			coolEdge: "#8844ff",
+			warmCore: "#ff4422",
+			warmEdge: "#ffaa00",
+			rippleColor: "#44ddff",
+			glowIntensity: 1.2,
+		},
 	},
 };

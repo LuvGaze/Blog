@@ -1,6 +1,7 @@
 ---
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
+import { createHash } from "node:crypto";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
@@ -32,18 +33,201 @@ const sortedPlaces = [...filteredEntries].sort((a, b) => {
 const totalVisitCount = sum(sortedPlaces.map((p) => p.data.visitCount || 1));
 const thisYearVisitCount = sortedPlaces.filter((p) => isSameYear(p.data.date)).length;
 
-const clientSortedPlaces = sortedPlaces.map((p) => ({
-	province: p.data.province,
-	city: p.data.city || "",
-	district: p.data.district || "",
-	visitCount: p.data.visitCount || 1,
-	date: p.data.date instanceof Date ? p.data.date.toISOString().split("T")[0] : "",
-}));
+// 预设标记颜色循环
+const MARKER_PRESETS = [
+	"ocean",
+	"sunset",
+	"violet",
+	"forest",
+	"amber",
+	"citrus",
+];
+
+// 自动地理编码使用的 Key 与安全密钥：
+// PUBLIC_AMAP_GEO_KEY 填高德控制台的「Key」（Web服务类型 Key）
+// PUBLIC_AMAP_GEO_SECRET 填高德控制台的「安全密钥/密钥」（仅当该 Key 开启了「安全码」时需要，
+//   用于计算 sig 数字签名；没有启用安全码则可留空）
+const amapGeoKey =
+	import.meta.env.PUBLIC_AMAP_GEO_KEY ||
+	import.meta.env.PUBLIC_AMAP_KEY_PLACES;
+const amapGeoSecret = import.meta.env.PUBLIC_AMAP_GEO_SECRET || "";
+// 高德 JSAPI 安全密钥（Web端 JS API Key 配套的「安全密钥」，用于正常加载地图底图）
+const amapSecurityCode =
+	import.meta.env.PUBLIC_AMAP_SECURITY_JS_CODE || "";
+
+// 使用高德地理编码 API 将「省份+城市」解析为经纬度。
+// Key 需为「Web服务」类型；解析失败或未配置时返回 null，改为手动在后台填写 lat/lng。
+async function tryGeocode(
+	province?: string,
+	city?: string,
+): Promise<{ lat: number; lng: number } | null> {
+	if (!amapGeoKey || !province) return null;
+	const params: Record<string, string> = {
+		key: amapGeoKey,
+		address: [province, city].filter(Boolean).join(""),
+	};
+	if (city) params.city = city;
+	// 按参数名 ASCII 升序拼接，若配置了安全密钥则计算 sig（MD5(query + secret)）并追加到 URL
+	const query = Object.keys(params)
+		.sort()
+		.map((k) => `${k}=${encodeURIComponent(params[k])}`)
+		.join("&");
+	const sign = amapGeoSecret
+		? createHash("md5").update(query + amapGeoSecret).digest("hex")
+		: "";
+	const url = amapGeoSecret
+		? `https://restapi.amap.com/v3/geocode/geo?${query}&sig=${sign}`
+		: `https://restapi.amap.com/v3/geocode/geo?${query}`;
+	let data: any = null;
+	try {
+		const res = await fetch(url);
+		data = await res.json();
+	} catch (e) {
+		// 忽略网络/解析错误，回退到手动坐标
+		return null;
+	}
+	if (data && data.status === "1" && data.geocodes && data.geocodes.length > 0) {
+		const parts = String(data.geocodes[0].location || "").split(",").map(Number);
+		const lng = parts[0];
+		const lat = parts[1];
+		if (
+			typeof lng === "number" &&
+			typeof lat === "number" &&
+			!Number.isNaN(lng) &&
+			!Number.isNaN(lat)
+		) {
+			return { lat, lng };
+		}
+	}
+	// 便于排查：构建日志打印失败信息（生产不展示给用户）
+	if (data && String(data.status) !== "1") {
+		console.warn(`[travel] 地理编码失败信息: ${data.info || data.infocode || "未知"}`);
+	}
+	return null;
+}
+
+// 将 MD 数据转换为 FootprintMap 所需的 JSON 格式。
+// 优先使用 MD 中的 lat/lng；缺失时用配置的高德 Key 自动地理编码补齐。
+const footprintLocations: {
+	name: string;
+	coordinates: string;
+	date: string;
+	description: string;
+	url: string;
+	urlLabel: string;
+	photos: string[];
+	categories: string[];
+	markerColor: string;
+	visitCount: number;
+}[] = [];
+
+for (let i = 0; i < sortedPlaces.length; i++) {
+	const p = sortedPlaces[i];
+	let lat = p.data.lat;
+	let lng = p.data.lng;
+	if ((lat === undefined || lng === undefined) && p.data.province) {
+		const g = await tryGeocode(p.data.province, p.data.city);
+		if (g) {
+			lat = g.lat;
+			lng = g.lng;
+		}
+	}
+	if (!lat || !lng) continue; // 依然没有经纬度则不显示在地图上
+	footprintLocations.push({
+		name: [p.data.province, p.data.city].filter(Boolean).join(" · ") || "未命名地点",
+		coordinates: `${lng},${lat}`,
+		date:
+			p.data.date instanceof Date
+				? p.data.date.toISOString().split("T")[0]
+				: typeof p.data.date === "string"
+				? p.data.date
+				: "",
+		description: p.data.title || "",
+		url: "",
+		urlLabel: "查看相关内容",
+		photos: [],
+		categories: p.data.tags && p.data.tags.length > 0 ? p.data.tags : ["去过"],
+		markerColor: MARKER_PRESETS[i % MARKER_PRESETS.length],
+		visitCount: p.data.visitCount || 1,
+	});
+}
+
+const footprintData = JSON.stringify({ locations: footprintLocations });
 ---
 
 <MainGridLayout title={i18n(I18nKey.placesTitle)} description={i18n(I18nKey.placesDescription)}>
+	<link slot="head" rel="stylesheet" href="/footprint/static/css/footprintmap.css">
+	<script is:inline slot="head" define:vars={{ footprintData, amapSecurityCode }}>
+// 足迹地图初始化脚本
+// 放在 head 中，Swup 导航时 @swup/head-plugin 会重新执行此脚本
+var _footprintInit = false;
+
+function _fpLoadScript(src, globalCheck) {
+	return new Promise(function (resolve, reject) {
+		if (globalCheck && window[globalCheck]) { resolve(); return; }
+		var existing = document.querySelector('script[data-fp-src="' + src + '"]');
+		if (existing) { resolve(); return; }
+		var s = document.createElement('script');
+		s.src = src;
+		s.setAttribute('data-fp-src', src);
+		s.onload = resolve;
+		s.onerror = reject;
+		document.head.appendChild(s);
+	});
+}
+
+function _fpInit() {
+	var mapEl = document.getElementById('footprintMap');
+	if (!mapEl || _footprintInit) return;
+	_footprintInit = true;
+
+	var blob;
+	try {
+		blob = new Blob([footprintData], { type: 'application/json' });
+		var url = URL.createObjectURL(blob);
+		mapEl.setAttribute('data-json', url);
+	} catch (e) {
+		console.error('足迹数据初始化失败:', e);
+		return;
+	}
+
+	if (window.FootprintMap && window.FootprintMap.CONFIG) {
+		window.FootprintMap.CONFIG.HIGHLIGHT.mode = 'visited';
+	}
+
+	// 高德 JS API 2.0 需要提前注册安全密钥，否则地图底图无法加载
+	if (!window._AMapSecurityConfig) {
+		window._AMapSecurityConfig = { securityJsCode: amapSecurityCode || '' };
+	}
+
+	mapEl.classList.add('footprint-map--loading');
+
+	Promise.all([
+		_fpLoadScript('/footprint/static/js/utils.js', 'FootprintMap'),
+		_fpLoadScript('/footprint/static/js/theme.js'),
+		_fpLoadScript('/footprint/static/js/footprintmap.js', 'FootprintMap'),
+		_fpLoadScript('/footprint/static/js/plugin-visited.js'),
+		_fpLoadScript('/footprint/static/js/plugin-hover.js')
+	]).then(function () {
+		if (window.FootprintMap && window.FootprintMap.bootstrapMap) {
+			window.FootprintMap.bootstrapMap(mapEl);
+		}
+	}).catch(function (err) {
+		console.error('足迹地图脚本加载失败:', err);
+	});
+}
+
+if (document.readyState === 'loading') {
+	document.addEventListener('DOMContentLoaded', _fpInit);
+} else {
+	_fpInit();
+}
+	</script>
+
 	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
 		<div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+
+			<!-- 头部 -->
 			<div class="mb-6">
 				<div class="flex items-center gap-3 mb-3">
 					<div class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70">
@@ -58,35 +242,48 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 				</p>
 			</div>
 
+			<!-- 统计 -->
 			<div class="flex flex-wrap gap-3 mb-6">
 				<div class="stat-pill">
-					<Icon name="material-symbols:location-city" class="text-sm" />
+					<Icon is:inline name="material-symbols:location-city" class="text-sm" />
 					<span class="font-semibold">{sortedPlaces.length}</span>
 					<span class="text-(--content-meta)">地点</span>
 				</div>
 				<div class="stat-pill">
-					<Icon name="material-symbols:pin-drop" class="text-sm" />
+					<Icon is:inline name="material-symbols:pin-drop" class="text-sm" />
 					<span class="font-semibold">{totalVisitCount}</span>
 					<span class="text-(--content-meta)">到访次数</span>
 				</div>
 				<div class="stat-pill">
-					<Icon name="material-symbols:calendar-today" class="text-sm" />
+					<Icon is:inline name="material-symbols:calendar-today" class="text-sm" />
 					<span class="font-semibold">{thisYearVisitCount}</span>
 					<span class="text-(--content-meta)">今年出行</span>
 				</div>
 			</div>
 
+			<!-- 地图 -->
 			<div class="mb-6">
 				<h2 class="text-lg font-bold text-(--deep-text) mb-3">足迹地图</h2>
-				<div id="life-map" class="h-[500px] w-full rounded-xl border border-(--line-divider) overflow-hidden"></div>
-				<p class="mt-2 text-xs text-(--content-meta) text-center">记录走过的每一步</p>
+				{footprintLocations.length > 0 ? (
+					<div class="map-wrapper" id="map-wrapper">
+						<div id="footprintMap" class="footprint-map" data-amap-key={import.meta.env.PUBLIC_AMAP_KEY_PLACES} data-amap-security={amapSecurityCode} style="height: 500px;"></div>
+					</div>
+				) : (
+					<div class="h-[500px] w-full rounded-xl border-2 border-neutral-300 dark:border-neutral-600 flex flex-col items-center justify-center gap-2">
+						<Icon is:inline name="material-symbols:location-off" class="text-4xl text-neutral-300 dark:text-neutral-600" />
+						<p class="text-neutral-500 dark:text-neutral-400 text-sm">暂无地图数据</p>
+						<p class="text-xs text-neutral-400 dark:text-neutral-500">请在地点 MD 文件中添加 lat 和 lng 字段</p>
+					</div>
+				)}
+				<p class="mt-2 text-xs text-(--content-meta) text-center">地图由 高德地图 提供</p>
 			</div>
 
+			<!-- 地点列表 -->
 			<div>
 				<h2 class="text-lg font-bold text-(--deep-text) mb-3">地点列表</h2>
 				{sortedPlaces.length === 0 ? (
 					<div class="w-full p-12 text-center">
-						<Icon name="material-symbols:explore" class="text-5xl text-(--content-meta)/50 mb-4" />
+						<Icon is:inline name="material-symbols:explore" class="text-5xl text-(--content-meta)/50 mb-4" />
 						<p class="text-(--content-meta)">{i18n(I18nKey.placesNoData)}</p>
 					</div>
 				) : (
@@ -95,28 +292,26 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 							const place = entry.data;
 							const slug = entry.id.replace(/\.md$/, "");
 							return (
-								<article class="place-card">
-									<a href={`/travel/${slug}/`} class="flex items-start justify-between gap-4 w-full">
-										<div class="flex-1 min-w-0">
-											<h3 class="place-name">
-												{place.province || "未知省份"}
-												{place.city ? ` · ${place.city}` : ""}
-											</h3>
+								<a href={`/travel/${slug}/`} class="place-card flex items-start justify-between gap-4 w-full">
+									<div class="flex-1 min-w-0">
+										<h3 class="place-name">
+											{place.province || "未知省份"}
+											{place.city ? ` · ${place.city}` : ""}
+										</h3>
+									</div>
+									<div class="text-right text-xs text-(--content-meta) shrink-0">
+										<div class="font-semibold text-(--deep-text)">
+											到访 {place.visitCount || 1} 次
 										</div>
-										<div class="text-right text-xs text-(--content-meta) shrink-0">
-											<div class="font-semibold text-(--deep-text)">
-												到访 {place.visitCount || 1} 次
-											</div>
-											<div class="mt-0.5">
-												{place.date instanceof Date
-													? place.date.toISOString().split("T")[0]
-													: typeof place.date === "string"
-													? place.date
-													: ""}
-											</div>
+										<div class="mt-0.5">
+											{place.date instanceof Date
+												? place.date.toISOString().split("T")[0]
+												: typeof place.date === "string"
+												? place.date
+												: ""}
 										</div>
-									</a>
-								</article>
+									</div>
+								</a>
 							);
 						})}
 					</div>
@@ -124,238 +319,10 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 			</div>
 		</div>
 	</div>
-</MainGridLayout>
 
-<script is:inline define:vars={{ clientSortedPlaces }}>
-	(function () {
-		var container = document.getElementById("life-map");
-		if (!container) return;
+	{/* 地图锁定/解锁已移除：解锁后直接可交互，不再需要重新上锁 */}
 
-		var chartInstance = null;
-
-		function loadECharts() {
-			return new Promise(function (resolve, reject) {
-				if (window.echarts) {
-					resolve(window.echarts);
-					return;
-				}
-				var script = document.createElement("script");
-				script.src = "https://cdn.jsdelivr.net/npm/echarts@5.4.3/dist/echarts.min.js";
-				script.onload = function () {
-					resolve(window.echarts);
-				};
-				script.onerror = function () {
-					reject(new Error("ECharts load failed"));
-				};
-				document.head.appendChild(script);
-			});
-		}
-
-		function loadChinaMap() {
-			var urls = [
-				"https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json",
-				"https://cdn.jsdelivr.net/gh/apache/echarts-website@asf-site/examples/vendors/echarts/map/json/china.json",
-				"/china-map.json"
-			];
-			var index = 0;
-			function tryNext() {
-				if (index >= urls.length) {
-					return Promise.reject(new Error("所有地图数据源加载失败"));
-				}
-				var url = urls[index++];
-				return fetch(url)
-					.then(function (res) {
-						if (!res.ok) throw new Error("HTTP " + res.status);
-						return res.json();
-					})
-					.then(function (data) {
-						if (!data || !data.features || !Array.isArray(data.features)) {
-							throw new Error("地图数据格式不正确");
-						}
-						return data;
-					})
-					.catch(function () {
-						return tryNext();
-					});
-			}
-			return tryNext();
-		}
-
-		function initMap() {
-			var currentContainer = document.getElementById("life-map");
-			if (!currentContainer) return;
-
-			if (chartInstance) {
-				chartInstance.dispose();
-				chartInstance = null;
-			}
-
-			Promise.all([loadECharts(), loadChinaMap()])
-				.then(function (results) {
-					var echartsLib = results[0];
-					var chinaMapData = results[1];
-
-					currentContainer = document.getElementById("life-map");
-					if (!currentContainer || !chinaMapData) {
-						if (currentContainer)
-							currentContainer.innerHTML =
-								'<div class="h-full flex items-center justify-center text-neutral-400">地图数据加载失败</div>';
-						return;
-					}
-
-					echartsLib.registerMap("china", chinaMapData);
-					chartInstance = echartsLib.init(currentContainer);
-
-					var provinceVisitCount = {};
-					var maxVisits = 1;
-					clientSortedPlaces.forEach(function (place) {
-						var province = place.province;
-						var count = place.visitCount || 1;
-						if (province) {
-							var normalizedProvince = province.replace(/省|自治区|特别行政区|市/g, "");
-							if (!provinceVisitCount[province]) {
-								provinceVisitCount[province] = 0;
-							}
-							provinceVisitCount[province] += count;
-							if (normalizedProvince !== province && !provinceVisitCount[normalizedProvince]) {
-								provinceVisitCount[normalizedProvince] = provinceVisitCount[province];
-							}
-							if (provinceVisitCount[province] > maxVisits)
-								maxVisits = provinceVisitCount[province];
-						}
-					});
-
-					var isDark = document.documentElement.classList.contains("dark");
-					var bgColor = isDark ? "#0a0a0a" : "#f5f5f5";
-					var emptyColor = isDark ? "#2a2a2a" : "#e8e8e8";
-					var borderColor = isDark ? "#3f3f46" : "#ccc";
-
-					var provinceData = (chinaMapData.features || []).map(function (f) {
-						var name = f.properties && f.properties.name;
-						var normalizedName = name.replace(/省|自治区|特别行政区|市/g, "");
-						var visits = provinceVisitCount[name] || provinceVisitCount[normalizedName] || provinceVisitCount[name.replace(/市$/, "")] || 0;
-						var places = clientSortedPlaces.filter(function (p) {
-							var pName = (p.province || "").replace(/省|自治区|特别行政区|市/g, "");
-							return pName === normalizedName || pName === name || pName === name.replace(/市$/, "");
-						});
-						return { name: name, value: visits, places: places };
-					});
-
-					var option = {
-						backgroundColor: "transparent",
-						tooltip: {
-							trigger: "item",
-							formatter: function (params) {
-								if (params.value && params.value > 0) {
-									var places = params.data && params.data.places ? params.data.places : [];
-									var tip = "<strong>" + params.name + "</strong><br/>到访：" + params.value + "次";
-									if (places.length > 0) {
-										tip += "<br/><span style='font-size:11px;opacity:0.7;'>";
-										for (var i = 0; i < Math.min(places.length, 5); i++) {
-											tip += "<br/>• " + (places[i].city || places[i].province || "未标记") + "(" + (places[i].visitCount || 1) + "次)";
-										}
-										if (places.length > 5) tip += "<br/>...等" + places.length + "处";
-										tip += "</span>";
-									}
-									return tip;
-								}
-								return "<strong>" + params.name + "</strong><br/><span style='opacity:0.5;'>未到访</span>";
-							},
-						},
-						visualMap: {
-							type: "piecewise",
-							show: true,
-							left: 20,
-							bottom: 20,
-							pieces: [
-								{ gt: Math.ceil(maxVisits * 0.8), color: isDark ? "#555" : "#000" },
-								{ gt: Math.ceil(maxVisits * 0.5), lte: Math.ceil(maxVisits * 0.8), color: isDark ? "#777" : "#333" },
-								{ gt: 1, lte: Math.ceil(maxVisits * 0.5), color: isDark ? "#999" : "#666" },
-								{ value: 0, color: emptyColor },
-							],
-							textStyle: { color: isDark ? "#a1a1aa" : "#52525b", fontSize: 12 },
-						},
-						series: [
-							{
-								name: "省份",
-								type: "map",
-								map: "china",
-								roam: true,
-								zoom: 1.2,
-								center: [105, 36],
-								itemStyle: {
-									areaColor: emptyColor,
-									borderColor: borderColor,
-									borderWidth: 1,
-								},
-								emphasis: {
-									itemStyle: { areaColor: isDark ? "#444" : "#ccc" },
-									label: { show: true },
-								},
-								select: { disabled: true },
-								data: provinceData,
-							},
-						],
-					};
-
-					chartInstance.setOption(option);
-					setTimeout(function () {
-						chartInstance.resize();
-					}, 100);
-				})
-				.catch(function (err) {
-					var failContainer = document.getElementById("life-map");
-					if (failContainer)
-						failContainer.innerHTML =
-							'<div class="h-full flex items-center justify-center text-neutral-400">加载失败: ' + (err.message || "") + "</div>";
-				});
-		}
-
-		function whenReady(fn) {
-			if (document.readyState === "complete") {
-				requestAnimationFrame(fn);
-			} else {
-				window.addEventListener("load", function () {
-					requestAnimationFrame(fn);
-				});
-			}
-		}
-
-		whenReady(initMap);
-
-		window.addEventListener("resize", function () {
-			if (chartInstance) chartInstance.resize();
-		});
-
-		var observer = new MutationObserver(function (mutations) {
-			mutations.forEach(function (m) {
-				if (m.attributeName === "class") {
-					if (chartInstance) {
-						chartInstance.dispose();
-						chartInstance = null;
-					}
-					initMap();
-				}
-			});
-		});
-		observer.observe(document.documentElement, { attributes: true });
-
-		document.addEventListener("astro:after-swap", function () {
-			if (document.getElementById("life-map") && !chartInstance) {
-				whenReady(initMap);
-			}
-		});
-		document.addEventListener("swup:contentReplaced", function () {
-			if (document.getElementById("life-map")) {
-				if (chartInstance) {
-					chartInstance.dispose();
-					chartInstance = null;
-				}
-				whenReady(initMap);
-			}
-		});
-	})();
-</script>
+	</MainGridLayout>
 
 <style>
 	.stat-pill {
@@ -391,6 +358,7 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 		border-radius: var(--radius-large);
 		background: var(--card-bg);
 		transition: border-color 0.2s ease, box-shadow 0.2s ease;
+		text-decoration: none;
 	}
 	.place-card:hover {
 		border-color: var(--primary);
@@ -408,5 +376,16 @@ const clientSortedPlaces = sortedPlaces.map((p) => ({
 		.place-card {
 			padding: 0.75rem 0.875rem;
 		}
+	}
+
+	/* 地图容器 */
+	.map-wrapper {
+		position: relative;
+		border-radius: 0.75rem;
+		overflow: hidden;
+	}
+
+	.map-wrapper :global(.footprint-map) {
+		margin: 0;
 	}
 </style>

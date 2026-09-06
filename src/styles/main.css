@@ -9,6 +9,7 @@
 @import './gallery.css';
 @import './anime-bangumi.css';
 @import './movies-games.css';
+@import './music-visualizer.css';
 
 @plugin '@tailwindcss/typography';
 
@@ -71,7 +72,7 @@ html {
 }
 
 @layer components {
-    /* View Transitions API 主题切换动画 */
+    /* View Transitions image-api 主题切换动画 */
     /* 为整个文档根元素设置视图过渡 */
     ::view-transition-old(root),
     ::view-transition-new(root) {
@@ -131,7 +132,7 @@ html {
     }
     
     /* 主题过渡保护类 - 仅在非 View Transitions 模式下使用 */
-    /* 当使用 View Transitions API 时，浏览器会自动处理过渡，不需要禁用 transition */
+    /* 当使用 View Transitions image-api 时，浏览器会自动处理过渡，不需要禁用 transition */
     .is-theme-transitioning:not(.use-view-transition) *,
     .is-theme-transitioning:not(.use-view-transition) *::before,
     .is-theme-transitioning:not(.use-view-transition) *::after {

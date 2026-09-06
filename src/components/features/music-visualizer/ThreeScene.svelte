@@ -18,6 +18,7 @@ let {
 }: Props = $props();
 
 let container: HTMLDivElement;
+let currentContainer: HTMLDivElement;
 let scene: THREE.Scene;
 let camera: THREE.PerspectiveCamera;
 let renderer: THREE.WebGLRenderer;
@@ -103,8 +104,34 @@ const dummyPosition = new THREE.Vector3();
 const dummyQuaternion = new THREE.Quaternion();
 const dummyScale = new THREE.Vector3();
 
+function readCssColor(varName: string, fallback: string): THREE.Color {
+	try {
+		const value = getComputedStyle(document.documentElement)
+			.getPropertyValue(varName)
+			.trim();
+		if (value) return new THREE.Color(value);
+	} catch (e) {
+		// ignore
+	}
+	return new THREE.Color(fallback);
+}
+
 function getThemeColors() {
 	const theme = musicPlayerConfig.visualizer?.theme;
+	// 整站统一：跟随站点主题色(--primary)与背景
+	if (musicPlayerConfig.visualizer?.followSiteTheme) {
+		const primary = readCssColor("--primary", theme?.coolCore ?? "#2255ff");
+		return {
+			base1: readCssColor("--card-bg", theme?.base1 ?? "#050810"),
+			base2: readCssColor("--card-bg", theme?.base2 ?? "#0a0f1a"),
+			coolCore: primary.clone(),
+			coolEdge: primary.clone().lerp(new THREE.Color(0xffffff), 0.35),
+			warmCore: primary.clone(),
+			warmEdge: primary.clone().lerp(new THREE.Color(0xffaa00), 0.5),
+			rippleColor: primary.clone().lerp(new THREE.Color(0x44ddff), 0.5),
+			glowIntensity: theme?.glowIntensity ?? 1.2,
+		};
+	}
 	return {
 		base1: new THREE.Color(theme?.base1 ?? "#050810"),
 		base2: new THREE.Color(theme?.base2 ?? "#0a0f1a"),
@@ -494,9 +521,37 @@ function createTerrainMaterial() {
 	});
 }
 
+// 场景构建一次后跨页面复用（SPA 导航不重建、不释放，进入即可见，退出仅暂停+分离）
+let built = false;
+
+function resizeRenderer() {
+	if (!currentContainer || !camera || !renderer) return;
+	const w = currentContainer.clientWidth;
+	const h = currentContainer.clientHeight;
+	camera.aspect = w / h;
+	camera.updateProjectionMatrix();
+	renderer.setSize(w, h);
+}
+
+function attachTo(el: HTMLDivElement) {
+	currentContainer = el;
+	if (renderer && renderer.domElement.parentNode !== el) {
+		el.appendChild(renderer.domElement);
+	}
+	resizeRenderer();
+}
+
 function init() {
-	const width = container.clientWidth;
-	const height = container.clientHeight;
+	if (!built) {
+		build();
+		built = true;
+	}
+	attachTo(container);
+}
+
+function build() {
+	const width = window.innerWidth;
+	const height = window.innerHeight;
 
 	scene = new THREE.Scene();
 	scene.background = backgroundTargetColor;
@@ -515,7 +570,6 @@ function init() {
 	renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 	renderer.toneMapping = THREE.ACESFilmicToneMapping;
 	renderer.toneMappingExposure = 1.2;
-	container.appendChild(renderer.domElement);
 
 	controls = new OrbitControls(camera, renderer.domElement);
 	controls.enableDamping = true;
@@ -616,20 +670,13 @@ function init() {
 	renderer.domElement.addEventListener("pointerdown", onPointerDown);
 	renderer.domElement.addEventListener("pointerup", onPointerUp);
 
-	onResize = () => {
-		if (!container || !camera || !renderer) return;
-		const w = container.clientWidth;
-		const h = container.clientHeight;
-		camera.aspect = w / h;
-		camera.updateProjectionMatrix();
-		renderer.setSize(w, h);
-	};
+	onResize = resizeRenderer;
 	window.addEventListener("resize", onResize);
 }
 
 function animate() {
 	animationId = requestAnimationFrame(animate);
-	const delta = clock.getDelta();
+	const delta = Math.min(clock.getDelta(), 0.1); // 暂停续播时封顶，避免跳变
 	const elapsed = clock.getElapsedTime();
 
 	const audioData: AudioData = audioAnalyzer.update(delta);
@@ -749,37 +796,43 @@ function animate() {
 	renderer.render(scene, camera);
 }
 
-function cleanup() {
-	if (animationId) cancelAnimationFrame(animationId);
-	if (onResize) window.removeEventListener("resize", onResize);
-	if (renderer) {
-		renderer.dispose();
-		if (container && renderer.domElement.parentNode === container) {
-			container.removeChild(renderer.domElement);
-		}
-	}
-	if (terrainMesh) {
-		terrainMesh.geometry.dispose();
-		terrainMaterial.dispose();
-	}
-	if (meteorMesh) {
-		meteorMesh.geometry.dispose();
-		(meteorMesh.material as THREE.Material).dispose();
-	}
-	if (particleMesh) {
-		particleMesh.geometry.dispose();
-		(particleMesh.material as THREE.Material).dispose();
-	}
-	controls?.dispose();
-}
-
 onMount(() => {
-	init();
-	animate();
-	onSceneReady?.();
+	// 首次进入：重型 WebGL 初始化（shader 编译 + 上万实例）会阻塞主线程，
+	// 延迟到页面过渡结束后再构建，避免切换卡顿；之后的路由进入则直接复用已构建场景，近乎零开销。
+	let started = false;
+	function boot() {
+		if (started || !container) return;
+		started = true;
+		init();
+		animate();
+		onSceneReady?.();
+	}
+	let polls = 0;
+	function poll() {
+		if (!document.documentElement.classList.contains("is-page-transitioning")) {
+			boot();
+			return;
+		}
+		if (++polls > 40) {
+			boot(); // 兜底：过渡标记异常时最迟 2s 内启动
+			return;
+		}
+		setTimeout(poll, 50);
+	}
+	setTimeout(poll, 16); // 先让当前帧渲染完成，再进行轮询/启动
+	setTimeout(boot, 800); // 绝对兜底
 });
 
-onDestroy(cleanup);
+onDestroy(() => {
+	// 只暂停动画并分离画布，不销毁 GPU 资源；重新进入时 init() 会复用，秒开无卡顿
+	if (animationId) cancelAnimationFrame(animationId);
+	animationId = undefined;
+	if (onResize) window.removeEventListener("resize", onResize);
+	const el = currentContainer;
+	if (el && renderer && renderer.domElement.parentNode === el) {
+		el.removeChild(renderer.domElement);
+	}
+});
 </script>
 
 <div bind:this={container} class="mv-three-container" />

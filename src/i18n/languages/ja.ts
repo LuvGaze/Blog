@@ -130,9 +130,9 @@ export const ja: Translation = {
 		"考えられる理由：ユーザー名が存在しない、ネットワーク接続の問題、またはAPI制限",
 	[Key.bangumiFetchError]: "Bangumi データ取得失敗",
 	[Key.bangumiFetchErrorDesc]:
-		"ビルド時に Bangumi API からのデータ取得に失敗しました。このページは一時的に利用できません。",
+		"ビルド時に Bangumi image-api からのデータ取得に失敗しました。このページは一時的に利用できません。",
 	[Key.bangumiUsername]: "ユーザー名",
-	[Key.bangumiApi]: "API",
+	[Key.bangumiApi]: "image-api",
 	[Key.bangumiConfigTip]:
 		"ヒント：ページ設定で正しいBangumiユーザー名を設定してください",
 	[Key.bangumiPrevPage]: "前へ",
@@ -173,7 +173,7 @@ export const ja: Translation = {
 	[Key.animeViewDetails]: "詳細を見る",
 	[Key.animeNotConfigured]: "アニメデータソースが未設定",
 	[Key.animeNotConfiguredDesc]:
-		"src/config/siteConfig.ts で Bilibili UID または TMDB API Key を設定してください",
+		"src/config/siteConfig.ts で Bilibili UID または TMDB image-api Key を設定してください",
 	[Key.animeBilibiliAvg]: "Bilibili 平均",
 	[Key.animeTmdbAvg]: "TMDB 平均",
 	[Key.animeDualSynced]: "デュアル同期済み",

@@ -7,7 +7,7 @@ import type { CoverImageConfig } from "../types/coverImageConfig";
  *
  * 随机封面图使用说明：
  * 1. 在文章的 Frontmatter 中添加 image: "api" 即可使用随机图功能
- * 2. 系统会依次尝试所有配置的 API，全部失败后使用备用图片
+ * 2. 系统会依次尝试所有配置的 image-api，全部失败后使用备用图片
  *
  * // 文章 Frontmatter 示例：
  * ---
