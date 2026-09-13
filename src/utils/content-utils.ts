@@ -19,7 +19,11 @@ async function getRawSortedPosts() {
 		const bPinned = b.data.pinned ? 1 : 0;
 		if (aPinned !== bPinned) return bPinned - aPinned;
 
-		// 同类型按发布时间排序，越新越靠前
+		// 置顶仍优先；其余按手动 order（大优先），再按发布时间排序，越新越靠前
+		const aOrder = a.data.order || 0;
+		const bOrder = b.data.order || 0;
+		if (aOrder !== bOrder) return bOrder - aOrder;
+
 		const dateA = new Date(a.data.published).getTime();
 		const dateB = new Date(b.data.published).getTime();
 		return dateB - dateA;

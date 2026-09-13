@@ -61,6 +61,7 @@ const notebooks = allEntries
 			cover: entry.data.cover,
 			summary: entry.data.summary,
 			entries: folderEntries.length,
+			order: entry.data.order ?? 0,
 			updatedAt:
 				latestEntry?.date instanceof Date ? latestEntry.date : new Date(0),
 			selfPath: `/notebooks/${folderName}/`,
@@ -103,7 +104,11 @@ const notebooksWithCovers = await Promise.all(
 		}),
 );
 
-const sortedNotebooks = sortByDateDesc(notebooksWithCovers, "updatedAt");
+const sortedNotebooks = [...notebooksWithCovers].sort(
+	(a, b) =>
+		(b.order || 0) - (a.order || 0) ||
+		new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime(),
+);
 ---
 
 <MainGridLayout title={i18n(I18nKey.notebooksTitle)} description={i18n(I18nKey.notebooksDescription)}>
@@ -119,7 +124,7 @@ const sortedNotebooks = sortByDateDesc(notebooksWithCovers, "updatedAt");
 						<ol class="text-[var(--content-meta)] space-y-1 list-decimal list-inside">
 							<li>在 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">src/content/notebooks/</code> 下创建文件夹</li>
 							<li>在文件夹内创建 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">_index.json</code> 文件</li>
-							<li>在文件夹内创建 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">*.md</code> 文件作为日记条目</li>
+							<li>在文件夹内创建 <code class="px-1 rounded bg-[var(--btn-regular-bg-hover)] font-mono">*.md</code> 文件作为笔记条目</li>
 						</ol>
 					</div>
 				</div>

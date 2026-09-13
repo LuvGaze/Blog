@@ -9,6 +9,7 @@ import { marked } from "marked";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { compareOrderThenDate } from "@/utils/content-sort";
 
 const notebookImageFiles = import.meta.glob<ImageMetadata>(
 	"../content/notebooks/**/*.{jpg,jpeg,png,webp,avif,gif,svg}",
@@ -41,11 +42,7 @@ export async function getStaticPaths() {
 				itemId !== `${folderName}/_index.json`
 			);
 		});
-		const sortedEntries = [...folderEntries].sort((a, b) => {
-			const aT = a.data.date instanceof Date ? a.data.date.getTime() : 0;
-			const bT = b.data.date instanceof Date ? b.data.date.getTime() : 0;
-			return bT - aT;
-		});
+		const sortedEntries = [...folderEntries].sort(compareOrderThenDate);
 
 		paths.push({
 			params: { slug: folderName },
@@ -78,7 +75,7 @@ const folderName = isNotebookRootMatch
 	? isNotebookRootMatch[1]
 	: normalizedEntryId.split("/")[0];
 
-const notebookName = entry.data.name && entry.data.name !== "未命名日记本" ? entry.data.name : folderName;
+const notebookName = entry.data.name && entry.data.name !== "未命名笔记本" ? entry.data.name : folderName;
 
 let coverSrc: string | null = null;
 const rawCover = entry.data.cover as string | undefined;
@@ -146,16 +143,16 @@ const sortedEntriesWithImages = isNotebookIndex
 				<div class="notebook-hero-overlay"></div>
 				<a href="/notebooks/" class="notebook-hero-back">
 					<Icon name="material-symbols:arrow-back-rounded" />
-					<span>日记本列表</span>
+					<span>笔记本列表</span>
 				</a>
 				<div class="notebook-hero-content">
-					<span class="notebook-hero-tag">📔 日记本</span>
-					<h1 class="notebook-hero-title">{entry.data.name || "我的日记本"}</h1>
+					<span class="notebook-hero-tag">📔 笔记本</span>
+					<h1 class="notebook-hero-title">{entry.data.name || "我的笔记本"}</h1>
 					{entry.data.summary && <p class="notebook-hero-desc">{entry.data.summary}</p>}
 					<div class="notebook-hero-stats">
 						<div class="notebook-hero-stat">
 							<Icon name="material-symbols:article-outline" />
-							<span>{entries.length} 篇日记</span>
+							<span>{entries.length} 篇笔记</span>
 						</div>
 						{sortedEntries[0]?.data.date instanceof Date && (
 							<div class="notebook-hero-stat">
@@ -171,7 +168,7 @@ const sortedEntriesWithImages = isNotebookIndex
 				{sortedEntriesWithImages.length === 0 ? (
 					<div class="diary-empty-entries">
 						<div class="text-5xl mb-4">📝</div>
-						<p class="text-[var(--content-meta)]">还没有日记内容</p>
+						<p class="text-[var(--content-meta)]">还没有笔记内容</p>
 					</div>
 				) : (
 					<div class="diary-entries-list">
@@ -183,12 +180,29 @@ const sortedEntriesWithImages = isNotebookIndex
 								? noteItem.body.split("\n").filter((line: string) => !line.trim().startsWith("---")).join("\n").trim()
 								: "";
 							const htmlPreview = contentBody ? marked.parse(contentBody.slice(0, 500), { mangle: false, headerIds: false }) : "";
-							const previewHtml = htmlPreview
+							const previewHtml = (htmlPreview || "")
+								// 移除脚本与样式
+								.replace(/<style[\s\S]*?<\/style>/gi, "")
+								.replace(/<script[\s\S]*?<\/script>/gi, "")
+								// 块级元素（div/表格/代码块/引用）转成换行，避免被塞进 <p> 破坏卡片布局
+								.replace(/\s*<\/?(?:div|section|article|table|tbody|thead|tr|pre|blockquote)[^>]*>\s*/gi, "<br>")
+								.replace(/\s*<\/?(?:td|th|li|dt|dd)[^>]*>\s*/gi, " ")
+								// 去掉图片
+								.replace(/<img[^>]*>/g, "")
+								// 删除所有标签属性（内联样式/固定宽高，防止撑破卡片）
+								.replace(/<(\/?[a-zA-Z][a-zA-Z0-9]*)(?:\s+[^>]*)?>/g, "<$1>")
+								// 去 LaTeX 定界符（行内 $...$、块 $$...$$、\( \) \[ \]）
+								.replace(/\$\$[\s\S]*?\$\$/g, "")
+								.replace(/\\(?:[()[\]]|left|right)/g, " ")
+								.replace(/\$[^$]*\$/g, "")
+								// 合并段落与多余的换行
 								.replace(/<\/p>\s*<p>/g, "<br>")
 								.replace(/<\/?p>/g, "")
-								.replace(/<h[1-6][^>]*>/g, "")
-								.replace(/<\/h[1-6]>/g, "<br>")
-								.replace(/<img[^>]*>/g, "")
+								.replace(/<h[1-6]>/g, "<br>")
+								.replace(/<\/h[1-6]>/g, "")
+								.replace(/(<br>\s*){2,}/g, "<br>")
+								// 兜底：删除字符串末尾因 slice 截断而残留的未闭合标签碎片（如 <div style="..." 无结束 >）
+								.replace(/<[^>]*$/g, "")
 								.trim();
 							const preview = previewHtml.slice(0, 300) + (previewHtml.length > 300 ? "..." : "");
 							const noteImages = noteItem.images as string[];
@@ -229,11 +243,11 @@ const sortedEntriesWithImages = isNotebookIndex
 			<article class="diary-paper">
 				<a href={`/notebooks/${folderName}/`} class="diary-paper-back">
 					<Icon name="material-symbols:arrow-back-rounded" />
-					<span>返回 {notebookName || "日记本"}</span>
+					<span>返回 {notebookName || "笔记本"}</span>
 				</a>
 
 				<h1 class="diary-paper-title">
-					{item.data.title || (item.data.name && item.data.name !== "未命名日记本" ? item.data.name : item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题")}
+					{item.data.title || (item.data.name && item.data.name !== "未命名笔记本" ? item.data.name : item.id.replace(/\\/g, "/").split("/").pop()?.replace(/\.md$/, "") || "无标题")}
 				</h1>
 
 				<div class="diary-paper-content">
@@ -465,6 +479,11 @@ const sortedEntriesWithImages = isNotebookIndex
 	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview) {
 		margin: 0;
 		color: var(--deep-text) !important;
+		overflow: hidden;
+		word-break: break-word;
+		display: -webkit-box;
+		-webkit-line-clamp: 3;
+		-webkit-box-orient: vertical;
 	}
 
 	:global(.diary-entry-card .entry-card-preview-container .entry-card-preview) *,

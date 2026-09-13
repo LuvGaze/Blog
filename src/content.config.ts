@@ -15,6 +15,7 @@ const postsCollection = defineCollection({
 		category: z.string().optional().nullable().default(""),
 		lang: z.string().optional().default(""),
 		pinned: z.boolean().optional().default(false),
+		order: z.number().optional().default(0),
 		author: z.string().optional().default(""),
 		sourceLink: z.string().optional().default(""),
 		licenseName: z.string().optional().default(""),
@@ -77,7 +78,7 @@ const notebooksCollection = defineCollection({
 		base: "./src/content/notebooks",
 	}),
 	schema: z.object({
-		name: z.string().optional().default("未命名日记本"),
+		name: z.string().optional().default("未命名笔记本"),
 		title: z.string().optional().default(""),
 		cover: z.string().optional().default(""),
 		summary: z.string().optional().default(""),
@@ -87,6 +88,7 @@ const notebooksCollection = defineCollection({
 			.default(""),
 		tags: z.array(z.string()).optional().default([]),
 		date: z.coerce.date().optional(),
+		order: z.number().optional().default(0),
 	}),
 });
 
@@ -101,6 +103,7 @@ const routinesCollection = defineCollection({
 		description: z.string().optional().default(""),
 		cover: z.string().optional().default(""),
 		updated: z.coerce.date().optional(),
+		order: z.number().optional().default(0),
 	}),
 });
 
@@ -120,6 +123,7 @@ const travelCollection = defineCollection({
 		visitCount: z.number().optional().default(1),
 		lat: z.number().optional(),
 		lng: z.number().optional(),
+		order: z.number().optional().default(0),
 	}),
 });
 
@@ -152,6 +156,7 @@ const changelogCollection = defineCollection({
 		time: z.string().optional(),
 		type: z.enum(["feature", "improvement", "fix", "removal"]),
 		description: z.string(),
+		order: z.number().optional().default(0),
 	}),
 });
 
@@ -185,6 +190,7 @@ const billsCollection = defineCollection({
 			.default(""),
 		description: z.string().optional().default(""),
 		tags: z.array(z.string()).optional().default([]),
+		order: z.number().optional().default(0),
 	}),
 });
 
@@ -200,6 +206,7 @@ const galleryCollection = defineCollection({
 		passwordHint: z.string().optional().default(""),
 		images: z.array(z.string()).optional().default([]),
 		cover: z.string().optional().default(""),
+		order: z.number().optional().default(0),
 	}),
 });
 

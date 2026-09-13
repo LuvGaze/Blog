@@ -14,6 +14,9 @@ if (!siteConfig.pages.changelog) {
 const entries = await getCollection("changelog");
 
 const sorted = entries.sort((a, b) => {
+	// 手动 order（大优先），再按版本日期/时间倒序
+	const orderDiff = (b.data.order || 0) - (a.data.order || 0);
+	if (orderDiff !== 0) return orderDiff;
 	const dateA = a.data.date.getTime();
 	const dateB = b.data.date.getTime();
 	if (dateA !== dateB) {

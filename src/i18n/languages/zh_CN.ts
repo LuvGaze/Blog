@@ -466,9 +466,9 @@ export const zh_CN: Translation = {
 	// 笔记本页面
 	[Key.notebooks]: "笔记本",
 	[Key.notebooksTitle]: "笔记本",
-	[Key.notebooksDescription]: "成长日记、学习复盘、灵感随笔",
-	[Key.notebooksNoData]: "还没有日记本",
-	[Key.notebooksEmptyTip]: "开始记录你的第一篇日记吧！",
+	[Key.notebooksDescription]: "成长笔记、学习复盘、灵感随笔",
+	[Key.notebooksNoData]: "还没有笔记本",
+	[Key.notebooksEmptyTip]: "开始记录你的第一篇笔记吧！",
 
 	// 日常规划页面
 	[Key.routines]: "日常规划",

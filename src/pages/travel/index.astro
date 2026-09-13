@@ -5,6 +5,7 @@ import { createHash } from "node:crypto";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { compareOrderThenDate } from "@/utils/content-sort";
 
 const travelEntries = await getCollection("travel");
 
@@ -24,11 +25,7 @@ const isSameYear = (date?: Date | string) => {
 
 const sum = (arr: number[]) => arr.reduce((acc, num) => acc + num, 0);
 
-const sortedPlaces = [...filteredEntries].sort((a, b) => {
-	const aTime = a.data.date instanceof Date ? a.data.date.getTime() : 0;
-	const bTime = b.data.date instanceof Date ? b.data.date.getTime() : 0;
-	return bTime - aTime;
-});
+const sortedPlaces = [...filteredEntries].sort(compareOrderThenDate);
 
 const totalVisitCount = sum(sortedPlaces.map((p) => p.data.visitCount || 1));
 const thisYearVisitCount = sortedPlaces.filter((p) => isSameYear(p.data.date)).length;

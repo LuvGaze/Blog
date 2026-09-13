@@ -160,10 +160,15 @@ const managerConfigStr = JSON.stringify({
     var fxPlayedColor = fxLyricsConfig.playedColor || '#ff4d4f';
     var fxUnplayedColor = fxLyricsConfig.unplayedColor || 'rgba(160,175,195,0.85)';
 
+    // 悬停歌词条时显示歌曲信息，移开后恢复歌词（置灰守卫，避免定时更新覆盖悬停内容）
+    var _fxShowInfo = false;
+
     function updateFixedBar() {
         if (!fxLyricsEl || !fxLyricsLine) return;
+        if (_fxShowInfo) return; // 悬停显示歌曲信息时不刷新歌词文本
         var showing = fxLyricsEnabled && state.isPlaying
             && state.currentLrcIndex >= 0 && state.currentLrcIndex < state.lyrics.length;
+        fxLyricsEl.style.pointerEvents = (fxLyricsEnabled && state.isPlaying) ? 'auto' : 'none';
         if (showing) {
             var lineText = state.lyrics[state.currentLrcIndex].text;
             if (!fxProgressFill) {
@@ -191,6 +196,25 @@ const managerConfigStr = JSON.stringify({
             fxLyricsEl.style.transform = 'translateX(-50%) translateY(14px)';
         }
     }
+
+    // ── 底部歌词条：悬停显示歌曲信息、移开恢复歌词、点击播放/暂停 ──
+    function _fxSetSongInfo(show) {
+        if (!fxLyricsEl || !fxLyricsLine) return;
+        _fxShowInfo = show;
+        var track = state.playlist[state.currentIndex];
+        if (show && track) {
+            fxLyricsText.textContent = (track.name || '未知歌曲') + '  ·  ' + (track.artist || '未知歌手');
+            fxLyricsKara.textContent = '';
+            fxLyricsEl.style.opacity = '1';
+            fxLyricsEl.style.transform = 'translateX(-50%) translateY(0)';
+            fxLyricsEl.style.pointerEvents = fxLyricsEnabled ? 'auto' : 'none';
+        } else {
+            updateFixedBar(); // 恢复歌词文本展示
+        }
+    }
+    fxLyricsEl.addEventListener('mouseenter', function () { _fxSetSongInfo(true); });
+    fxLyricsEl.addEventListener('mouseleave', function () { _fxSetSongInfo(false); });
+    fxLyricsEl.addEventListener('click', function () { togglePlay(); });
 
     // ── 会话状态持久化：跨页面/刷新后仍能恢复曲目、进度与模式 ──
     function persistState() {
@@ -675,8 +699,9 @@ const managerConfigStr = JSON.stringify({
                     else audio.addEventListener('loadedmetadata', tryResume, { once: true });
                 }
 
-                // 自动播放开关开启：始终挂首次交互续播，保证刷新/首访后也能自动开始
-                if (config.autoplay) {
+                // 自动播放开关开启：始终挂首次交互续播，保证刷新/首访后也能自动开始。
+                // 但若用户上一次会话已暂停（saved.wasPlaying===0），则尊重暂停，不再强制续播。
+                if (config.autoplay && !(saved && saved.wasPlaying === 0)) {
                     for (var _y = 0; _y < _intEvs.length; _y++) {
                         window.addEventListener(_intEvs[_y], _startPlayback);
                     }
@@ -801,6 +826,7 @@ const managerConfigStr = JSON.stringify({
         transform: translateX(-50%) translateY(14px);
         transition: opacity 0.35s ease, transform 0.35s ease;
         pointer-events: none;
+        cursor: pointer;
         text-align: center;
     }
     :root.dark .music-fixed-lyrics {

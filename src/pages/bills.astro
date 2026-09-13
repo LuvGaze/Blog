@@ -71,7 +71,11 @@ for (const [dayKey, entries] of groupBillsByDay(sorted)) {
 	}
 	const d = entries[0].data.date;
 	const dayEntries = [...entries]
-		.sort((a, b) => (b.data.time || "").localeCompare(a.data.time || ""))
+		.sort((a, b) => {
+			const orderDiff = (b.data.order || 0) - (a.data.order || 0);
+			if (orderDiff !== 0) return orderDiff;
+			return (b.data.time || "").localeCompare(a.data.time || "");
+		})
 		.map((e) => ({
 			cat: e.data.category || "其他",
 			desc: e.data.description || e.data.title || "",
