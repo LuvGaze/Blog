@@ -8,7 +8,7 @@ interface Props {
 	link: string;
 	status: number;
 	score: number;
-	index: number;
+	index?: number;
 }
 
 const { title, coverImage, link, status, score } = Astro.props;
@@ -25,75 +25,149 @@ const sc = statusConfig[status] || { color: "#999", label: "" };
 const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 ---
 
-<a href={link} class="book-card group">
-	<div class="book-cover-wrap">
-		<img
-			src={coverImage}
-			alt={title}
-			class="book-cover-img"
-			loading="lazy"
-		/>
+<a href={link} class="nb-book group" title={title}>
+	<div class="nb-book-inner">
+		<div class="nb-book-cover">
+			<div class="nb-book-illustration">
+				<img
+					src={coverImage}
+					alt={title}
+					class="nb-book-illustration-img"
+					loading="lazy"
+				/>
+				<div class="nb-book-bind" aria-hidden="true"></div>
 
-		<span class="book-status-tag" style={`background: ${sc.color};`}>
-			{sc.label}
-		</span>
+				<!-- Status label top-left -->
+				<span class="book-status-tag" style={`background: ${sc.color};`}>
+					{sc.label}
+				</span>
 
-		{scoreText && (
-			<span class="book-score-tag">
-				<svg class="book-score-star" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
-				{scoreText}
-			</span>
-		)}
-
-		<div class="book-hover-overlay">
-			<span class="book-hover-text">查看详情</span>
+				<!-- Score top-right -->
+				{scoreText && (
+					<span class="book-score-tag">
+						<svg class="book-score-star" viewBox="0 0 20 20" fill="currentColor"><path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" /></svg>
+						{scoreText}
+					</span>
+				)}
+			</div>
 		</div>
+		<div class="nb-book-pages" aria-hidden="true"></div>
+		<div class="nb-book-back" aria-hidden="true"></div>
 	</div>
-
-	<p class="book-title">{title}</p>
 </a>
 
 <style>
-	.book-card {
+	/* ===== 3D 书本卡片（参照参考模板，封面整铺无文字区）===== */
+	.nb-book {
+		--book-depth: var(--shelf-book-depth, 42px);
 		display: block;
+		width: 100%;
 		text-decoration: none;
 		color: inherit;
-		cursor: pointer;
-		transition: transform 0.2s ease;
+		perspective: 900px;
 	}
 
-	.book-card:hover {
-		transform: translateY(-4px);
-	}
-	:root.dark .book-card:hover .book-title {
-		color: var(--primary);
-	}
-
-	.book-cover-wrap {
+	/* 书体：3D 旋转层。比例取微信读书封面实测 250×360（25/36），保证封面整图无裁剪 */
+	.nb-book-inner {
 		position: relative;
-		aspect-ratio: 3/4;
-		border-radius: 6px;
+		width: 100%;
+		aspect-ratio: 25 / 36;
+		transform-style: preserve-3d;
+		transition: transform 550ms ease-out;
+	}
+	.nb-book:hover .nb-book-inner {
+		transform: rotateY(-30deg) scale(1.09) translateX(-14px);
+	}
+	/* 悬停时抬升层级，避免 3D 倾斜被相邻卡片遮住 */
+	.nb-book:hover {
+		z-index: 10;
+	}
+
+	/* 书本主体：白色纸张为基底 */
+	.nb-book-cover {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		flex-direction: column;
 		overflow: hidden;
+		border-radius: 0.375rem;
+		border: 1px solid rgba(0, 0, 0, 0.08);
+		background: #fff;
 		box-shadow:
-			0 2px 8px rgba(0,0,0,0.10),
-			0 1px 2px rgba(0,0,0,0.06);
-		transition: box-shadow 0.2s ease;
-		background: var(--btn-regular-bg);
+			0 1.8px 3.6px rgba(0, 0, 0, 0.05),
+			0 10.8px 21.6px rgba(0, 0, 0, 0.08),
+			inset 0 -0.9px 0 rgba(0, 0, 0, 0.1),
+			inset 0 1.8px 1.8px hsla(0, 0%, 100%, 0.6),
+			inset 3.6px 0 3.6px rgba(0, 0, 0, 0.08);
+	}
+	:root.dark .nb-book-cover {
+		background: #171717;
+		border-color: rgba(255, 255, 255, 0.1);
 	}
 
-	.book-card:hover .book-cover-wrap {
-		box-shadow:
-			0 8px 25px rgba(0,0,0,0.15),
-			0 2px 6px rgba(0,0,0,0.08);
+	/* 封皮：封面图整铺（无白色文字区） */
+	.nb-book-illustration {
+		position: relative;
+		flex: 1 1 auto;
+		min-height: 0;
+		overflow: hidden;
+		background: linear-gradient(135deg, oklch(0.93 0 0), oklch(0.87 0 0));
+	}
+	:root.dark .nb-book-illustration {
+		background: linear-gradient(135deg, oklch(0.25 0 0), oklch(0.19 0 0));
 	}
 
-	.book-cover-img {
+	.nb-book-illustration-img {
 		width: 100%;
 		height: 100%;
 		object-fit: cover;
 		display: block;
+		position: relative;
+		z-index: 1;
 	}
 
+	/* 书脊绑带（插画区左侧高光竖条） */
+	.nb-book-bind {
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 8.2%;
+		background:
+			linear-gradient(90deg, hsla(0, 0%, 100%, 0), hsla(0, 0%, 100%, 0) 12%, hsla(0, 0%, 100%, 0.25) 29.25%, hsla(0, 0%, 100%, 0) 50.5%, hsla(0, 0%, 100%, 0) 75.25%, hsla(0, 0%, 100%, 0.25) 91%, hsla(0, 0%, 100%, 0)),
+			linear-gradient(90deg, rgba(0, 0, 0, 0.03), rgba(0, 0, 0, 0.1) 12%, transparent 30%, rgba(0, 0, 0, 0.02) 50%, rgba(0, 0, 0, 0.2) 73.5%, rgba(0, 0, 0, 0.5) 75.25%, rgba(0, 0, 0, 0.15) 85.25%, transparent);
+		mix-blend-mode: overlay;
+		opacity: 1;
+		z-index: 2;
+		pointer-events: none;
+	}
+
+	/* 右侧纸张厚度（白色纸纹，rotateY(90deg) 立起） */
+	.nb-book-pages {
+		position: absolute;
+		top: 3px;
+		left: calc(100% - var(--book-depth) / 2 - 3px);
+		width: calc(var(--book-depth) - 2px);
+		height: calc(100% - 12px);
+		background: repeating-linear-gradient(90deg, #fff, #efefef 1px, #fff 3px, #9a9a9a 2px);
+		transform: rotateY(90deg) translateX(calc(var(--book-depth) / 2));
+	}
+
+	/* 封底（平移到书厚度的后方） */
+	.nb-book-back {
+		position: absolute;
+		inset: 0;
+		border-radius: 0.375rem;
+		background: #e4e4e4;
+		box-shadow: inset 0 0 6px rgba(0, 0, 0, 0.18);
+		transform: translateZ(calc(-1 * var(--book-depth)));
+	}
+	:root.dark .nb-book-back {
+		background: #3a3a3a;
+		box-shadow: inset 0 0 6px rgba(255, 255, 255, 0.08);
+	}
+
+	/* Status tag */
 	.book-status-tag {
 		position: absolute;
 		top: 8px;
@@ -103,11 +177,13 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 		font-size: 10px;
 		font-weight: 600;
 		color: #fff;
-		z-index: 2;
+		z-index: 3;
 		letter-spacing: 0.02em;
 		line-height: 1.6;
+		pointer-events: none;
 	}
 
+	/* Score tag */
 	.book-score-tag {
 		position: absolute;
 		top: 8px;
@@ -117,67 +193,18 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 		gap: 2px;
 		padding: 2px 7px 2px 5px;
 		border-radius: 4px;
-		background: rgba(0,0,0,0.55);
+		background: rgba(0, 0, 0, 0.55);
 		font-size: 11px;
 		font-weight: 700;
 		color: #fbbf24;
-		z-index: 2;
+		z-index: 3;
 		line-height: 1;
+		pointer-events: none;
 	}
 	.book-score-star {
 		width: 10px;
 		height: 10px;
 		flex-shrink: 0;
-	}
-
-	.book-hover-overlay {
-		position: absolute;
-		inset: 0;
-		background: rgba(0,0,0,0.5);
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		opacity: 0;
-		transition: opacity 0.2s ease;
-		z-index: 3;
-	}
-	.book-card:hover .book-hover-overlay {
-		opacity: 1;
-	}
-	.book-hover-text {
-		color: #fff;
-		font-size: 14px;
-		font-weight: 600;
-		padding: 6px 16px;
-		border: 1.5px solid rgba(255,255,255,0.7);
-		border-radius: 20px;
-		letter-spacing: 0.04em;
-	}
-
-	.book-title {
-		margin: 8px 2px 0;
-		font-size: 12px;
-		font-weight: 500;
-		line-height: 1.4;
-		color: var(--deep-text);
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		text-align: center;
-	}
-
-	.book-card:hover .book-title {
-		color: var(--primary);
-	}
-
-	:root.dark .book-cover-wrap {
-		border: 1px solid #3f3f46;
-		box-shadow: 0 2px 8px rgba(255,255,255,0.03);
-	}
-	:root.dark .book-card:hover .book-cover-wrap {
-		border-color: #fff;
-		box-shadow: 0 8px 25px rgba(255,255,255,0.1);
 	}
 
 	@media (max-width: 480px) {
@@ -198,11 +225,6 @@ const scoreText = score > 0 ? `${score}`.replace(/\.0$/, "") : "";
 		.book-score-star {
 			width: 8px;
 			height: 8px;
-		}
-		.book-title {
-			font-size: 11px;
-			margin-top: 6px;
-			-webkit-line-clamp: 1;
 		}
 	}
 </style>

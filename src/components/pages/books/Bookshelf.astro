@@ -54,7 +54,7 @@ const { books, statusMap } = Astro.props;
 	.shelf-grid {
 		display: grid;
 		grid-template-columns: repeat(3, 1fr);
-		gap: 20px 16px;
+		gap: 32px 18px;
 		padding: 0 4px;
 	}
 
@@ -70,18 +70,12 @@ const { books, statusMap } = Astro.props;
 		}
 	}
 
-	@media (min-width: 1024px) {
-		.shelf-grid {
-			grid-template-columns: repeat(6, 1fr);
-		}
-	}
-
 	@media (max-width: 640px) {
 		.bookshelf {
 			padding: 8px 2px 2px;
 		}
 		.shelf-grid {
-			gap: 18px 8px;
+			gap: 24px 8px;
 		}
 	}
 </style>
