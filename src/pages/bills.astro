@@ -3,7 +3,6 @@ import { getCollection } from "astro:content";
 import { Solar } from "lunar-javascript";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
 import BillsDashboard from "@/components/bills/BillsDashboard.astro";
-import EncryptedContent from "@/components/features/EncryptedContent.astro";
 import { billsConfig } from "@/config/billsConfig";
 import {
 	categoryExpenseRank,
@@ -170,13 +169,7 @@ const incomeTotalAmt = incomeList.reduce((s, r) => s + r.amount, 0);
 ---
 
 <MainGridLayout title="账单" description="账单仪表盘">
-	{billsConfig.password ? (
-		<EncryptedContent
-			password={billsConfig.password}
-			slug="bills"
-			hint={billsConfig.passwordHint}
-		>
-			<BillsDashboard
+		<BillsDashboard
 				yearStats={yearStats}
 				yearBalance={yearBalance}
 				monthIncome={monthIncome}
@@ -196,27 +189,4 @@ const incomeTotalAmt = incomeList.reduce((s, r) => s + r.amount, 0);
 				year={year}
 				month={month}
 			/>
-		</EncryptedContent>
-	) : (
-		<BillsDashboard
-			yearStats={yearStats}
-			yearBalance={yearBalance}
-			monthIncome={monthIncome}
-			monthExpense={monthExpense}
-			monthBalance={monthBalance}
-			flowMonths={flowMonths}
-			nowMonth={nowMonth}
-			calendar={calendar}
-			daily={daily}
-			incomeList={incomeList}
-			incomeTotalCount={incomeTotalCount}
-			incomeTotalAmt={incomeTotalAmt}
-			yearly={yearly}
-			expenseRank={expenseRank}
-			expenseCount={expenseCount}
-			expenseTotal={expenseTotal}
-			year={year}
-			month={month}
-		/>
-	)}
-</MainGridLayout>
+	</MainGridLayout>
