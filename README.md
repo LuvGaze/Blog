@@ -2,11 +2,22 @@
 
 > 基于 [Firefly](https://github.com/CuteLeaf) 博客系统二次开发，可搭配专属后台 [Blog-Admin](https://github.com/LuvGaze/Blog-Admin) 使用。
 
-一个功能丰富、高度可定制的现代化个人博客：基于 **Astro 7 + Svelte 5**，文章、书架、影视、游戏、番组、音乐、相册、足迹、规划、账单、更新日志等一应俱全，并配有 Express + TypeScript 后台。
+![Astro 7](https://img.shields.io/badge/Astro-7-FF5D01.svg)
+![Svelte 5](https://img.shields.io/badge/Svelte-5-FF3E00.svg)
+![TypeScript](https://img.shields.io/badge/TypeScript-strict-3178C6.svg)
+![TailwindCSS 4](https://img.shields.io/badge/TailwindCSS-4-38BDF8.svg)
+![License](https://img.shields.io/badge/license-MIT-green.svg)
+
+一个功能丰富、高度可定制的现代化个人博客：基于 **Astro 7 + Svelte 5**，文章、书架、影视、游戏、番组、音乐、相册、足迹、规划、账单、更新日志、笔记本等一应俱全；内容全部用 **Markdown 托管**，并配有 **Express + TypeScript 独立管理后台** 在线可视化编辑。
 
 ---
 
 ## ✨ 特色功能
+
+- **双层响应式侧边栏**：左右栏组件化布局，组件可配置归属（左/右）、排序、粘性定位与是否在文章页显示，且全部可在后台可视化调整。
+- **侧栏小组件丰富**：天气预报（三列整组轮换、AQI 分色、气压 kPa）、恋爱计时器、音乐播放器、日历、公告、「最近更新」多源聚合等。
+- **全站访问口令统一**：受保护页面（含账单）共用一套访问口令，后台可直接勾选栏目。
+- **3D 书架 / 更新日志链路图谱 / 账单仪表盘** 等特色页面模块。
 
 ### 🎨 视觉与交互
 
@@ -31,6 +42,7 @@
 | 📋 规划 | `src/content/plans/` | 待办规划 |
 | 💰 账单 | `src/content/bills/` | 收支流水、月度统计、分类排行 | 
 | 🕘 更新日志 | `src/content/changelog/` | 版本更新记录 |
+| 📓 笔记本 | `src/content/notebooks/` | 多级笔记本目录 + 单篇笔记，带封面 |
 | 🤝 友链 | `src/content/friends/` | 友情链接 |
 
 > 各内容类型的写法和字段示例，可直接参考站内教程文章《博客功能使用教程》。
@@ -119,7 +131,7 @@ Blog/
 │   │   └── changelog/  friends/  spec/
 │   ├── content.config.ts   # 内容集合 schema（字段定义）
 │   ├── components/         # 布局 / 页面 / 特性组件
-│   ├── config/             # 站点、主题、导航、评论、音乐等配置
+│   ├── config/             # 站点、主题、导航、评论、音乐、侧栏等配置
 │   ├── pages/              # 页面路由
 │   ├── styles/  utils/  types/  constants/
 │   ├── astro.config.*      # Astro 与 Cloudflare 配置
@@ -139,9 +151,13 @@ Blog/
 | `siteConfig.ts` | 站点信息、功能开关（`pages.xxx`） |
 | `navBarConfig.ts` | 导航栏菜单结构与 `LinkPresets` |
 | `themeConfig.ts` | 主题色、字体、布局 |
+| `sidebarConfig.ts` | 左右侧边栏组件布局、排序、各组件开关 |
 | `commentConfig.ts` | 评论系统（Artalk / Giscus / Waline …） |
 | `musicConfig.ts` | 音乐播放器、歌单、Meting API、歌词颜色 |
 | `footerConfig.ts` | 页脚内容与版权开关（`FooterConfig.html`） |
+| `weatherConfig.ts` | 天气预报（城市、API 参数、显示项） |
+| `relationshipConfig.ts` | 恋爱计时器（纪念日、是否显示） |
+| `accessConfig.ts` | 全站访问口令与受保护页面（路由） |
 | `billsConfig.ts` | 账单页参数 |
 | `backgroundWallpaper.ts` | 背景壁纸 |
 
