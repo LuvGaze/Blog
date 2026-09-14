@@ -1,5 +1,6 @@
 ---
 title: Minecraft
+date: "2026-09-14"
 category: game
 image: "https://image.luvgaze.com/d/Blog/MC.webp?sign=SCx5zlgsJseEsASrBVWlzerf8uz6GsGjBg6FC-ngutw=:0"
 score: 10

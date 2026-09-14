@@ -1,5 +1,6 @@
 ---
 title: 穿越火线
+date: "2026-09-14"
 category: game
 image: "https://image.luvgaze.com/d/Blog/CF.webp?sign=12SJEKErf6WOEWpnClTFVJhoEPX-pDUhrPksPYWRENA=:0"
 score: 9
