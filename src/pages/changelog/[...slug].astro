@@ -23,6 +23,12 @@ export async function getStaticPaths() {
 const { entry } = Astro.props;
 const { Content } = await render(entry);
 
+// 解析作者手选的相关日志（按文件名 id 或 version 匹配）
+const allEntries = await getCollection("changelog");
+const relatedEntries = (entry.data.related ?? [])
+	.map((r) => allEntries.find((x) => x.id === r || x.data.version === r))
+	.filter((x): x is NonNullable<typeof x> => !!x);
+
 const typeConfig = {
 	feature: {
 		label: i18n(I18nKey.changelogFeature),
@@ -84,6 +90,29 @@ const dateStr = entry.data.date.toISOString().slice(0, 10);
 
 				{entry.body && (
 					<Markdown class="mb-6"><Content /></Markdown>
+				)}
+
+				{relatedEntries.length > 0 && (
+					<div class="mb-6">
+						<h3 class="text-sm font-semibold text-(--deep-text) mb-3">相关更新</h3>
+						<div class="flex flex-wrap gap-2">
+							{relatedEntries.map((rel) => {
+								const relType = typeConfig[rel.data.type] || typeConfig.improvement;
+								return (
+									<a
+										href={`/changelog/${rel.id}/`}
+										class:list={[
+											"inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
+											"bg-(--btn-regular-bg) text-(--deep-text) hover:opacity-80 transition-opacity",
+										]}
+									>
+										<span class={`w-2 h-2 rounded-full ${relType.color}`} />
+										{rel.data.version || rel.id}
+									</a>
+								);
+							})}
+						</div>
+					</div>
 				)}
 
 				<div class="mt-6 flex items-center gap-4">

@@ -157,6 +157,8 @@ const changelogCollection = defineCollection({
 		type: z.enum(["feature", "improvement", "fix", "removal"]),
 		description: z.string(),
 		order: z.number().optional().default(0),
+		// 作者手选的相关日志：填写关联日志的文件名 id（如 v1.0.0）或 version，用于在更新日志链路图谱中画关联线
+		related: z.array(z.string()).optional().default([]),
 	}),
 });
 
