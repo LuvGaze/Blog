@@ -16,8 +16,15 @@ if (!siteConfig.pages.gallery) {
 const title = i18n(I18nKey.gallery);
 const description = i18n(I18nKey.galleryDescription);
 
-const allAlbums = await getCollection("gallery");
-const albums = allAlbums
+// 相册目录为空时 getCollection 会抛错，这里兜底为空数组
+const allAlbums = (async function () {
+  try {
+    return await getCollection("gallery");
+  } catch {
+    return [];
+  }
+})();
+const albums = (await allAlbums)
 	.filter((album) => album.id)
 	// 按手动 order（大优先）再时间倒序（新在前），无时间排最后
 	.sort(compareOrderThenDate)
