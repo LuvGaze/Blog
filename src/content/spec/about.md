@@ -27,6 +27,7 @@
 [//]: # (::github{repo="saicaca/fuwari"})
 
 ::github{repo="LuvGaze/Blog"}
+::github{repo="LuvGaze/Blog-Admin"}
 
 ---
 
