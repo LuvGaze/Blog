@@ -120,8 +120,7 @@ const stats = [
 		key: "showRunningDays",
 		icon: "material-symbols:calendar-clock-outline",
 		label: i18n(I18nKey.siteStatsRunningDays),
-		value: 0, // 将由客户端更新
-		suffix: i18n(I18nKey.siteStatsDays).replace("{days}", ""),
+		value: "--", // 将由客户端以 "1年2月3日" 形式更新
 		dynamic: true,
 		id: "running-days",
 	},
@@ -171,14 +170,27 @@ const stats = [
   function updateDynamicStats() {
     const today = new Date();
 
-    // 更新运行天数
+    // 将天数折算为 年/月/日 组合，规则：年>0 加"X年"，月>0 加"X月"，日>0 加"X日"
+    function formatDuration(totalDays) {
+      const years = Math.floor(totalDays / 365);
+      const rem = totalDays % 365;
+      const months = Math.floor(rem / 30);
+      const days = rem % 30;
+      let s = "";
+      if (years > 0) s += years + "年";
+      if (months > 0) s += months + "月";
+      s += days + "日";
+      return s;
+    }
+
+    // 更新运行时长（年月日）
     const startDate = new Date(siteStartDate);
     const diffTime = Math.abs(today.getTime() - startDate.getTime());
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
 
     const runningDaysElements = document.querySelectorAll('[data-stat-id="running-days"]');
     runningDaysElements.forEach((element) => {
-      element.textContent = diffDays.toString();
+      element.textContent = formatDuration(diffDays);
     });
 
     // 更新最后活动时间
