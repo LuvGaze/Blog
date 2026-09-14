@@ -11,6 +11,9 @@ export type WidgetComponentType =
 	| "music"
 	| "siteInfo"
 	| "umamiStats"
+	| "weather"
+	| "relationship"
+	| "recentUpdates"
 	| "changelog";
 
 export type WidgetComponentConfig = {
@@ -18,6 +21,8 @@ export type WidgetComponentConfig = {
 	enable: boolean; // 是否启用该组件
 	showTitle?: boolean; // 是否显示该组件标题，默认true
 	position: "top" | "sticky"; // 组件位置：top=固定在顶部，sticky=粘性定位（可滚动）
+	side?: "left" | "right"; // 可选：覆盖组件显示在哪一侧，不填则遵循所在数组（如 leftComponents 里的默认为左侧）
+	order?: number; // 可选：同侧内的上下排序权重，数字越小越靠前；不填则按数组出现顺序
 	showOnPostPage?: boolean; // 是否在文章详情页显示
 	hideOnNonPostPage?: boolean; // 是否在非文章详情页隐藏
 	specificConfig?: WidgetSpecificConfig;
@@ -28,6 +33,7 @@ export type MobileBottomComponentConfig = {
 	type: WidgetComponentType; // 组件类型
 	enable: boolean; // 是否启用该组件
 	showTitle?: boolean; // 是否显示该组件标题，默认true
+	order?: number; // 可选：移动端底部组件的上下排序权重，数字越小越靠前；不填则按数组出现顺序
 	showOnPostPage?: boolean; // 是否在文章详情页显示
 	hideOnNonPostPage?: boolean; // 是否在非文章详情页隐藏
 	specificConfig?: WidgetSpecificConfig;
@@ -42,6 +48,7 @@ export type WidgetSpecificConfig = {
 	ad?: AdConfig; // 广告组件专用配置
 	siteInfo?: SiteInfoConfig; // 站点信息组件专用配置
 	stats?: StatsWidgetConfig; // 站点统计组件专用配置
+	recentUpdates?: RecentUpdatesConfig; // 最近更新组件专用配置
 };
 
 // 站点统计组件专用配置：控制显示哪些统计项（缺省全部显示）
@@ -52,6 +59,11 @@ export type StatsWidgetConfig = {
 	showTotalWords?: boolean; // 显示全站总字数
 	showRunningDays?: boolean; // 显示运行时长
 	showLastUpdate?: boolean; // 显示最后活动
+};
+
+// 最近更新组件专用配置
+export type RecentUpdatesConfig = {
+	limit?: number; // 显示的最新文章数量，默认 6
 };
 
 // 站点信息组件专用配置
@@ -86,6 +98,12 @@ export type AdConfig = {
 export type SidebarLayoutConfig = {
 	enable: boolean; // 是否启用侧边栏
 	fullWidth?: boolean; // 是否全屏靠边：内容区铺满整个视口宽度，左右侧边栏贴边，默认 false
+	// 侧边栏与中间内容的间距（grid 列间距），默认 "1rem"
+	gridGap?: string;
+	// 侧边栏到页面左右边框的水平间距，默认 "1rem"
+	gridEdgeX?: string;
+	// 主网格上下的垂直间距，默认 "1rem"
+	gridEdgeY?: string;
 	position: "left" | "right" | "both"; // 侧边栏位置：左侧、右侧或双侧
 	tabletSidebar?: "left" | "right"; // 平板端(769-1279px)显示哪侧侧边栏，仅position为both时生效，默认left
 	hideSidebarOnPostPage?: boolean; // 文章详情页隐藏侧边栏，设为 true 则只在首页等非文章页显示，默认 false

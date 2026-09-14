@@ -7,10 +7,13 @@ import Categories from "@/components/widget/Categories.astro";
 import Music from "@/components/widget/Music.astro";
 import UmamiStats from "@/components/widget/UmamiStats.astro";                // 引入统计访问组件
 import Profile from "@/components/widget/Profile.astro";
+import RecentUpdates from "@/components/widget/RecentUpdates.astro";
+import RelationshipTimer from "@/components/widget/RelationshipTimer.astro";
 import SidebarTOC from "@/components/widget/SidebarTOC.astro";
 import SiteInfo from "@/components/widget/SiteInfo.astro";
 import SiteStats from "@/components/widget/SiteStats.astro";
 import Tags from "@/components/widget/Tags.astro";
+import Weather from "@/components/widget/Weather.astro";
 import { sidebarLayoutConfig } from "@/config";
 import type {
 	MobileBottomComponentConfig,
@@ -52,6 +55,9 @@ const componentMap = {
 	music: Music,
 	siteInfo: SiteInfo,
 	umamiStats: UmamiStats,             // 统计访问组件
+	weather: Weather,
+	relationship: RelationshipTimer,
+	recentUpdates: RecentUpdates,
 };
 
 // 获取侧边栏位置
@@ -60,20 +66,32 @@ const side = (Astro.props.side ||
 const className = Astro.props.class;
 
 // 根据 side 属性获取对应的组件列表
+// left/right：遍历左右组件并收集所有组件，再按组件的 side 覆盖字段（缺省取所在数组）筛选出属于本侧的部分，最后按 order 排序实现上下调整
+// bottom：直接返回移动端底部组件，并按 order 排序
 const getComponents = (): (
 	| WidgetComponentConfig
 	| MobileBottomComponentConfig
 )[] => {
-	if (side === SIDEBAR_SIDE.LEFT) {
-		return sidebarLayoutConfig.leftComponents;
-	}
-	if (side === SIDEBAR_SIDE.RIGHT) {
-		return sidebarLayoutConfig.rightComponents;
-	}
 	if (side === SIDEBAR_SIDE.BOTTOM) {
-		return sidebarLayoutConfig.mobileBottomComponents;
+		return [...sidebarLayoutConfig.mobileBottomComponents].sort(
+			(a, b) => (a.order ?? 0) - (b.order ?? 0),
+		);
 	}
-	return [];
+	const targetSide =
+		side === SIDEBAR_SIDE.RIGHT ? SIDEBAR_SIDE.RIGHT : SIDEBAR_SIDE.LEFT;
+	const candidates: (WidgetComponentConfig & { __defaultSide: "left" | "right" })[] = [
+		...sidebarLayoutConfig.leftComponents.map((c) => ({
+			...c,
+			__defaultSide: "left" as const,
+		})),
+		...sidebarLayoutConfig.rightComponents.map((c) => ({
+			...c,
+			__defaultSide: "right" as const,
+		})),
+	];
+	return candidates
+		.filter((c) => (c.side ?? c.__defaultSide) === targetSide)
+		.sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
 };
 
 // 过滤并排序组件（不再进行 showOnPostPage 过滤，交由客户端处理）

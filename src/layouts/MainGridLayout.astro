@@ -15,6 +15,7 @@ import BackgroundPlayer from "@/components/features/BackgroundPlayer.astro";
 import TypewriterText from "@/components/features/TypewriterText.astro";
 import CategoryBar from "@/components/layout/CategoryBar.astro";
 import {
+	accessConfig,
 	backgroundWallpaper,
 	live2dWidgetConfig,
 	sidebarLayoutConfig,
@@ -39,6 +40,8 @@ import {
 	type ResponsiveSidebarConfig,
 } from "@/utils/responsive-utils";
 import Layout from "./Layout.astro";
+import PagePassword from "@/components/features/PagePassword.astro";
+import { isRouteProtected, slugifyPath } from "@/utils/access-utils";
 
 import "@/styles/markdown.css";
 import "@/styles/expressive-code.css";
@@ -227,6 +230,25 @@ const rightSidebarClass =
 		: "";
 const mainContentClass = generateMainContentClasses(updatedGridConfig);
 const staticBarClass = mainContentClass.replace("transition-main", "").trim();
+
+// 全站内容口令保护：命中受保护路径且已配置口令时，对主内容槽加密展示
+const passwordRequired =
+	!!(accessConfig.password || import.meta.env.GATE_PASSWORD) &&
+	isRouteProtected(Astro.url.pathname, accessConfig.protectedRoutes);
+const passwordSlug = slugifyPath(Astro.url.pathname);
+
+// 网格水平偏移 gridEdgeX 支持负数：负数时将网格整体向两侧外扩，让侧栏更贴边/突出
+// （CSS 的 padding 不接受负数会被钳制为 0，故负数改用 width + 负 margin 实现）
+const edgeX = sidebarLayoutConfig.gridEdgeX ?? "1rem";
+const edgeY = sidebarLayoutConfig.gridEdgeY ?? "1rem";
+const edgeXNeg = typeof edgeX === "string" && edgeX.trim().startsWith("-");
+const edgeXAbs = edgeXNeg ? edgeX.trim().replace(/^-+/, "") : String(edgeX);
+let gridOffsetStyle: string;
+if (!fullWidthLayout && edgeXNeg) {
+	gridOffsetStyle = `width: calc(100% + 2 * ${edgeXAbs}); margin-left: -${edgeXAbs}; margin-right: -${edgeXAbs}; padding: ${edgeY} 0;`;
+} else {
+	gridOffsetStyle = `padding: ${edgeY} ${edgeX};`;
+}
 
 const footerClass = ["footer", "col-span-1", "onload-animation"];
 
@@ -834,8 +856,8 @@ const hasMultipleImages =
             </div>
         )}
         <div id="main-grid"
-          class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto gap-4 ${fullWidthLayout ? 'px-0' : 'px-2 md:px-4'} ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
-          style="position: relative; z-index: 1;"
+          class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
+          style={`position: relative; z-index: 1; gap: ${sidebarLayoutConfig.gridGap ?? "1rem"}; ${gridOffsetStyle}`}
           data-sidebar-enable={sidebarLayoutConfig.enable ? "true" : "false"}
           data-grid-hide-sidebar-on-post={hideSidebarOnPostPage ? "true" : "false"}
           data-sidebar-position={sidebarLayoutConfig.position}
@@ -906,7 +928,13 @@ const hasMultipleImages =
                 {/* 为每个页面提供一个隐藏的h1标题，用于SEO和可访问性 */}
                 <h1 class="sr-only">{title}</h1>
                 <div id="content-wrapper" class="onload-animation transition-leaving">
-                    <slot></slot>
+                    {passwordRequired ? (
+                        <PagePassword slug={passwordSlug} hint={accessConfig.hint}>
+                            <slot></slot>
+                        </PagePassword>
+                    ) : (
+                        <slot></slot>
+                    )}
                 </div>
                 <WelcomeToast />
             </main>
