@@ -93,7 +93,7 @@ export const siteConfig: SiteConfig = {
 		routines: true,     // 规划页面
 		places: true,       // 足迹页面
 		notebooks: true,    // 笔记本页面
-		bills: false,        // 账单页面
+		bills: true,        // 账单页面
 	},
 
 	// 是否在主页显示分类栏（文章顶部的分类标签条）
