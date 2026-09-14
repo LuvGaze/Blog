@@ -102,7 +102,7 @@ const noRandomPostsText = i18n(I18nKey.noRandomPosts);
   </div>
 </div>
 
-<script is:inline>
+<script is:inline data-swup-ignore-script>
 function renderRandomPosts() {
   var container = document.getElementById('random-posts-list');
   if (!container) return;
@@ -216,5 +216,13 @@ function renderRandomPosts() {
 }
 
 renderRandomPosts();
-document.addEventListener('swup:contentReplaced', renderRandomPosts);
+window.renderRandomPosts = renderRandomPosts;
+// 使用 swup 标准 hook 在内容替换后重新渲染，避免 SPA 切换文章时随机文章不更新的问题
+if (window.swup && window.swup.hooks) {
+  window.swup.hooks.on('content:replace', renderRandomPosts);
+} else {
+  document.addEventListener('swup:enable', function () {
+    window.swup.hooks.on('content:replace', renderRandomPosts);
+  });
+}
 </script>

@@ -185,17 +185,40 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
 	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32">
 		<div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
 			<div class="mb-6">
-				<div class="flex items-center gap-3 mb-3">
-					<div class="w-12 h-12 rounded-2xl bg-(--primary) flex items-center justify-center">
-						<Icon name="material-symbols:bookmark" class="text-[1.4rem] text-white" />
-					</div>
-					<div>
-						<h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-3xl font-bold text-(--deep-text)">
-							{i18n(I18nKey.projectsTitle)}
-						</h1>
-					</div>
+				<div class="flex items-center justify-between gap-3 mb-3">
+					<div class="flex items-center gap-3">
+							<Icon name="material-symbols:bookmark" class="text-[1.875rem] text-(--deep-text) shrink-0" />
+							<h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-3xl font-bold text-(--deep-text)">
+								{i18n(I18nKey.projectsTitle)}
+							</h1>
+						</div>
+					<!-- 迷你模式切换按钮 -->
+					<button
+						id="mini-mode-toggle"
+						class="mini-mode-btn shrink-0"
+						aria-label="切换迷你模式"
+						title="切换迷你模式"
+					>
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mini-mode-icon-normal">
+							<rect x="3" y="3" width="7" height="7" rx="1" />
+							<rect x="14" y="3" width="7" height="7" rx="1" />
+							<rect x="3" y="14" width="7" height="7" rx="1" />
+							<rect x="14" y="14" width="7" height="7" rx="1" />
+						</svg>
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mini-mode-icon-compact hidden">
+							<rect x="3" y="3" width="5" height="5" rx="1" />
+							<rect x="10" y="3" width="5" height="5" rx="1" />
+							<rect x="17" y="3" width="5" height="5" rx="1" />
+							<rect x="3" y="10" width="5" height="5" rx="1" />
+							<rect x="10" y="10" width="5" height="5" rx="1" />
+							<rect x="17" y="10" width="5" height="5" rx="1" />
+							<rect x="3" y="17" width="5" height="5" rx="1" />
+							<rect x="10" y="17" width="5" height="5" rx="1" />
+							<rect x="17" y="17" width="5" height="5" rx="1" />
+						</svg>
+					</button>
 				</div>
-				<p class="text-sm text-(--content-meta) leading-relaxed">
+				<p class="text-base text-(--content-meta) leading-relaxed">
 					{i18n(I18nKey.projectsDescription)}
 				</p>
 			</div>
@@ -232,7 +255,7 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
 											<span class="text-base font-bold text-(--deep-text)">{cat}</span>
 										</div>
 										<span class="text-xs text-(--content-meta)">{catSites.length}</span>
-										<div class="flex-1 h-[2px] bg-(--line-divider)" />
+										<div class="flex-1 h-[2px] bg-(--meta-divider)" />
 									</div>
 									<div class="tools-card-grid">
 										{catSites.map((site, index) => (
@@ -254,9 +277,9 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
 													{(() => {
 														const iconSrc = site.data.icon || site.data.image;
 														return iconSrc ? (
-															<img src={iconSrc} alt={site.data.name} class="w-7 h-7 rounded object-contain shrink-0" onerror="this.remove()" />
+															<img src={iconSrc} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" onerror="this.remove()" />
 														) : (
-															<Icon name="material-symbols:language" class="text-2xl text-(--content-meta) group-hover:text-(--primary) transition-colors duration-300 shrink-0" />
+															<Icon name="material-symbols:language" class="text-2xl text-(--content-meta) group-hover:text-(--deep-text) transition-colors duration-300 shrink-0" />
 														);
 													})()}
 													<h3 class="text-lg font-bold text-(--deep-text) group-hover:translate-x-1 transition-transform duration-300 truncate">
@@ -308,9 +331,9 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
 												{(() => {
 													const iconSrc = site.data.icon || site.data.image;
 													return iconSrc ? (
-														<img src={iconSrc} alt={site.data.name} class="w-7 h-7 rounded object-contain shrink-0" onerror="this.remove()" />
+														<img src={iconSrc} alt={site.data.name} class="w-6 h-6 rounded object-contain shrink-0" onerror="this.remove()" />
 													) : (
-														<Icon name="material-symbols:language" class="text-2xl text-(--content-meta) group-hover:text-(--primary) transition-colors duration-300 shrink-0" />
+														<Icon name="material-symbols:language" class="text-2xl text-(--content-meta) group-hover:text-(--deep-text) transition-colors duration-300 shrink-0" />
 													);
 												})()}
 												<h3 class="text-lg font-bold text-(--deep-text) group-hover:translate-x-1 transition-transform duration-300 truncate">
@@ -347,164 +370,319 @@ const allSites = sortedCategories.flatMap((cat) => sortedData.get(cat)!);
 </MainGridLayout>
 
 <style>
-	.tools-tab-wrapper {
-		margin-bottom: 1.5rem;
-	}
+  /* ===== Tab 外层 ===== */
+  .tools-tab-wrapper {
+    margin-bottom: 1.5rem;
+  }
 
-	.tools-tab-pill {
-		position: relative;
-		display: flex;
-		flex-wrap: wrap;
-		gap: 0.375rem;
-		padding: 0.375rem;
-		border-radius: var(--radius-large);
-		border: 1px solid var(--line-divider);
-		background: var(--card-bg);
-	}
+  /* 胶囊容器（换行） */
+  .tools-tab-pill {
+    position: relative;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.375rem;
+    padding: 0.375rem;
+    border-radius: 1rem;
+    border: 2px solid var(--line-color);
+    background: transparent;
+  }
 
-	.tools-tab-indicator {
-		position: absolute;
-		border-radius: 9999px;
-		background: var(--primary);
-		transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1), top 0.3s cubic-bezier(0.4, 0, 0.2, 1), width 0.3s cubic-bezier(0.4, 0, 0.2, 1), height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-		opacity: 0;
-		pointer-events: none;
-		z-index: 0;
-	}
+  /* 滑动指示条（中性底色，不强调颜色） */
+  .tools-tab-indicator {
+    position: absolute;
+    border-radius: 9999px;
+    background: var(--btn-regular-bg);
+    transition: left 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                top 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                width 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+                height 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
 
-	.tools-tab-btn {
-		position: relative;
-		z-index: 1;
-		display: flex;
-		align-items: center;
-		gap: 0.375rem;
-		padding: 0.375rem 0.875rem;
-		border: none;
-		border-radius: 9999px;
-		font-size: 0.8125rem;
-		font-weight: 500;
-		white-space: nowrap;
-		cursor: pointer;
-		background: transparent;
-		transition: color 0.2s;
-		flex-shrink: 0;
-		font-family: inherit;
-		color: var(--deep-text);
-	}
+  /* Tab 按钮 */
+  .tools-tab-btn {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    padding: 0.375rem 0.875rem;
+    border: none;
+    border-radius: 9999px;
+    font-size: 0.8125rem;
+    font-weight: 500;
+    white-space: nowrap;
+    cursor: pointer;
+    background: transparent;
+    transition: color 0.2s;
+    flex-shrink: 0;
+    font-family: inherit;
+  }
 
-	.tools-tab-btn-active {
-		color: #fff;
-		cursor: default;
-	}
+  /* 激活态：中性底色胶囊，文字用主文字色 */
+  .tools-tab-btn-active {
+    color: var(--deep-text);
+    cursor: default;
+  }
 
-	.tools-tab-btn-inactive:hover {
-		color: var(--primary);
-	}
+  /* 未激活态：弱化，悬停加深为主文字色 */
+  .tools-tab-btn-inactive {
+    color: var(--content-meta);
+  }
+  .tools-tab-btn-inactive:hover {
+    color: var(--deep-text);
+    opacity: 0.85;
+  }
 
-	.tools-tab-badge {
-		font-size: 0.65rem;
-		padding: 0.0625rem 0.375rem;
-		border-radius: 9999px;
-		background: var(--btn-regular-bg);
-		color: var(--btn-content);
-		line-height: 1.4;
-	}
+  /* 数量徽章 */
+  .tools-tab-badge {
+    font-size: 0.65rem;
+    padding: 0.0625rem 0.375rem;
+    border-radius: 9999px;
+    background: var(--btn-regular-bg);
+    color: var(--btn-content);
+    line-height: 1.4;
+  }
 
-	.tools-tab-btn-active .tools-tab-badge {
-		background: rgba(255, 255, 255, 0.25);
-		color: #fff;
-	}
+  /* 激活态徽章（中性） */
+  .tools-tab-btn-active .tools-tab-badge {
+    background: var(--line-color);
+    color: var(--deep-text);
+  }
 
-	.tools-category-group + .tools-category-group {
-		margin-top: 2rem;
-	}
+  /* 分组间距（"全部" Tab） */
+  .tools-category-group + .tools-category-group {
+    margin-top: 2rem;
+  }
 
-	.tools-card-grid {
-		display: grid;
-		grid-template-columns: repeat(3, 1fr);
-		gap: 1rem;
-	}
-	@media (max-width: 1024px) {
-		.tools-card-grid {
-			grid-template-columns: repeat(2, 1fr);
-		}
-	}
-	@media (max-width: 640px) {
-		.tools-card-grid {
-			grid-template-columns: 1fr;
-		}
-	}
+  /* 卡片网格 */
+  .tools-card-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+  @media (max-width: 1024px) {
+    .tools-card-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    .tools-card-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    .tools-card-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+  }
 
-	.tools-card {
-		position: relative;
-		display: flex;
-		flex-direction: column;
-		padding: 1.25rem;
-		border-radius: var(--radius-large);
-		border: 1px solid var(--line-divider);
-		background: var(--card-bg);
-		text-decoration: none;
-		overflow: hidden;
-		opacity: 0;
-		transform: translateY(20px);
-		animation: toolsCardSlideIn 0.5s ease-out forwards;
-		transition: border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease, background-color 300ms ease;
-	}
-	.tools-card:hover {
-		border-color: var(--primary);
-		box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-		transform: translateY(-2px);
-	}
+  /* 卡片样式 */
+  .tools-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    padding: 0.875rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--line-color);
+    background: var(--card-bg);
+    text-decoration: none;
+    overflow: hidden;
+    opacity: 0;
+    transform: translateY(20px);
+    animation: toolsCardSlideIn 0.5s ease-out forwards;
+    transition: border-color 300ms ease, box-shadow 300ms ease, transform 300ms ease, background-color 300ms ease;
+  }
+  .tools-card:hover {
+    border-color: var(--deep-text);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-2px);
+  }
 
-	.tools-card-jump-icon {
-		position: absolute;
-		top: 0.875rem;
-		right: 0.875rem;
-		display: flex;
-		align-items: center;
-		justify-content: center;
-		width: 1.75rem;
-		height: 1.75rem;
-		border-radius: 0.5rem;
-		color: var(--content-meta);
-		background: var(--btn-regular-bg);
-		opacity: 0;
-		transform: scale(0.8) translateY(-4px);
-		transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1), transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
-		z-index: 2;
-		pointer-events: none;
-	}
-	.tools-card:hover .tools-card-jump-icon {
-		opacity: 1;
-		transform: scale(1) translateY(0);
-	}
+  /* 右上角跳转图标 */
+  .tools-card-jump-icon {
+    position: absolute;
+    top: 0.875rem;
+    right: 0.875rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    border-radius: 0.5rem;
+    color: var(--btn-content);
+    background: var(--btn-regular-bg);
+    opacity: 0;
+    transform: scale(0.8) translateY(-4px);
+    transition: opacity 250ms cubic-bezier(0.4, 0, 0.2, 1), transform 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    z-index: 2;
+    pointer-events: none;
+  }
+  .tools-card:hover .tools-card-jump-icon {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
 
-	.tools-card-desc {
-		margin: 0 0 0.75rem 0;
-		font-size: 0.875rem;
-		font-weight: 400;
-		color: var(--content-meta);
-		line-height: 1.5;
-		display: -webkit-box;
-		-webkit-line-clamp: 2;
-		-webkit-box-orient: vertical;
-		overflow: hidden;
-		flex: 1;
-		min-height: 2.625rem;
-	}
+  /* 描述文本：单行省略 */
+  .tools-card-desc {
+    margin: 0 0 0.75rem 0;
+    font-size: 0.875rem;
+    font-weight: 400;
+    color: var(--content-meta);
+    line-height: 1.5;
+    display: -webkit-box;
+    -webkit-line-clamp: 1;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    flex: 1;
+    min-height: 1.3125rem;
+  }
 
-	.tools-card-footer {
-		display: flex;
-		align-items: center;
-		padding-top: 0.75rem;
-		border-top: 1px solid var(--line-divider);
-		margin-top: auto;
-	}
+  /* 底部域名 */
+  .tools-card-footer {
+    display: flex;
+    align-items: center;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--line-divider);
+    margin-top: auto;
+  }
 
-	@keyframes toolsCardSlideIn {
-		to {
-			opacity: 1;
-			transform: translateY(0);
-		}
-	}
+  /* ===== 迷你模式切换按钮 ===== */
+  .mini-mode-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 0.75rem;
+    border: 2px solid var(--line-color);
+    background: var(--card-bg);
+    color: var(--deep-text);
+    cursor: pointer;
+    transition: background-color 200ms ease, border-color 200ms ease, transform 150ms ease;
+    flex-shrink: 0;
+  }
+  .mini-mode-btn:hover {
+    background: var(--btn-regular-bg);
+    transform: scale(1.05);
+  }
+  .mini-mode-btn:active {
+    transform: scale(0.95);
+  }
+
+  /* ===== 迷你模式样式 ===== */
+  :global(.tools-mini-mode) .tools-card-grid {
+    grid-template-columns: repeat(4, 1fr);
+    gap: 0.75rem;
+  }
+  :global(.tools-mini-mode) .tools-card {
+    padding: 0.75rem;
+    flex-direction: row;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  :global(.tools-mini-mode) .tools-card:hover {
+    transform: translateY(-1px);
+  }
+  :global(.tools-mini-mode) .tools-card .flex.items-center.gap-2.mb-3 {
+    margin-bottom: 0;
+    flex: 1;
+    min-width: 0;
+  }
+  :global(.tools-mini-mode) .tools-card h3 {
+    font-size: 0.9375rem;
+    line-height: 1.3;
+    margin: 0;
+  }
+  :global(.tools-mini-mode) .tools-card .tools-card-desc,
+  :global(.tools-mini-mode) .tools-card .tools-card-footer,
+  :global(.tools-mini-mode) .tools-card .tools-card-jump-icon {
+    display: none !important;
+  }
+  :global(.tools-mini-mode) .tools-card img {
+    width: 1.25rem;
+    height: 1.25rem;
+  }
+  :global(.tools-mini-mode) .tools-card .iconify {
+    width: 1.25rem;
+    height: 1.25rem;
+    font-size: 1.25rem;
+  }
+  :global(.tools-mini-mode) .tools-category-group {
+    margin-top: 1.5rem;
+  }
+  :global(.tools-mini-mode) .tools-category-group:first-child {
+    margin-top: 0;
+  }
+  :global(.tools-mini-mode) .tools-category-group > .flex.items-center.gap-3.mb-5 {
+    margin-bottom: 0.75rem;
+  }
+
+  /* 迷你模式响应式 */
+  @media (max-width: 1280px) {
+    :global(.tools-mini-mode) .tools-card-grid {
+      grid-template-columns: repeat(3, 1fr);
+    }
+  }
+  @media (max-width: 768px) {
+    :global(.tools-mini-mode) .tools-card-grid {
+      grid-template-columns: repeat(2, 1fr);
+    }
+  }
+  @media (max-width: 480px) {
+    :global(.tools-mini-mode) .tools-card-grid {
+      grid-template-columns: repeat(2, 1fr);
+      gap: 0.5rem;
+    }
+  }
+
+  @keyframes toolsCardSlideIn {
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
 </style>
+
+<script is:inline data-swup-ignore-script>
+	// 使用事件委托，不受 Swup DOM 替换影响
+	document.addEventListener('click', function(e) {
+		var toggleBtn = e.target.closest('#mini-mode-toggle');
+		if (!toggleBtn) return;
+
+		var isMini = document.body.classList.contains('tools-mini-mode');
+		if (isMini) {
+			document.body.classList.remove('tools-mini-mode');
+			var iconNormal = toggleBtn.querySelector('.mini-mode-icon-normal');
+			var iconCompact = toggleBtn.querySelector('.mini-mode-icon-compact');
+			if (iconNormal) iconNormal.classList.remove('hidden');
+			if (iconCompact) iconCompact.classList.add('hidden');
+			localStorage.setItem('tools-mini-mode', 'false');
+		} else {
+			document.body.classList.add('tools-mini-mode');
+			var iconNormal2 = toggleBtn.querySelector('.mini-mode-icon-normal');
+			var iconCompact2 = toggleBtn.querySelector('.mini-mode-icon-compact');
+			if (iconNormal2) iconNormal2.classList.add('hidden');
+			if (iconCompact2) iconCompact2.classList.remove('hidden');
+			localStorage.setItem('tools-mini-mode', 'true');
+		}
+	});
+
+	function initMiniMode() {
+		var toggleBtn = document.getElementById('mini-mode-toggle');
+		if (!toggleBtn) return;
+		var savedMode = localStorage.getItem('tools-mini-mode');
+		if (savedMode === 'true') {
+			document.body.classList.add('tools-mini-mode');
+			var iconNormal = toggleBtn.querySelector('.mini-mode-icon-normal');
+			var iconCompact = toggleBtn.querySelector('.mini-mode-icon-compact');
+			if (iconNormal) iconNormal.classList.add('hidden');
+			if (iconCompact) iconCompact.classList.remove('hidden');
+		}
+	}
+	initMiniMode();
+	document.addEventListener('astro:page-load', initMiniMode);
+</script>

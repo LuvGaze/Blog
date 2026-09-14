@@ -190,7 +190,63 @@ if (isLocalSrcLogo) {
     </div>
 </div>
 
+<style>
+  /* 当前所在页导航高亮 */
+  #navbar a.navlink-active,
+  #navbar a.navlink-active .navbar-icon {
+    color: var(--primary);
+  }
+  #navbar a.navlink-active {
+    font-weight: 700;
+  }
+</style>
+
+<style is:global>
+  .navlink-active {
+    color: var(--primary) !important;
+  }
+</style>
+
 <script>
+function setNavActive() {
+  var path = location.pathname;
+  var current = (path === '/' ? '/' : path.replace(/\/+$/, '') + '/');
+  var links = document.querySelectorAll('#navbar a[href]');
+  var activeByDropdown = new Map();
+  for (var i = 0; i < links.length; i++) {
+    var a = links[i];
+    var href = a.getAttribute('href');
+    if (!href) continue;
+    var urlObj: URL | null = null;
+    try { urlObj = new URL(href, location.origin); } catch (e) { continue; }
+    if (!urlObj || urlObj.origin !== location.origin) continue;
+    var linkPath = (urlObj.pathname === '/' ? '/' : urlObj.pathname.replace(/\/+$/, '') + '/');
+    var active = current === linkPath || (linkPath !== '/' && current.indexOf(linkPath) === 0);
+    a.classList.toggle('navlink-active', active);
+    // 子链接高亮时，同时记录其所属的下拉容器，用于联动父按钮高亮
+    if (active) {
+      var dropdown = a.closest('[data-dropdown]');
+      if (dropdown) activeByDropdown.set(dropdown, true);
+    }
+  }
+  // 子页所在的下拉菜单：父级触发按钮也高亮，体现“当前所在父栏”状态
+  var triggers = document.querySelectorAll('#navbar [data-dropdown-trigger]');
+  for (var j = 0; j < triggers.length; j++) {
+    var trigger = triggers[j];
+    var container = trigger.closest('[data-dropdown]');
+    triggers[j].classList.toggle('navlink-active', !!(container && activeByDropdown.get(container)));
+  }
+}
+
+setNavActive();
+if (window.swup && window.swup.hooks) {
+  window.swup.hooks.on('content:replace', setNavActive);
+} else {
+  document.addEventListener('swup:enable', function () {
+    window.swup.hooks.on('content:replace', setNavActive);
+  });
+}
+
 function initLinkPrefetch() {
     // 悬停内链时预加载目标页，配合 Layout 中的 rel=prefetch 缓存，切换更跟手
     var done = {};
