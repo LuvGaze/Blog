@@ -128,7 +128,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件类型：恋爱计时器组件（置顶展示）
 			type: "relationship",
 			// 是否启用该组件
-			enable: true,
+			enable: false,
 			// 同侧上下排序（最小即最靠前，置于最上方）
 			order: 0,
 			// 组件位置
