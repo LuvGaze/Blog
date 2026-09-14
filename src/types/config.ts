@@ -1,3 +1,4 @@
+export type { AccessConfig } from "./accessConfig";
 export type { AnalyticsConfig } from "./analyticsConfig";
 export type { AnnouncementConfig } from "./announcementConfig";
 export type { BackgroundWallpaperConfig } from "./backgroundWallpaper";
@@ -24,6 +25,8 @@ export type {
 export type { Live2DWidgetConfig, SpineModelConfig } from "./pioConfig";
 export type { PlantUMLConfig } from "./plantumlConfig";
 export type { ProfileConfig } from "./profileConfig";
+export type { RelationshipConfig } from "./relationshipConfig";
+export type { WeatherConfig } from "./weatherConfig";
 export type {
 	AdConfig,
 	CalendarConfig,

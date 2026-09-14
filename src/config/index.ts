@@ -3,6 +3,7 @@
 
 // 类型导出
 export type {
+	AccessConfig,
 	AdConfig,
 	AnalyticsConfig,
 	AnnouncementConfig,
@@ -16,12 +17,14 @@ export type {
 	NavBarConfig,
 	PlantUMLConfig,
 	ProfileConfig,
+	RelationshipConfig,
 	SakuraConfig,
 	SidebarLayoutConfig,
 	SiteConfig,
 	SponsorConfig,
 	SponsorItem,
 	SponsorMethod,
+	WeatherConfig,
 	WidgetComponentConfig,
 	WidgetComponentType,
 	WidgetSpecificConfig,
@@ -32,6 +35,7 @@ export type {
 	FontDefinition,
 	FontSelectionConfig,
 } from "../types/fontConfig"; // 字体类型定义
+export { accessConfig } from "./accessConfig"; // 全站访问口令配置
 export { analyticsConfig } from "./analyticsConfig"; // 统计分析配置
 export { announcementConfig } from "./announcementConfig"; // 公告配置
 // 样式配置
@@ -50,6 +54,8 @@ export { navBarConfig, navBarSearchConfig } from "./navBarConfig"; // 导航栏�
 export { live2dWidgetConfig, spineModelConfig } from "./pioConfig"; // 看板娘配置
 export { plantumlConfig } from "./plantumlConfig"; // PlantUML 图表配置
 export { profileConfig } from "./profileConfig"; // 用户资料配置
+export { relationshipConfig } from "./relationshipConfig"; // 恋爱计时器配置
+export { weatherConfig } from "./weatherConfig"; // 天气配置
 // 布局配置
 export { sidebarLayoutConfig } from "./sidebarConfig"; // 侧边栏布局配置
 // 核心配置
