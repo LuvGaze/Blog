@@ -16,13 +16,19 @@ if (!siteConfig.pages.gallery) {
 }
 
 export async function getStaticPaths() {
-	const albums = await getCollection("gallery");
-	return albums
-		.filter((album) => album.id)
-		.map((album) => ({
-			params: { album: album.id },
-			props: { albumData: album.data, albumId: album.id },
-		}));
+  // 相册目录为空时 getCollection 会抛错，这里兜底为空数组
+  let albums = [];
+  try {
+    albums = await getCollection("gallery");
+  } catch {
+    albums = [];
+  }
+  return albums
+    .filter((album) => album.id)
+    .map((album) => ({
+      params: { album: album.id },
+      props: { albumData: album.data, albumId: album.id },
+    }));
 }
 
 const { albumData, albumId } = Astro.props;
