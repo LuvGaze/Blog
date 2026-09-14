@@ -55,7 +55,7 @@ export const siteConfig: SiteConfig = {
 			// Logo类型："image"图片，"text"文字，"emoji"表情符号
 			type: "image",
 			// Logo值（图片路径、文字内容或表情符号）
-			value: "assets/images/firefly.webp",
+			value: "assets/images/LuvGaze.webp",
 			// Logo替代文本（用于无障碍访问）
 			alt: "🍀",
 		},
