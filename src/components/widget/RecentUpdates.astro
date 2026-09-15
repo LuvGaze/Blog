@@ -1,4 +1,6 @@
 ---
+import fs from "node:fs";
+import path from "node:path";
 import { getCollection } from "astro:content";
 import { Icon } from "astro-icon/components";
 import WidgetLayout from "@/components/common/WidgetLayout.astro";
@@ -39,6 +41,25 @@ interface RecentItem {
 	date: Date;
 	url: string;
 	image: string;
+	/** 源文件最后修改时间（毫秒），用于同日期条目的次级排序 */
+	mtime: number;
+}
+
+/**
+ * 取条目源文件的最后修改时间。
+ * 内容集合里很多条目的日期只精确到「天」，同一天新增的多条内容日期完全相同，
+ * 仅按日期排序时新增内容会被同日期旧内容挤出列表；用文件修改时间做次级排序，
+ * 让「最近改动过的」优先展示，列表才真正是「最近更新」。
+ * 取不到（无 filePath 或读取失败）时返回 0，退化为原有排序。
+ */
+function entryMtime(entry: unknown): number {
+	const fp = (entry as { filePath?: string } | null | undefined)?.filePath;
+	if (!fp) return 0;
+	try {
+		return fs.statSync(path.resolve(process.cwd(), fp)).mtimeMs;
+	} catch {
+		return 0;
+	}
 }
 
 const mediaLabel: Record<string, string> = {
@@ -58,6 +79,7 @@ const items: RecentItem[] = [];
 			date: p.data.published,
 			url: getPostUrlBySlug(p.id),
 			image: processCoverImageSync(p.data.image, p.id),
+			mtime: entryMtime(p),
 		});
 	}
 
@@ -77,6 +99,7 @@ for (const m of media) {
 		date: m.data.date ? new Date(m.data.date) : new Date(0),
 		url,
 		image: img,
+		mtime: entryMtime(m),
 	});
 }
 
@@ -90,6 +113,7 @@ for (const r of plans) {
 		date: d,
 		url: `/plans/`,
 		image: r.data.cover || "",
+		mtime: entryMtime(r),
 	});
 }
 
@@ -102,6 +126,7 @@ for (const t of travels) {
 		date: t.data.date ? new Date(t.data.date) : new Date(0),
 		url: `/travel/${t.id}/`,
 		image: t.data.cover || "",
+		mtime: entryMtime(t),
 	});
 }
 
@@ -118,6 +143,7 @@ for (const g of galleries) {
 		date: g.data.date ? new Date(g.data.date) : new Date(0),
 		url: `/gallery/${g.id}/`,
 		image: typeof img === "string" ? img : "",
+		mtime: entryMtime(g),
 	});
 }
 
@@ -151,17 +177,20 @@ for (const nb of notebooks) {
 		date: note.date ? new Date(note.date) : new Date(0),
 		url: `/notebooks/${folder}/${noteSlug}/`,
 		image: notebookRoots.get(folder)?.cover || "",
+		mtime: entryMtime(nb),
 	});
 }
 
 // 笔记本容器（以最新笔记日期作为更新时间）
 for (const [folder, root] of notebookRoots) {
 	let latest = 0;
+	let latestMtime = 0;
 	for (const nb of notebooks) {
 		const nid = nb.id.replace(/\\/g, "/");
 		if (!nid.startsWith(folder + "/") || nid.includes("/_index")) continue;
 		const d = (nb.data as { date?: Date | string }).date;
 		if (d) latest = Math.max(latest, new Date(d).getTime());
+		latestMtime = Math.max(latestMtime, entryMtime(nb));
 	}
 	items.push({
 		type: "notebook",
@@ -170,13 +199,15 @@ for (const [folder, root] of notebookRoots) {
 		date: latest ? new Date(latest) : new Date(0),
 		url: `/notebooks/${folder}/`,
 		image: root.cover,
+		mtime: latestMtime,
 	});
 }
 
-// 排序：全部条目按日期倒序，截取前 limit 条（最大显示数量，可在后台调整 limit）
+// 排序：先按日期倒序；日期相同（多数内容日期只精确到「天」）时按源文件修改时间倒序，
+// 保证刚新增/改动过的内容能排在前面，再截取前 limit 条（最大显示数量，可在后台调整 limit）
 const recent = items
 	.filter((i) => i.date instanceof Date && !isNaN(i.date.getTime()))
-	.sort((a, b) => b.date.getTime() - a.date.getTime())
+	.sort((a, b) => b.date.getTime() - a.date.getTime() || b.mtime - a.mtime)
 	.slice(0, Math.max(limit, 1));
 
 function fmtDate(d: Date): string {
