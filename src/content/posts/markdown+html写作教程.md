@@ -829,22 +829,22 @@ Cause: 未配置行高与字体参数</code></pre>
 
 **实时预览：**
 
-<p style="text-indent:2em; line-height:1.8; color:#333; font-size:15px; margin-bottom:16px;">
+<p style="text-indent:2em; line-height:1.8; color:#00BFFF; font-size:20px; margin-bottom:16px;">
 本套共计35款完整版博客美化组件，全覆盖基础排版、高亮提示、布局分栏、交互收纳、代码展示五大核心场景，全部采用纯行内HTML样式，无外部CSS依赖、无JavaScript脚本，零污染、零代码冲突，兼容性拉满。所有组件均经过双端适配测试，完美适配移动端、桌面端，兼容Obsidian笔记、个人博客、公众号编辑器、静态网页、技术文档等绝大多数写作场景。使用方式极简，直接复制对应组件下方的纯净源码，粘贴即可实时生效，无需额外配置、无需调试。
 </p>
 
-<p style="text-indent:2em; line-height:1.8; color:#333; font-size:15px; margin-bottom:16px;">
+<p style="text-indent:2em; line-height:1.8; color:#E9967A; font-size:15px; margin-bottom:16px;">
 💡 通用优化技巧：所有颜色、圆角、边距参数均可自由修改，可根据自己博客主题色调，统一替换主色值，打造专属统一的页面风格，大幅提升文章精致度与阅读体验。
 </p>
 
 **纯净源码：**
 
 ```html
-<p style="text-indent:2em; line-height:1.8; color:#333; font-size:15px; margin-bottom:16px;">
+<p style="text-indent:2em; line-height:1.8; color:#00BFFF; font-size:20px; margin-bottom:16px;">
 本套共计35款完整版博客美化组件，全覆盖基础排版、高亮提示、布局分栏、交互收纳、代码展示五大核心场景，全部采用纯行内HTML样式，无外部CSS依赖、无JavaScript脚本，零污染、零代码冲突，兼容性拉满。所有组件均经过双端适配测试，完美适配移动端、桌面端，兼容Obsidian笔记、个人博客、公众号编辑器、静态网页、技术文档等绝大多数写作场景。使用方式极简，直接复制对应组件下方的纯净源码，粘贴即可实时生效，无需额外配置、无需调试。
 </p>
 
-<p style="text-indent:2em; line-height:1.8; color:#333; font-size:15px; margin-bottom:16px;">
+<p style="text-indent:2em; line-height:1.8; color:#E9967A; font-size:15px; margin-bottom:16px;">
 💡 通用优化技巧：所有颜色、圆角、边距参数均可自由修改，可根据自己博客主题色调，统一替换主色值，打造专属统一的页面风格，大幅提升文章精致度与阅读体验。
 </p>
 ```
