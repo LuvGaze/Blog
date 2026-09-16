@@ -49,3 +49,6 @@ test/
 /参考模板/
 github.md
 /image-api/
+/API/
+# 自动生成的随机文章数据源（构建/dev 时由 generate-post-meta 插件生成）
+/public/api/
