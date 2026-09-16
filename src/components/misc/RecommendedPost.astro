@@ -109,10 +109,10 @@ function renderRandomPosts() {
 
   var apiUrl = container.dataset.apiUrl;
   var currentId = container.dataset.currentId;
-  var relatedIds = JSON.parse(container.dataset.relatedIds || '[]');
+  // 随机池只排除「当前文章」与加密文章，不排除「相关文章」，
+  // 否则文章较少时右侧会被相关文章排挤剩不下 5 篇，无法占满整栏
   var excludeSet = {};
   excludeSet[currentId] = true;
-  for (var i = 0; i < relatedIds.length; i++) excludeSet[relatedIds[i]] = true;
 
   function render(allPosts) {
     var emptyTemplate = document.getElementById('random-posts-empty');
