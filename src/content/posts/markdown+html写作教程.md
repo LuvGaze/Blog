@@ -3,8 +3,8 @@ title: markdown+html写作教程
 published: 2026-09-14
 pinned: true
 order: 0
-description: 写作教程
-category: markdown
+description: ""
+category: 教程
 draft: false
 image: api
 encrypted: false
@@ -508,7 +508,7 @@ tags: [markdown, 教程]
 **实时预览：**
 
 <p align="center">
-<img src="" style="border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1); max-width:100%;" alt="配图示例">
+<img src="https://t.alcy.cc/fj" style="border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1); max-width:100%;" alt="配图示例">
 <small style="color:#666;">图：博客配图说明文字（自行替换图片链接）</small>
 </p>
 
@@ -516,7 +516,7 @@ tags: [markdown, 教程]
 
 ```html
 <p align="center">
-<img src="" style="border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1); max-width:100%;" alt="配图示例">
+<img src="https://t.alcy.cc/fj" style="border-radius:10px; box-shadow:0 3px 10px rgba(0,0,0,0.1); max-width:100%;" alt="配图示例">
 <small style="color:#666;">图：博客配图说明文字（自行替换图片链接）</small>
 </p>
 ```
