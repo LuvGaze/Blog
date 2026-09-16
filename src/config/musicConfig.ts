@@ -53,17 +53,12 @@ export const musicPlayerConfig: MusicPlayerConfig = {
 	local: {
 		playlist: [
 			{
-				// 歌曲名称
-				name: "使一颗心免于哀伤",
-				// 歌手/艺术家
-				artist: "知更鸟 / HOYO-MiX / Chevy",
-				// 音频文件路径（相对于public目录）
-				url: "/assets/music/使一颗心免于哀伤-哼唱.mp3",
-				// 封面图片路径
-				cover: "/assets/music/cover/109951169585655912.webp",
-				// 歌词文件路径（留空则不显示歌词）
-				lrc: "",
-			},
+			    name: "使一颗心免于哀伤",
+			    artist: "知更鸟 / HOYO-MiX / Chevy",
+			    url: "/assets/music/使一颗心免于哀伤-哼唱.mp3",
+			    cover: "/assets/music/cover/109951169585655912.webp",
+			    lrc: ""
+			   }
 		],
 	},
 
