@@ -1,0 +1,181 @@
+---
+import I18nKey from "@i18n/i18nKey";
+import { i18n } from "@i18n/translation";
+import { getCategoryList } from "@utils/content-utils";
+import { getCategoryUrl, url } from "@utils/url-utils";
+
+interface Props {
+	title?: string;
+	category?: string;
+}
+
+const { title, category } = Astro.props;
+
+const homeUrl = url("/");
+const categories = await getCategoryList();
+
+const categoryLabel = category || i18n(I18nKey.uncategorized);
+
+interface DropdownOption {
+	label: string;
+	value: string;
+	href: string;
+}
+
+const dropdownOptions: DropdownOption[] = categories.map((c) => ({
+	label: `${c.name.trim()} (${c.count})`,
+	value: c.name.trim(),
+	href: c.url,
+}));
+
+const currentDropdownValue = category
+	? category.trim()
+	: i18n(I18nKey.uncategorized);
+const currentDropdownOption =
+	dropdownOptions.find((o) => o.value === currentDropdownValue) ??
+	dropdownOptions[0];
+---
+
+<nav class="cb" id="breadcrumb-nav" aria-label="Breadcrumb">
+  <ol class="cb__list">
+    {/* 文章列表 */}
+    <li class="cb__item">
+      <a href="/posts/" class="cb__link">
+        <span class="cb__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M4 18q-.825 0-1.412-.587T2 16V4q0-.825.588-1.412T4 2h16q.825 0 1.413.588T22 4v12q0 .825-.587 1.413T20 18H4Zm0-2h16V4H4v12Zm2-2h12V6H6v8Zm-2 6q-.825 0-1.412-.587T2 20v-2h20v2q0 .825-.587 1.413T20 22H4Z"/></svg>
+        </span>
+        <span>文章列表</span>
+      </a>
+    </li>
+
+    <li class="cb__item">
+      <span class="cb__sep" aria-hidden="true">›</span>
+      {/* 分类下拉 */}
+      <span
+        class="cb__dropdown"
+        data-breadcrumb-dropdown
+        data-current-value={currentDropdownValue}
+      >
+        <button
+          type="button"
+          class="cb__dropdown-trigger"
+          aria-haspopup="menu"
+          aria-expanded="false"
+          data-breadcrumb-dropdown-trigger
+        >
+          <span class="cb__dropdown-label" data-breadcrumb-dropdown-label>
+            {currentDropdownOption?.label ?? categoryLabel}
+          </span>
+          <span class="cb__dropdown-arrow" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24"><path fill="currentColor" d="M12 14.975q-.2 0-.375-.062T11.3 14.7l-4.6-4.6q-.275-.275-.275-.7t.275-.7q.275-.275.7-.275t.7.275L12 12.55l4.125-4.125q.275-.275.7-.275t.7.275q.275.275.275.7t-.275.7l-4.6 4.6q-.15.15-.325.213T12 14.975Z"/></svg>
+          </span>
+        </button>
+        <span
+          class="cb__dropdown-menu"
+          role="menu"
+          data-breadcrumb-dropdown-menu
+        >
+          {dropdownOptions.map((option) => (
+            <a
+              href={option.href}
+              class:list={[
+                "cb__dropdown-item",
+                option.value === currentDropdownValue && "is-active",
+              ]}
+              role="menuitem"
+              data-breadcrumb-dropdown-item
+              data-value={option.value}
+            >
+              <span>{option.label}</span>
+            </a>
+          ))}
+        </span>
+      </span>
+    </li>
+
+    <li class="cb__item">
+      <span class="cb__sep" aria-hidden="true">›</span>
+      <span class="cb__current">
+        <span class="cb__icon">
+          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24"><path fill="currentColor" d="M5 21q-.825 0-1.412-.587T3 19V5q0-.825.588-1.412T5 3h11l5 5v11q0 .825-.588 1.413T19 21H5Zm7-7q.425 0 .713-.288T13 13q0-.425-.288-.712T12 12q-.425 0-.712.288T11 13q0 .425.288.713T12 14ZM9 9h6q.425 0 .713-.288T16 8q0-.425-.288-.712T15 7H9q-.425 0-.712.288T8 8q0 .425.288.713T9 9Z"/></svg>
+        </span>
+        <span>此文章</span>
+      </span>
+    </li>
+  </ol>
+</nav>
+
+<script is:inline>
+(function() {
+  if (window.__postBreadcrumbInited) return;
+  window.__postBreadcrumbInited = true;
+
+  function closeDropdown(dd) {
+    var trigger = dd.querySelector("[data-breadcrumb-dropdown-trigger]");
+    if (trigger) trigger.setAttribute("aria-expanded", "false");
+    dd.classList.remove("is-open");
+  }
+
+  function openDropdown(dd) {
+    var trigger = dd.querySelector("[data-breadcrumb-dropdown-trigger]");
+    var menu = dd.querySelector("[data-breadcrumb-dropdown-menu]");
+    if (trigger) trigger.setAttribute("aria-expanded", "true");
+    // 定位 fixed 下拉菜单
+    if (menu && trigger) {
+      var rect = trigger.getBoundingClientRect();
+      menu.style.top = (rect.bottom + 6) + "px";
+      menu.style.left = rect.left + "px";
+    }
+    dd.classList.add("is-open");
+  }
+
+  function closeAll() {
+    var dds = document.querySelectorAll("[data-breadcrumb-dropdown]");
+    for (var i = 0; i < dds.length; i++) closeDropdown(dds[i]);
+  }
+
+  function focusItem(dd, dir) {
+    var items = Array.prototype.slice.call(dd.querySelectorAll("[data-breadcrumb-dropdown-item]"));
+    if (!items.length) return;
+    var active = document.activeElement;
+    var idx = items.indexOf(active);
+    var next = idx < 0 ? 0 : (idx + dir + items.length) % items.length;
+    items[next].focus();
+  }
+
+  document.addEventListener("click", function(e) {
+    var t = e.target;
+    if (!t) return;
+    var trigger = t.closest && t.closest("[data-breadcrumb-dropdown-trigger]");
+    var item = t.closest && t.closest("[data-breadcrumb-dropdown-item]");
+    if (trigger) {
+      e.preventDefault();
+      var dd = trigger.closest("[data-breadcrumb-dropdown]");
+      if (!dd) return;
+      var isOpen = dd.classList.contains("is-open");
+      closeAll();
+      if (!isOpen) openDropdown(dd);
+      return;
+    }
+    if (item) {
+      e.preventDefault();
+      var href = item.getAttribute("href") || "";
+      closeAll();
+      if (href) {
+        if (window.swup && typeof window.swup.navigate === "function") {
+          window.swup.navigate(href);
+        } else {
+          window.location.assign(href);
+        }
+      }
+      return;
+    }
+    if (!t.closest || !t.closest("[data-breadcrumb-dropdown]")) closeAll();
+  });
+
+  // Swup 导航后关闭下拉
+  document.addEventListener("swup:content:replaced", function() {
+    closeAll();
+  });
+})();
+</script>
