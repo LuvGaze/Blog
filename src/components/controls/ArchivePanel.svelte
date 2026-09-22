@@ -9,11 +9,9 @@ import { getPostUrlBySlug } from "@/utils/url-utils";
 export let tags: string[] = [];
 export let categories: string[] = [];
 export let sortedPosts: Post[] = [];
-
-const params = new URLSearchParams(window.location.search);
-tags = params.has("tag") ? params.getAll("tag") : [];
-categories = params.has("category") ? params.getAll("category") : [];
-const uncategorized = params.get("uncategorized");
+// 归档页传入的年份过滤 props
+export let selectedYear: number | undefined = undefined;
+export let availableYears: number[] = [];
 
 interface Post {
 	id: string;
@@ -41,6 +39,9 @@ let primaryFilter: ActiveFilter | null = null;
 let secondaryFilters: ActiveFilter[] = [];
 let filteredPostCount = 0;
 let collapsedYears: Set<number> = new Set();
+// 当前生效的年份（初始取归档页传入的 selectedYear，运行时由 archive-year-change 驱动）
+let activeYear: number | undefined = selectedYear;
+let uncategorized: string | null = null;
 
 function toggleYear(year: number) {
 	const willCollapse = !collapsedYears.has(year);
@@ -97,7 +98,8 @@ function formatFilterSummary(filters: ActiveFilter[]) {
 		.join("  ·  ");
 }
 
-onMount(async () => {
+// 统一应用筛选（分类 / 标签 / 年份），供初始化与年份切换时复用
+function applyFilters() {
 	let filteredPosts: Post[] = sortedPosts;
 	const currentFilters: ActiveFilter[] = [];
 
@@ -140,6 +142,13 @@ onMount(async () => {
 		filteredPosts = filteredPosts.filter((post) => !post.data.category);
 	}
 
+	// 按生效年份过滤文章
+	if (typeof activeYear === "number") {
+		filteredPosts = filteredPosts.filter(
+			(post) => post.data.published.getFullYear() === activeYear,
+		);
+	}
+
 	// 按发布时间倒序排序，确保不受置顶影响
 	filteredPosts = filteredPosts
 		.slice()
@@ -171,6 +180,26 @@ onMount(async () => {
 	if (siteConfig.foldArticle !== false && groupedPostsArray.length > 1) {
 		collapsedYears = new Set(groupedPostsArray.slice(1).map((g) => g.year));
 	}
+}
+
+onMount(() => {
+	// 从 URL 读取筛选参数（放到 onMount 里保证 SSR 安全）
+	const params = new URLSearchParams(window.location.search);
+	tags = params.has("tag") ? params.getAll("tag") : [];
+	categories = params.has("category") ? params.getAll("category") : [];
+	uncategorized = params.get("uncategorized");
+
+	applyFilters();
+
+	// 监听归档页年份下拉派发的 archive-year-change 事件，切换列表年份
+	const onYearChange = (e: Event) => {
+		const y = (e as CustomEvent).detail?.year;
+		if (typeof y === "number" && !Number.isNaN(y)) {
+			activeYear = y;
+			applyFilters();
+		}
+	};
+	window.addEventListener("archive-year-change", onYearChange as EventListener);
 
 	// 更新横幅标题为当前筛选的分类名或标签名（带淡入淡出）
 	const bannerTitle = document.querySelector<HTMLElement>(
@@ -193,6 +222,13 @@ onMount(async () => {
 			}, 260);
 		}
 	}
+
+	return () => {
+		window.removeEventListener(
+			"archive-year-change",
+			onYearChange as EventListener,
+		);
+	};
 });
 </script>
 
@@ -231,7 +267,7 @@ onMount(async () => {
 				<div class="w-[15%] md:w-[10%]">
 					<div
 							class="h-3 w-3 bg-none rounded-full outline outline-(--primary) mx-auto
-                  -outline-offset-2 z-50 outline-3"
+	                  -outline-offset-2 z-50 outline-3"
 					></div>
 				</div>
 				<div class="w-[70%] md:w-[80%] transition text-left text-50 flex items-center gap-2
@@ -262,23 +298,23 @@ onMount(async () => {
 						<div class="w-[15%] md:w-[10%] relative dash-line h-full flex items-center">
 							<div
 									class="transition-all mx-auto w-1 h-1 rounded group-hover:h-5
-                       bg-[oklch(0.5_0.05_var(--hue))] group-hover:bg-(--primary)
-                       outline outline-4 z-50
-                       outline-(--card-bg)
-                       group-hover:outline-(--btn-plain-bg-hover)
-                       group-active:outline-(--btn-plain-bg-active)"
+	                       bg-[oklch(0.5_0.05_var(--primary-hue))] group-hover:bg-(--primary)
+	                       outline outline-4 z-50
+	                       outline-(--card-bg)
+	                       group-hover:outline-(--btn-plain-bg-hover)
+	                       group-active:outline-(--btn-plain-bg-active)"
 							></div>
 						</div>
 
 						<!-- post title -->
 						<div
 								class="w-[70%] md:max-w-[65%] md:w-[65%] text-left font-bold
-                     group-hover:translate-x-1 transition-all group-hover:text-(--primary)
-                     text-75 pr-8 whitespace-nowrap text-ellipsis overflow-hidden flex items-center gap-2"
+	                     group-hover:translate-x-1 transition-all group-hover:text-(--primary)
+	                     text-75 pr-8 whitespace-nowrap text-ellipsis overflow-hidden flex items-center gap-2"
 						>
 							{#if post.data.category}
 								<span class="shrink-0 inline-block text-xs font-medium px-1.5 py-0.5 rounded
-								             bg-[oklch(0.95_0.025_var(--hue))] dark:bg-[oklch(0.25_0.025_var(--hue))]
+								             bg-[oklch(0.95_0.025_var(--primary-hue))] dark:bg-[oklch(0.25_0.025_var(--primary-hue))]
 								             text-(--primary) group-hover:bg-(--primary) group-hover:text-white!
 								             transition-colors">
 									{post.data.category}
@@ -290,7 +326,7 @@ onMount(async () => {
 						<!-- tag list -->
 						<div
 								class="hidden md:block md:w-[15%] text-left text-sm transition
-                     whitespace-nowrap text-ellipsis overflow-hidden text-30"
+	                 whitespace-nowrap text-ellipsis overflow-hidden text-30"
 						>
 							{formatTag(post.data.tags)}
 						</div>

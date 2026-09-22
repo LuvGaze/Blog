@@ -1,28 +1,106 @@
 ---
 import ArchivePanel from "@components/controls/ArchivePanel.svelte";
+import ArchiveHeatmap from "@components/widget/ArchiveHeatmap.astro";
 import I18nKey from "@i18n/i18nKey";
 import { i18n } from "@i18n/translation";
 import MainGridLayout from "@layouts/MainGridLayout.astro";
+import { Icon } from "astro-icon/components";
 import { getSortedPostsList } from "@/utils/content-utils";
 
 const sortedPostsList = await getSortedPostsList();
+const title = i18n(I18nKey.archive);
+
+// 年份列表（与 ArchiveHeatmap 同源计算，用于标题行年份下拉）
+const yearsSet = new Set<number>();
+for (const p of sortedPostsList) yearsSet.add(p.data.published.getFullYear());
+const availableYears = Array.from(yearsSet).sort((a, b) => b - a);
+const defaultYear = availableYears[0] ?? new Date().getFullYear();
 ---
 
-<MainGridLayout title={i18n(I18nKey.archive)}>
-  <script is:inline>
-    (function() {
-      var p = new URLSearchParams(location.search);
-      var cat = p.get("category") || "";
-      var tag = p.get("tag") || "";
-      var unc = p.get("uncategorized");
-      var t = cat || (unc ? "未分类" : "") || (tag ? "#" + tag : "");
-      if (t) {
-        requestAnimationFrame(function() {
-          var el = document.querySelector(".banner-page-title-text");
-          if (el) el.textContent = t;
-        });
+<MainGridLayout title={title}>
+  <div class="flex w-full overflow-hidden relative min-h-32">
+    <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+      <!-- 顶部一行（左上角）：归档标题 + 年份下拉 -->
+      <div class="flex flex-wrap items-center gap-x-3 gap-y-2 mb-3">
+        <div class="flex items-center gap-2">
+          <Icon name="material-symbols:schedule-outline-rounded" class="text-[1.875rem]" />
+          <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+            {title}
+          </div>
+        </div>
+        <div class="archive-year-dropdown" data-archive-year-dropdown>
+          <button type="button" class="archive-year-trigger" aria-haspopup="listbox" aria-expanded="false" data-archive-year-trigger>
+            <span data-archive-year-label>{defaultYear}</span>
+            <Icon name="material-symbols:expand-more-rounded" class="text-lg" />
+          </button>
+          <div class="archive-year-menu" role="listbox" data-archive-year-menu>
+            {availableYears.map((y) => (
+              <button type="button" role="option" class="archive-year-option" data-archive-year-option data-active={y === defaultYear ? "" : undefined} data-year={y} aria-selected={y === defaultYear ? "true" : "false"}>{y}</button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <ArchiveHeatmap posts={sortedPostsList} showYearNav={false} />
+      <ArchivePanel sortedPosts={sortedPostsList} client:load selectedYear={defaultYear} availableYears={availableYears} />
+    </div>
+  </div>
+  <script is:inline data-archive-year-inline>
+  (function(){
+    if (window.__archiveYearBound) return;
+    window.__archiveYearBound = true;
+    function syncYear(y){
+      document.querySelectorAll(".archive-year-option").forEach(function(b){
+        var isActive = b.getAttribute("data-year") === String(y);
+        if (isActive) b.setAttribute("data-active", "");
+        else b.removeAttribute("data-active");
+        b.setAttribute("aria-selected", isActive ? "true" : "false");
+      });
+      var label = document.querySelector("[data-archive-year-label]");
+      if (label) label.textContent = String(y);
+      document.querySelectorAll(".heatmap-year").forEach(function(el){ el.hidden = el.getAttribute("data-year") !== String(y); });
+      // 通知 ArchivePanel（Svelte）切换年份，触发列表过滤
+      window.dispatchEvent(new CustomEvent("archive-year-change", { detail: { year: y } }));
+      var url = new URL(window.location.href);
+      url.searchParams.set("year", String(y));
+      window.history.replaceState({}, "", url.toString());
+    }
+    // 初始化：URL year 优先，否则用默认年
+    var y0 = new URLSearchParams(window.location.search).get("year");
+    if (y0 && !isNaN(Number(y0))) syncYear(Number(y0));
+    document.addEventListener("click", function(e){
+      var target = e.target;
+      if (!target || !target.closest) return;
+      var option = target.closest("[data-archive-year-option]");
+      if (option) {
+        var y = Number(option.getAttribute("data-year"));
+        if (!isNaN(y)) { syncYear(y); }
+        var dd = document.querySelector("[data-archive-year-dropdown]");
+        var tr = document.querySelector("[data-archive-year-trigger]");
+        if (dd) dd.classList.remove("is-open");
+        if (tr) tr.setAttribute("aria-expanded", "false");
+        return;
       }
-    })();
+      var trigger = target.closest("[data-archive-year-trigger]");
+      if (trigger) {
+        var dropdown = document.querySelector("[data-archive-year-dropdown]");
+        if (!dropdown) return;
+        var isOpen = dropdown.classList.contains("is-open");
+        if (isOpen) {
+          dropdown.classList.remove("is-open");
+          trigger.setAttribute("aria-expanded", "false");
+        } else {
+          dropdown.classList.add("is-open");
+          trigger.setAttribute("aria-expanded", "true");
+        }
+        return;
+      }
+      var dropdown2 = document.querySelector("[data-archive-year-dropdown]");
+      if (dropdown2 && !target.closest("[data-archive-year-dropdown]")) {
+        dropdown2.classList.remove("is-open");
+        var tr2 = document.querySelector("[data-archive-year-trigger]");
+        if (tr2) tr2.setAttribute("aria-expanded", "false");
+      }
+    });
+  })();
   </script>
-  <ArchivePanel sortedPosts={sortedPostsList} client:only="svelte" />
 </MainGridLayout>
