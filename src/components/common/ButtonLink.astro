@@ -33,7 +33,7 @@ const { badge, url, label } = Astro.props;
             { badge !== undefined && badge !== null && badge !== '' &&
                 <div class="transition px-2 h-7 ml-4 min-w-8 rounded-lg text-sm font-bold
                     text-(--btn-content) dark:text-(--deep-text)
-                    bg-[oklch(0.95_0.025_var(--hue))] dark:bg-(--primary)
+                    bg-[oklch(0.95_0.025_var(--primary-hue))] dark:bg-(--primary)
                     flex items-center justify-center">
                     { badge }
                 </div>

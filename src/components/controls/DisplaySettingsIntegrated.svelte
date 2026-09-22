@@ -803,7 +803,7 @@ $effect(() => {
             -webkit-appearance none
             height 1.5rem
             border-radius 999px
-            background-image unquote("linear-gradient(90deg, var(--primary) 0 var(--range-progress, 50%), hsla(var(--hue), 22%, 28%, 0.18) var(--range-progress, 50%) 100%)")
+            background-image unquote("linear-gradient(90deg, var(--primary) 0 var(--range-progress, 50%), hsla(var(--primary-hue), 22%, 28%, 0.18) var(--range-progress, 50%) 100%)")
             transition background-image 0.15s ease-in-out
 
         input[type="range"].overlay-slider

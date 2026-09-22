@@ -16,6 +16,7 @@ import {
 	sakuraConfig,
 	siteConfig,
 } from "../config";
+import { isHexColor } from "./color";
 import { isHomePage as checkIsHomePage } from "./layout-utils";
 
 // Declare global functions
@@ -60,9 +61,20 @@ export function resolveTheme(theme: LIGHT_DARK_MODE): LIGHT_DARK_MODE {
 	return theme;
 }
 
+/** 是否配置了有效的 16 进制主题主色（存在即让整套色相跟随该 hex） */
+function hasConfiguredHex(): boolean {
+	const c = siteConfig?.themeColor?.color;
+	return typeof c === "string" && Boolean(c.trim()) && isHexColor(c.trim());
+}
+
 export function getHue(): number {
 	// 先检查全局对象
 	if (typeof window === "undefined" || !window.localStorage) {
+		return getDefaultHue();
+	}
+	// 配置了有效 hex 主色时，主题色相以该 hex 推导的为准（getDefaultHue = 配置 hex 的 hue），
+	// 忽略旧浏览器 localStorage 里残留的 hue，避免"填了颜色却仍生效旧的色相"
+	if (hasConfiguredHex()) {
 		return getDefaultHue();
 	}
 	const stored = localStorage.getItem("hue");
