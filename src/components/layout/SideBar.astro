@@ -6,6 +6,7 @@ import Calendar from "@/components/widget/Calendar.astro";
 import Categories from "@/components/widget/Categories.astro";
 import Music from "@/components/widget/Music.astro";
 import UmamiStats from "@/components/widget/UmamiStats.astro";                // 引入统计访问组件
+import PostDirectory from "@/components/widget/PostDirectory.astro";
 import Profile from "@/components/widget/Profile.astro";
 import RecentUpdates from "@/components/widget/RecentUpdates.astro";
 import RelationshipTimer from "@/components/widget/RelationshipTimer.astro";
@@ -45,6 +46,7 @@ const ANIMATION_DELAY_UNIT = 50; // ms
 // 组件映射表
 const componentMap = {
 	profile: Profile,
+	postDirectory: PostDirectory,
 	announcement: Announcement,
 	categories: Categories,
 	tags: Tags,
@@ -122,6 +124,10 @@ const getAnimationDelay = (index: number): string => {
 // 判断当前页面是否为文章页面（服务端渲染时确定）
 const isPostPage = Astro.url.pathname.includes("/posts/");
 
+// 判断当前页面是否为文章列表页（/posts/ 或 /posts/分页/，如 /posts/2/）
+// 文章详情页为 /posts/某slug/，不匹配此正则
+const isPostListPage = /^\/posts\/?(\/\d+\/?)?$/.test(Astro.url.pathname);
+
 // 判断组件在当前页面首屏是否可见（用于计算布局间距，避免隐藏组件占位）
 const isComponentInitiallyVisible = (
 	config: WidgetComponentConfig | MobileBottomComponentConfig,
@@ -157,8 +163,17 @@ const getComponentProps = (
 	// 添加 showOnPostPage 和 hideOnNonPostPage 标记class（仅WidgetComponentConfig有这些属性）
 	// 同时根据当前页面类型在服务端渲染时设置初始 hidden 状态，避免页面加载时闪烁
 	if ("showOnPostPage" in config && config.showOnPostPage === false) {
-		baseProps.class = `${baseProps.class} widget-hide-on-post`;
-		if (isPostPage) {
+		// 列表页豁免：stats/recentUpdates 在文章列表页（/posts/ 及分页）仍需显示，
+		// showOnPostPage:false 只用于在文章详情页隐藏它们
+		const isListExempt =
+			isPostListPage &&
+			(config.type === "stats" || config.type === "recentUpdates");
+		// 打上不同标记：豁免组件（统计/最近更新）在列表页显示、仅详情页隐藏；
+		// 其余 showOnPostPage:false 组件（profile/weather/music/calendar）在所有文章相关页都隐藏
+		baseProps.class = `${baseProps.class} widget-hide-on-post${
+			isListExempt ? " widget-hide-on-post-list-exempt" : ""
+		}`;
+		if (isPostPage && !isListExempt) {
 			baseProps.class = `${baseProps.class} hidden`;
 		}
 	}
@@ -171,6 +186,10 @@ const getComponentProps = (
 
 	// 特殊处理 SidebarTOC 组件
 	if (config.type === "sidebarToc") {
+		// 文章目录只在文章详情页显示；文章列表页（含分页）也应隐藏
+		if (isPostListPage) {
+			baseProps.class = `${baseProps.class} hidden`;
+		}
 		return { ...baseProps, headings: Astro.props.headings || [] };
 	}
 

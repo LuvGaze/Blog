@@ -55,7 +55,8 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		    enable: true,
 		    order: 1,
 		    position: "top",
-		    showOnPostPage: true
+		    // 文章相关页（详情+列表）仅在左侧显示「全部文章」，故此处隐藏 profile
+		    showOnPostPage: false
 		   },
 		{
 		    type: "announcement",
@@ -69,14 +70,14 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		    enable: true,
 		    order: 3,
 		    position: "sticky",
-		    showOnPostPage: true
+		    showOnPostPage: false
 		   },
 		{
 		    type: "music",
 		    enable: true,
 		    order: 5,
 		    position: "sticky",
-		    showOnPostPage: true
+		    showOnPostPage: false
 		   },
 		{
 			// 组件类型：日历组件（置于音乐下方）
@@ -94,6 +95,30 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			},
 		},
 		{
+			// 组件类型：全部文章目录（文章详情页与列表页左侧显示在「全部标签」上方）
+			// showOnPostPage:true 使其在文章相关页显示；hideOnNonPostPage:true 使其在首页等非文章页隐藏
+			type: "postDirectory",
+			enable: true,
+			order: 7,
+			position: "sticky",
+			showOnPostPage: true,
+			hideOnNonPostPage: true,
+		},
+		{
+			// 组件类型：全部标签（文章详情页与列表页左侧「全部文章」下方显示）
+			// enable:true 配合 hideOnNonPostPage:true，使其只在文章相关页显示，首页等其它页保持原样
+			type: "tags",
+			enable: true,
+			order: 8,
+			position: "sticky",
+			showOnPostPage: true,
+			hideOnNonPostPage: true,
+			specificConfig: {
+				// 折叠阈值：标签数量超过 8 个时自动折叠
+				collapseThreshold: 8,
+			},
+		},
+		{
 		    type: "categories",
 		    enable: false,
 		    order: 6,
@@ -101,16 +126,6 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 		    showOnPostPage: true,
 		    specificConfig: {
 		        collapseThreshold: 5
-		       }
-		   },
-		{
-		    type: "tags",
-		    enable: false,
-		    order: 7,
-		    position: "sticky",
-		    showOnPostPage: true,
-		    specificConfig: {
-		        collapseThreshold: 10
 		       }
 		   },
 		{
@@ -146,7 +161,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件位置
 			position: "top",
 			// 是否在文章详情页显示
-			showOnPostPage: true,
+			showOnPostPage: false,
 			// 组件专属配置：控制显示哪些统计项（false 即隐藏该项）
 			specificConfig: {
 				stats: {
@@ -165,9 +180,9 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 				},
 			},
 		},
-		{
-			// 组件类型：站点信息组件
-			type: "siteInfo",
+	{
+		// 组件类型：站点信息组件
+		type: "siteInfo",
 			// 是否启用该组件
 			enable: false,
 			// 同侧上下排序
@@ -268,7 +283,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
 			// 组件位置
 			position: "sticky",
 			// 是否在文章详情页显示
-			showOnPostPage: true,
+			showOnPostPage: false,
 			// 组件专属配置
 			specificConfig: {
 				recentUpdates: {
