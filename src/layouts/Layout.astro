@@ -15,6 +15,7 @@ import {
 	expressiveCodeConfig,
 	profileConfig,
 	siteConfig,
+	THEME_HUE,
 } from "@/config";
 import {
 	BANNER_HEIGHT,
@@ -26,6 +27,7 @@ import { defaultFavicons } from "@/constants/icon";
 import type { Favicon } from "@/types/config";
 import { isHomePage } from "@/utils/layout-utils";
 import { url } from "@/utils/url-utils";
+import { hexToOklch, isHexColor } from "@/utils/color";
 
 import "@/styles/main.css";
 import "@/styles/variables.styl";
@@ -50,7 +52,18 @@ const isHomePageCheck = isHomePage(Astro.url.pathname);
 
 // defines global css variables
 // why doing this in Layout instead of GlobalStyles: https://github.com/withastro/astro/issues/6728#issuecomment-1502203757
-const configHue = siteConfig.themeColor.hue;
+const configHue = THEME_HUE;
+
+// 16 进制主题主色：提取 Oklch 亮度/色度，使 --primary 精确等于该 hex
+const themeColorHex =
+	typeof siteConfig.themeColor.color === "string" &&
+	siteConfig.themeColor.color.trim().length > 0
+		? siteConfig.themeColor.color.trim()
+		: "";
+const themeOklch =
+	themeColorHex && isHexColor(themeColorHex) ? hexToOklch(themeColorHex) : null;
+const configPrimaryLight = themeOklch ? themeOklch.L : null;
+const configPrimaryChroma = themeOklch ? themeOklch.C : null;
 
 // 获取导航栏透明模式配置
 const navbarTransparentMode =
@@ -258,6 +271,8 @@ const siteLang = lang.replace("_", "-");
         BANNER_HEIGHT_EXTEND,
         PAGE_WIDTH,
         configHue,
+        configPrimaryLight,
+        configPrimaryChroma,
         defaultMode: siteConfig.themeColor.defaultMode ?? "light",
         defaultWallpaperMode: backgroundWallpaper.mode,
         isWallpaperSwitchable:
@@ -308,8 +323,27 @@ const siteLang = lang.replace("_", "-");
       );
 
       // Load the hue from local storage
-      const hue = localStorage.getItem("hue") || configHue;
+      // 配置了有效 16 进制主色时，整个主题色相以该 hex 推导的 configHue 为准，
+      // 不走 localStorage（旧残留 hue 会覆盖 hex 推到出的色相，导致"填了颜色仍生效旧色相"）
+      const hue = configPrimaryChroma !== null
+        ? configHue
+        : (localStorage.getItem("hue") || configHue);
       document.documentElement.style.setProperty("--hue", hue);
+
+      // 16 进制主色：写入 --primary 的亮度/色度，使主色精确等于所填 hex
+      // 同时设置亮色与暗色两套亮度变量（--primary-light / --primary-dark-light），
+      // 否则暗色模式下 --primary 亮度回退默认 0.75，主色不精确、只随色相变化
+      // 主题色相：始终取配置 hex 推导的 configHue（未配置时即默认色相）。
+      // 整棵色族（背景/按钮/文字/目录/代码块等）都通过 --primary-hue 跟随当前配色，
+      // 不再依赖 --hue（--hue 可能被 localStorage 旧值覆盖，导致"填了颜色却只部分/完全不生效"）
+      document.documentElement.style.setProperty("--primary-hue", configHue);
+
+      if (configPrimaryChroma !== null && configPrimaryLight !== null) {
+        document.documentElement.style.setProperty("--primary-chroma", configPrimaryChroma);
+        document.documentElement.style.setProperty("--primary-light", configPrimaryLight);
+        document.documentElement.style.setProperty("--primary-dark-light", configPrimaryLight);
+        // --primary 的亮度/色度由 hex 推导，使主色精确等于所填颜色
+      }
 
       // 设置卡片透明度（全屏透明模式下使用），优先使用用户自定义值
       const storedCardOpacity = localStorage.getItem("overlayCardOpacity");
@@ -369,6 +403,16 @@ const siteLang = lang.replace("_", "-");
         "data-wallpaper-mode",
         wallpaperMode
       );
+
+      // 文章列表首屏视图：提前写入 data-article-view，避免 Svelte 水合前闪单列
+      (function applyArticleListView() {
+        try {
+          var saved = localStorage.getItem("postListLayout");
+          if (saved === "grid" || saved === "list") {
+            document.documentElement.setAttribute("data-article-view", saved);
+          }
+        } catch (_) {}
+      })();
 
       // 立即执行函数来处理DOM
       (function applyWallpaperMode() {
@@ -1392,6 +1436,8 @@ function disableAnimation() {
   let backToTopBtn = document.getElementById("back-to-top-btn");
   let toc = document.getElementById("toc-wrapper");
   let navbar = document.getElementById("navbar-wrapper");
+  // 顶栏滚动方向追踪：下滚隐藏、上滚显现
+  let navbarLastScrollY = 0;
   const sidebarStickyState: Record<
     "left" | "right",
     { topClass: "top-0" | "top-4"; hasVisibleTop: boolean }
@@ -1436,19 +1482,19 @@ function disableAnimation() {
       });
     }
 
-    if (stickyNavbar && navbar) {
+    // 顶栏自动隐藏：下滚隐藏、上滚显现（参考模板效果）
+    if (navbar) {
       operations.push(() => {
-        navbar.classList.remove("navbar-hidden");
-      });
-    } else if (bannerEnabled && navbar) {
-      operations.push(() => {
-        const threshold = window.innerHeight * (BANNER_HEIGHT_HOME / 100) - 88;
-
-        if (scrollTop >= threshold) {
-          navbar.classList.add("navbar-hidden");
-        } else {
-          navbar.classList.remove("navbar-hidden");
+        const HIDE_AFTER = 120; // 滚动距离超过该值后才允许隐藏，避免顶部抖动
+        const delta = scrollTop - navbarLastScrollY;
+        if (scrollTop <= HIDE_AFTER || delta < -2) {
+          // 回到顶部或向上滚动 → 显示
+          navbar!.classList.remove("navbar-hidden");
+        } else if (delta > 2) {
+          // 向下滚动 → 隐藏
+          navbar!.classList.add("navbar-hidden");
         }
+        navbarLastScrollY = scrollTop;
       });
     }
 
@@ -1456,8 +1502,11 @@ function disableAnimation() {
       operations.push(() => {
         if (scrollTop > 8) {
           navbarElement.classList.add("navbar-sticky-shadow");
+          // 滚动后导航栏压缩：logo 与右侧按钮向中间靠拢（参考模板效果）
+          navbarElement.classList.add("navbar-compact");
         } else {
           navbarElement.classList.remove("navbar-sticky-shadow");
+          navbarElement.classList.remove("navbar-compact");
         }
       });
     }
@@ -1510,6 +1559,11 @@ function disableAnimation() {
   // 检查当前页面是否为文章详情页
   const isCurrentPagePost = () =>
     window.location.pathname.includes("/posts/") || window.location.pathname.includes("/post/");
+
+  // 检查当前页面是否为文章列表页（/posts/ 或 /posts/分页/，如 /posts/2/）
+  // 文章详情页为 /posts/某slug/，不匹配此正则
+  const isCurrentPostListPage = () =>
+    /^\/posts\/?(\/\d+\/?)?$/.test(window.location.pathname);
 
   // Grid 列类常量
   const GRID_COL_CLASSES = [
@@ -1607,6 +1661,7 @@ function disableAnimation() {
   // 更新侧边栏组件的可见性
   function updateSidebarComponentsVisibility() {
     const isPostPage = isCurrentPagePost();
+    const isPostListPage = isCurrentPostListPage();
 
     // 处理侧边栏级别的 hideSidebarOnPostPage 配置
     document.querySelectorAll<HTMLElement>("[data-hide-sidebar-on-post]").forEach((wrapper) => {
@@ -1619,14 +1674,30 @@ function disableAnimation() {
     });
 
     // 处理组件级别的 showOnPostPage 配置
+    // showOnPostPage:false 的组件分两类：
+    //  - 豁免组件（widget-hide-on-post-list-exempt，即站点统计、最近更新）仅在文章详情页隐藏，
+    //    在非文章页与文章列表页（/posts/ 及分页）需正常显示
+    //  - 其余组件（profile/weather/music/calendar 等）在文章相关页（详情+列表）都隐藏，
+    //    非文章页才显示
     document.querySelectorAll(".widget-hide-on-post").forEach((widget) => {
-      isPostPage ? widget.classList.add("hidden") : widget.classList.remove("hidden");
+      const listExempt = widget.classList.contains("widget-hide-on-post-list-exempt");
+      const hide = isPostPage && (listExempt ? !isPostListPage : true);
+      widget.classList.toggle("hidden", hide);
     });
 
     // 处理 hideOnNonPostPage === true 的组件
     document.querySelectorAll(".widget-hide-on-non-post").forEach((widget) => {
       !isPostPage ? widget.classList.add("hidden") : widget.classList.remove("hidden");
     });
+
+    // 文章目录（sidebarToc）只在文章详情页显示；列表页及首页等非文章页均需隐藏
+    document
+      .querySelectorAll('widget-layout[data-id="sidebar-toc"]')
+      .forEach((widget) => {
+        if (!isPostPage || isPostListPage) {
+          widget.classList.add("hidden");
+        }
+      });
 
     // 组件可见性变化后，立即重算 sticky 间距，避免 swup 切页后残留旧间距
     updateSidebarStickySpacing();

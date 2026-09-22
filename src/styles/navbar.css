@@ -50,6 +50,51 @@
     box-shadow: var(--shadow-navbar-dark) !important;
 }
 
+/* ============================================
+ * 滚动后导航栏压缩动画（参考模板效果）
+ * 顶栏采用 left/center/right 三段式：左(logo)、中(导航)、右(操作)。
+ * 默认左/右分居两端、中居中；滚动后由 JS 把左/右段平移贴紧中段，
+ * 呈现"向中间靠拢"的压缩动画。
+ * ============================================ */
+.navbar-segments {
+    position: relative;
+    height: 100%;
+    width: 100%;
+}
+.navbar-seg {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    transition: left 0.36s cubic-bezier(0.22, 1, 0.36, 1);
+    will-change: left;
+}
+.navbar-seg--left {
+    left: 0;
+}
+.navbar-seg--right {
+    right: 0;
+}
+.navbar-seg--center {
+    left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;      /* 导航目录不让换行，保持单行 */
+    width: max-content;       /* 宽度按内容撑开，不被收缩挤压，杜绝目录换行/压缩换行 */
+    max-width: none;
+    flex-shrink: 0;
+}
+/* 导航目录及其所有后代一律禁止换行，确保顶栏菜单恒为单行 */
+#navbar .navbar-seg--center,
+#navbar .navbar-seg--center .navbar-nav,
+#navbar .navbar-seg--center .dropdown-container,
+#navbar .navbar-seg--center a,
+#navbar .navbar-seg--center button,
+#navbar .navbar-seg--center span {
+    white-space: nowrap !important;
+}
+#navbar .navbar-seg--center .dropdown-container {
+    flex-shrink: 0;
+}
+
 /* semifull 模式的透明阶段不单独显示 sticky shadow，避免 8px 和 50px 两段跳变 */
 #wallpaper-wrapper~* #navbar[data-transparent-mode="semifull"]:not(.scrolled).navbar-sticky-shadow>div,
 body:has(#wallpaper-wrapper) #navbar[data-transparent-mode="semifull"]:not(.scrolled).navbar-sticky-shadow>div {

@@ -108,7 +108,8 @@ if (isLocalSrcLogo) {
         className,
         "overflow-visible! h-18 px-4"
     ]}>
-        <div class="mx-auto h-full w-full max-w-(--page-width) grid grid-cols-[auto_minmax(0,1fr)_auto] items-center">
+        <div class="navbar-segments mx-auto h-full w-full max-w-(--page-width)">
+            <div class="navbar-seg navbar-seg--left">
             <a href={url('/')} class="btn-plain scale-animation rounded-lg h-13 px-5 font-bold active:scale-95">
                 <div class:list={[
                     "flex flex-row items-center text-md",
@@ -137,8 +138,10 @@ if (isLocalSrcLogo) {
                     {navbarTitle}
                 </div>
             </a>
+            </div>
+            <div class="navbar-seg navbar-seg--center">
             <div class:list={[
-                "hidden lg:flex items-center space-x-1 col-start-2",
+                "hidden lg:flex items-center space-x-1 flex-nowrap whitespace-nowrap",
                 isNavbarMenuCentered
                     ? "justify-center"
                     : "justify-start pl-2"
@@ -147,7 +150,9 @@ if (isLocalSrcLogo) {
                     return <DropdownMenu link={l} />;
                 })}
             </div>
-            <div class="flex col-start-3 justify-self-end">
+            </div>
+            <div class="navbar-seg navbar-seg--right">
+            <div class="flex">
                 <!--<SearchPanel client:load>-->
                 <Search
                     client:load
@@ -178,6 +183,7 @@ if (isLocalSrcLogo) {
                 <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 lg:hidden!" id="nav-menu-switch">
                     <Icon is:inline name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
                 </button>
+            </div>
             </div>
         </div>
         {musicPlayerConfig.showInNavbar && (
@@ -444,6 +450,62 @@ if (document.readyState === 'loading') {
 } else {
     initSemifullScrollDetection();
 }
+</script>
+
+<script>
+// 参考模板：导航栏压缩动画——滚动后左(logo)/右(操作)段平移贴紧中(导航)段
+// 依赖 Layout 中滚动时给 #navbar 添加/移除的 navbar-compact 类
+(function () {
+  function updateCompactLayout() {
+    var navbar = document.getElementById('navbar');
+    var segments = document.querySelector('.navbar-segments');
+    var center = document.querySelector('.navbar-seg--center');
+    var left = document.querySelector('.navbar-seg--left');
+    var right = document.querySelector('.navbar-seg--right');
+    if (!navbar || !segments || !center || !left || !right) return;
+
+    var isMobile = window.matchMedia('(max-width: 1023px)').matches;
+    if (isMobile) {
+      left.style.left = ''; left.style.right = '';
+      right.style.left = ''; right.style.right = '';
+      return;
+    }
+
+    var compact = navbar.classList.contains('navbar-compact');
+    if (!compact) {
+      left.style.left = '0px'; left.style.right = 'auto';
+      right.style.left = 'auto'; right.style.right = '0px';
+      return;
+    }
+
+    var segRect = segments.getBoundingClientRect();
+    var centerRect = center.getBoundingClientRect();
+    var leftRect = left.getBoundingClientRect();
+    var rightRect = right.getBoundingClientRect();
+    var GAP = 14;
+    left.style.left = (centerRect.left - segRect.left - GAP - leftRect.width) + 'px';
+    left.style.right = 'auto';
+    right.style.left = (centerRect.right - segRect.left + GAP) + 'px';
+    right.style.right = 'auto';
+  }
+
+  function schedule() {
+    requestAnimationFrame(updateCompactLayout);
+  }
+
+  window.addEventListener('load', schedule);
+  window.addEventListener('scroll', schedule, { passive: true });
+  window.addEventListener('resize', schedule, { passive: true });
+  document.addEventListener('astro:page-load', schedule);
+  if (window.swup && window.swup.hooks) {
+    window.swup.hooks.on('content:replace', schedule);
+  } else {
+    document.addEventListener('swup:enable', function () {
+      window.swup.hooks.on('content:replace', schedule);
+    });
+  }
+  schedule();
+})();
 </script>
 
 {
