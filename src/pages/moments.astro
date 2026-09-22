@@ -1,0 +1,327 @@
+---
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import MomentCard from "@/components/moments/MomentCard.astro";
+import MomentsCover from "@/components/moments/MomentsCover.astro";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { siteConfig } from "@/config";
+
+// 检查页面是否启用
+if (!siteConfig.pages.moments) {
+	return Astro.redirect("/404/");
+}
+
+const moments = await getCollection("moments");
+const sortedMoments = moments
+	.filter((m) => !m.data.pinned)
+	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
+
+// 置顶朋友圈
+const pinnedMoments = moments
+	.filter((m) => m.data.pinned)
+	.sort((a, b) => b.data.published.getTime() - a.data.published.getTime());
+
+// 解析图片路径（支持数组或逗号/分号分隔的字符串）
+const parseImages = (imagesData: string | string[] | undefined): string[] => {
+	let rawPaths: string[] = [];
+	if (Array.isArray(imagesData)) {
+		rawPaths = imagesData;
+	} else if (typeof imagesData === "string" && imagesData.trim()) {
+		rawPaths = imagesData
+			.split(/[,;]/)
+			.map((img) => img.trim())
+			.filter((img) => img);
+	}
+	return Array.from(new Set(rawPaths));
+};
+
+// 预处理置顶朋友圈
+const pinnedData = pinnedMoments.map((m) => ({
+	images: parseImages(m.data.images),
+	body: m.body || "",
+	date: m.data.published,
+}));
+---
+
+<MainGridLayout title="朋友圈" description="记录生活中的点点滴滴">
+  <!-- 微信朋友圈风格封面 -->
+  <MomentsCover />
+
+  <!-- 置顶朋友圈（有置顶时显示，点击跳转置顶合集页） -->
+  <a
+    href="/moments/pinned/"
+    class="wx-pinned"
+    id="pinned-block"
+    style={pinnedData.length === 0 ? "display:none" : ""}
+  >
+    <div class="wx-pinned-tag">
+      <Icon name="material-symbols:push-pin" />
+    </div>
+    <div class="wx-pinned-items" id="pinned-items">
+      {pinnedData.map((item) => (
+        <div class="wx-pinned-preview">
+          {item.images.length > 0 ? (
+            <div class={`wx-pimgs wx-pimgs-${Math.min(item.images.length, 9)}`}>
+              {item.images.slice(0, 9).map((img) => (
+                <img src={img} alt="" class="wx-pinned-img" loading="lazy" />
+              ))}
+            </div>
+          ) : (
+            <p class="wx-ptxt">
+              {item.body.slice(0, 60)}
+              {item.body.length > 60 ? "..." : ""}
+            </p>
+          )}
+        </div>
+      ))}
+    </div>
+  </a>
+
+  <!-- 朋友圈列表（前 5 条显示，其余无限滚动加载） -->
+  <div class="wx-feed" id="moments-feed">
+    {sortedMoments.length > 0 ? (
+      sortedMoments.map((moment, index) => (
+        <div
+          class={`wx-feed-item ${index >= 5 ? "wx-feed-hidden" : ""}`}
+          data-published={moment.data.published.toISOString()}
+          data-index={index}
+        >
+          <MomentCard moment={moment} />
+        </div>
+      ))
+    ) : (
+      <div class="wx-empty" id="moments-empty">
+        <div class="wx-empty-icon">
+          <Icon name="material-symbols:sentiment-neutral-outline" />
+        </div>
+        <h3>还没有发布任何朋友圈</h3>
+        <p>快去记录你的生活点滴吧</p>
+      </div>
+    )}
+  </div>
+
+  <!-- 加载更多指示器 -->
+  <div id="load-more-sentinel" class="load-more-sentinel">
+    <div class="load-more-spinner">
+      <div class="spinner"></div>
+      <span>加载中...</span>
+    </div>
+  </div>
+
+  <!-- 无限滚动加载（Swup 内，支持 SPA 重入） -->
+  <script is:inline>
+  (function() {
+    var BATCH_SIZE = 5;
+    var currentCount = BATCH_SIZE;
+    var isLoading = false;
+    var allLoaded = false;
+    var observer = null;
+
+    function getItems() {
+      var feed = document.getElementById('moments-feed');
+      return feed ? Array.from(feed.querySelectorAll('.wx-feed-item')) : [];
+    }
+
+    function updateVisibility() {
+      var items = getItems();
+      var total = items.length;
+      for (var i = 0; i < total; i++) {
+        if (i < currentCount) {
+          items[i].classList.remove('wx-feed-hidden');
+        } else {
+          items[i].classList.add('wx-feed-hidden');
+        }
+      }
+      return total;
+    }
+
+    function checkAllLoaded() {
+      var sentinel = document.getElementById('load-more-sentinel');
+      if (!sentinel) return;
+      var total = getItems().length;
+      if (currentCount >= total) {
+        allLoaded = true;
+        sentinel.classList.add('hidden');
+      } else {
+        allLoaded = false;
+        sentinel.classList.remove('hidden');
+      }
+    }
+
+    function loadMore() {
+      if (isLoading || allLoaded) return;
+      isLoading = true;
+
+      var items = getItems();
+      var total = items.length;
+
+      setTimeout(function() {
+        var nextBatch = Math.min(currentCount + BATCH_SIZE, total);
+        for (var i = currentCount; i < nextBatch; i++) {
+          if (items[i]) {
+            items[i].classList.remove('wx-feed-hidden');
+          }
+        }
+        currentCount = nextBatch;
+        isLoading = false;
+        checkAllLoaded();
+
+        if (!allLoaded && isSentinelInViewport()) {
+          loadMore();
+        }
+      }, 300);
+    }
+
+    function isSentinelInViewport() {
+      var sentinel = document.getElementById('load-more-sentinel');
+      if (!sentinel) return false;
+      var rect = sentinel.getBoundingClientRect();
+      return rect.top < window.innerHeight + 200;
+    }
+
+    function setupObserver() {
+      var sentinel = document.getElementById('load-more-sentinel');
+      if (!sentinel) return;
+
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+
+      if ('IntersectionObserver' in window) {
+        observer = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (entry.isIntersecting) {
+              loadMore();
+            }
+          });
+        }, { root: null, rootMargin: '200px', threshold: 0.1 });
+        observer.observe(sentinel);
+      }
+    }
+
+    function init() {
+      var feed = document.getElementById('moments-feed');
+      var sentinel = document.getElementById('load-more-sentinel');
+      if (!feed || !sentinel) return false;
+
+      currentCount = BATCH_SIZE;
+      isLoading = false;
+      allLoaded = false;
+
+      updateVisibility();
+      checkAllLoaded();
+      setupObserver();
+      return true;
+    }
+
+    function reinit(){ init(); }
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', function() { init(); });
+    } else {
+      init();
+    }
+    document.addEventListener("swup:content:replaced", reinit);
+    document.addEventListener("astro:page-load", reinit);
+  })();
+  </script>
+</MainGridLayout>
+
+<style>
+  /* ============================================
+   * 朋友圈列表
+   * ============================================ */
+  .wx-feed {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1rem 0 2rem;
+  }
+
+  .wx-feed-item {
+    position: relative;
+  }
+
+  /* 空状态 */
+  .wx-empty {
+    text-align: center;
+    padding: 3rem 1rem;
+    background: var(--card-bg);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+  }
+
+  .wx-empty-icon {
+    width: 4rem;
+    height: 4rem;
+    margin: 0 auto 1rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--btn-regular-bg);
+    border-radius: 50%;
+    color: var(--content-meta);
+    font-size: 2rem;
+  }
+
+  .wx-empty h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    color: var(--text-color);
+    margin-bottom: 0.375rem;
+  }
+
+  .wx-empty p {
+    font-size: 0.875rem;
+    color: var(--content-meta);
+    margin: 0;
+  }
+
+  /* 隐藏的朋友圈项（分页加载） */
+  .wx-feed-hidden {
+    display: none;
+  }
+
+  /* 加载更多指示器 */
+  .load-more-sentinel {
+    display: flex;
+    justify-content: center;
+    padding: 2rem 0;
+    min-height: 60px;
+  }
+
+  .load-more-sentinel.hidden {
+    display: none;
+  }
+
+  .load-more-spinner {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    color: var(--content-meta);
+    font-size: 0.875rem;
+  }
+
+  .spinner {
+    width: 24px;
+    height: 24px;
+    border: 3px solid var(--line-divider);
+    border-top-color: var(--primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+
+  @keyframes spin {
+    to {
+      transform: rotate(360deg);
+    }
+  }
+
+  /* 响应式 */
+  @media (max-width: 480px) {
+    .wx-feed {
+      gap: 1.25rem;
+      padding: 0.75rem 0 1.5rem;
+    }
+  }
+</style>
