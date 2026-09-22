@@ -38,60 +38,17 @@ export const getStaticPaths: GetStaticPaths = async () => {
 	});
 };
 
-let fontCache: { regular: Buffer | null; bold: Buffer | null } | null = null;
+// 本地字体缓存（构建/运行时从磁盘读取，避免联网拉取导致构建失败）
+let fontCache: Buffer | null = null;
 
-async function fetchNotoSansSCFonts() {
+function loadDengFont(): Buffer {
 	if (fontCache) return fontCache;
-	try {
-		const cssResp = await fetch(
-			"https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700&display=swap",
-		);
-		if (!cssResp.ok) throw new Error("Failed to fetch Google Fonts CSS");
-		const cssText = await cssResp.text();
-
-		const getUrlForWeight = (weight: number) => {
-			const blockRe = new RegExp(
-				`@font-face\\s*{[^}]*font-weight:\\s*${weight}[^}]*}`,
-				"g",
-			);
-			const match = cssText.match(blockRe);
-			if (!match || match.length === 0) return null;
-			const urlMatch = match[0].match(/url\((https:[^)]+)\)/);
-			return urlMatch ? urlMatch[1] : null;
-		};
-
-		const regularUrl = getUrlForWeight(400);
-		const boldUrl = getUrlForWeight(700);
-
-		if (!regularUrl || !boldUrl) {
-			console.warn(
-				"Could not find font urls in Google Fonts CSS; falling back to no fonts.",
-			);
-			fontCache = { regular: null, bold: null };
-			return { regular: null, bold: null };
-		}
-
-		const [rResp, bResp] = await Promise.all([
-			fetch(regularUrl),
-			fetch(boldUrl),
-		]);
-		if (!rResp.ok || !bResp.ok) {
-			console.warn(
-				"Failed to download font files from Google; falling back to no fonts.",
-			);
-			fontCache = { regular: null, bold: null };
-			return { regular: null, bold: null };
-		}
-
-		const rBuf = Buffer.from(await rResp.arrayBuffer());
-		const bBuf = Buffer.from(await bResp.arrayBuffer());
-		fontCache = { regular: rBuf, bold: bBuf };
-		return fontCache;
-	} catch (err) {
-		console.warn("Error fetching fonts:", err);
-		fontCache = { regular: null, bold: null };
-		return { regular: null, bold: null };
+	const fontPath = "./public/fonts/Deng.ttf";
+	if (!fs.existsSync(fontPath)) {
+		throw new Error(`OG 字体缺失：${fontPath}`);
 	}
+	fontCache = fs.readFileSync(fontPath);
+	return fontCache;
 }
 
 export async function GET({
@@ -99,8 +56,8 @@ export async function GET({
 }: APIContext<{ post: CollectionEntry<"posts"> }>) {
 	const { post } = props;
 
-	// Try to fetch fonts from Google Fonts (woff2) at runtime.
-	const { regular: fontRegular, bold: fontBold } = await fetchNotoSansSCFonts();
+	// 本地等线字体（Deng.ttf，单一 Regular 字重，同时注册 400/700 供 satori 加粗）
+	const dengFont = loadDengFont();
 
 	// Avatar + icon: still read from disk (small assets)
 	let avatarBase64: string;
@@ -155,7 +112,7 @@ const textColor = "hsl(0, 0%, 95%)";
 				flexDirection: "column",
 				backgroundColor: backgroundColor,
 				fontFamily:
-					'"Noto Sans SC", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif',
+					'"DengXian", "Deng", -apple-system, BlinkMacSystemFont, Arial, sans-serif',
 				padding: "60px",
 			},
 			children: [
@@ -324,21 +281,11 @@ const textColor = "hsl(0, 0%, 95%)";
 	};
 
 	const fonts: FontOptions[] = [];
-	if (fontRegular) {
-		fonts.push({
-			name: "Noto Sans SC",
-			data: fontRegular,
-			weight: 400,
-			style: "normal",
-		});
-	}
-	if (fontBold) {
-		fonts.push({
-			name: "Noto Sans SC",
-			data: fontBold,
-			weight: 700,
-			style: "normal",
-		});
+	if (dengFont) {
+		fonts.push(
+			{ name: "DengXian", data: dengFont, weight: 400, style: "normal", lang: "zh-CN" },
+			{ name: "DengXian", data: dengFont, weight: 700, style: "normal", lang: "zh-CN" },
+		);
 	}
 
 	const svg = await satori(template, {
