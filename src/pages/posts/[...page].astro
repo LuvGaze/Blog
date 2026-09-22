@@ -1,0 +1,172 @@
+---
+import { render } from "astro:content";
+import * as path from "node:path";
+import type { GetStaticPaths, ImageMetadata } from "astro";
+import ArticleVirtualList from "@/components/pages/ArticleVirtualList.svelte";
+import { siteConfig } from "@/config";
+import { coverImageConfig } from "@/config/coverImageConfig";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { getSortedPosts } from "@/utils/content-utils";
+import { processCoverImageSync, getApiUrlList } from "@/utils/image-utils";
+import {
+	getCategoryUrl,
+	getFileDirFromPath,
+	getPostUrlBySlug,
+	getTagUrl,
+	url,
+} from "@/utils/url-utils";
+import { getCategoryColorHue } from "@/utils/color";
+
+export const getStaticPaths = (async () => {
+	return [{ params: { page: undefined } }];
+}) satisfies GetStaticPaths;
+
+const title = "文章列表";
+const description = "按整页滚动浏览所有文章。";
+const posts = await getSortedPosts();
+const articleImageFiles = import.meta.glob<ImageMetadata>(
+	"../../content/**/*.{png,jpg,jpeg,webp,avif}",
+	{
+		import: "default",
+	},
+);
+
+const dateFormatter = new Intl.DateTimeFormat(
+	siteConfig.lang.replace("_", "-"),
+	{
+		year: "numeric",
+		month: "2-digit",
+		day: "2-digit",
+	},
+);
+
+async function resolveArticleImage(entry: (typeof posts)[number]) {
+	const processedImage = processCoverImageSync(
+		entry.data.image || "api",
+		entry.id,
+	);
+	const imageApiUrls = getApiUrlList(entry.data.image, entry.id);
+
+	if (!processedImage) {
+		return {
+			imageUrl: "",
+			imageApiUrls,
+		};
+	}
+
+	const isLocal = !(
+		processedImage.startsWith("/") ||
+		processedImage.startsWith("http") ||
+		processedImage.startsWith("https") ||
+		processedImage.startsWith("data:")
+	);
+
+	if (isLocal) {
+		const basePath = getFileDirFromPath(entry.filePath || "");
+		const normalizedPath = path
+			.normalize(path.join("../../content/", basePath, processedImage))
+			.replace(/\\/g, "/");
+		const imageFile = articleImageFiles[normalizedPath];
+
+		if (!imageFile) {
+			return {
+				imageUrl: "",
+				imageApiUrls,
+			};
+		}
+
+		const image = await imageFile();
+		return {
+			imageUrl: image.src,
+			imageApiUrls,
+		};
+	}
+
+	const imageUrl = processedImage.startsWith("/")
+		? url(processedImage)
+		: processedImage;
+
+	return {
+		imageUrl,
+		imageApiUrls,
+	};
+}
+
+function getCategoryHue(category: string): number {
+	return getCategoryColorHue(category);
+}
+
+const fallbackImageUrl = coverImageConfig.randomCoverImage.fallback
+	? `${`/${coverImageConfig.randomCoverImage.fallback.replace(/^\/+/, "")}`}`
+	: "";
+
+const articleListPosts = await Promise.all(
+	posts.map(async (entry) => {
+		const { remarkPluginFrontmatter } = await render(entry);
+		const articleImage = await resolveArticleImage(entry);
+		const rawCategory = (entry.data.category || "").trim();
+		const category = rawCategory || "未分类";
+		const tags = (entry.data.tags || [])
+			.map((tag) => tag.trim())
+			.filter(Boolean)
+			.map((tag) => ({
+				name: tag,
+				url: getTagUrl(tag),
+			}));
+
+		const wordCount = Number(remarkPluginFrontmatter.words) || 0;
+		const categoryHue = getCategoryHue(category);
+
+		// 判断是否有真实封面（不是随机API）
+		const hasRealCover = !!entry.data.image;
+
+		return {
+			id: entry.id,
+			title: entry.data.title,
+			url: getPostUrlBySlug(entry.id),
+			publishedIso: entry.data.published.toISOString(),
+			publishedText: dateFormatter.format(entry.data.published),
+			category,
+			categoryUrl: getCategoryUrl(rawCategory || null),
+			tags,
+			description:
+				entry.data.description ||
+				remarkPluginFrontmatter.excerpt ||
+				"暂无文章简介，点击卡片查看完整内容。",
+			imageUrl: articleImage.imageUrl,
+			imageApiUrls: articleImage.imageApiUrls,
+			apiUrls: articleImage.imageApiUrls,
+			fallbackImageUrl,
+			categoryHue,
+			wordCount,
+			pinned: !!entry.data.pinned,
+			hasRealCover,
+		};
+	}),
+);
+
+const defaultLayout = siteConfig.postListLayout.defaultMode || "list";
+const allowLayoutSwitch = siteConfig.postListLayout.allowSwitch;
+---
+
+<MainGridLayout title={title} description={description}>
+	<section class="article-list-page article-list-page--compact">
+		<header class="article-list-page__header">
+			<!-- 页面标题 -->
+			<div class="article-list-page__title-row">
+				<h1 class="article-list-page__title">
+					<span class="article-list-page__title-en">Article Index</span>
+					<span class="article-list-page__title-zh">文章列表</span>
+				</h1>
+			</div>
+		</header>
+
+		<ArticleVirtualList
+			client:load
+			posts={articleListPosts}
+			defaultView={defaultLayout === "grid" ? "grid" : "list"}
+			postsPerPage={9}
+			allowLayoutSwitch={allowLayoutSwitch}
+		/>
+	</section>
+</MainGridLayout>
