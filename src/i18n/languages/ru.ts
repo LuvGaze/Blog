@@ -58,6 +58,11 @@ export const ru: Translation = {
 		"Вот мои друзья, добро пожаловать посетить и общаться друг с другом",
 	[Key.searchFriends]: "Поиск друзей...",
 	[Key.friendsEmpty]: "Друзей пока нет.",
+	[Key.friendsLatestTitle]: "✨ Новые друзья · Недавно присоединившиеся!",
+	[Key.friendsMyFriendsTitle]: "🤪 Друзья · Те, кто всегда рядом!",
+	[Key.friendsMoreTitle]: "🤤 Дружеские ссылки · Те люди, те истории~",
+	[Key.friendsShiningDesc]: "Здесь {n} сияющих маленьких сайтов.",
+	[Key.friendsSites]: "сайтов",
 	[Key.guestbook]: "Гостевая книга",
 	[Key.guestbookDescription]:
 		"Добро пожаловать, оставьте свой след здесь, поделитесь своими мыслями и предложениями",
@@ -399,4 +404,17 @@ export const ru: Translation = {
 	[Key.videoPrev]: "Предыдущее видео",
 	[Key.videoNext]: "Следующее видео",
 	[Key.videoLoadError]: "Не удалось загрузить видео",
+
+	// Круг друзей
+	[Key.circle]: "Круг",
+	[Key.circleTitle]: "Круг друзей",
+	[Key.circleSubtitle]: "Последние статьи друзей",
+	[Key.circleFriends]: "Всего друзей",
+	[Key.circleActive]: "Активные",
+	[Key.circleLost]: "Потерянные",
+	[Key.circleArticles]: "Всего статей",
+	[Key.circleLastUpdated]: "Последнее обновление",
+	[Key.circleNoData]: "Статей пока нет",
+	[Key.circleLoading]: "Загрузка круга друзей...",
+	[Key.circleError]: "Не удалось загрузить. Попробуйте позже",
 };

@@ -1,0 +1,377 @@
+/* ============================================
+   友链卡片 — 截图卡（清羽飞扬风格）
+   结构：截图整卡背景 + 下半部（头像/名字/描述）+ 右上角状态徽标
+   头像沿用 data-src 懒加载 + 涂鸦 fallback
+   ============================================ */
+
+.friend-card {
+	position: relative;
+	display: flex;
+	flex-direction: column;
+	width: 100%;
+	aspect-ratio: 7 / 5; /* 横长形（参考站同款 1.4:1，子元素 absolute，需固定高度） */
+	overflow: hidden;
+	border-radius: 16px;
+	background: color-mix(in oklch, var(--card-bg) 55%, transparent);
+	border: 1px solid color-mix(in oklch, var(--line-divider) 40%, transparent);
+	cursor: pointer;
+	text-decoration: none;
+	transition: box-shadow 300ms ease, border-color 300ms ease;
+}
+
+.friend-card--no-shot {
+	aspect-ratio: auto;
+}
+
+.friend-card:hover {
+	box-shadow: 0 4px 20px color-mix(in oklch, var(--primary) 8%, transparent),
+		inset 0 0 30px color-mix(in oklch, var(--primary) 3%, transparent);
+	border-color: color-mix(in oklch, var(--primary) 25%, transparent);
+}
+
+.friend-card:focus-visible {
+	outline: 2px dashed var(--primary);
+	outline-offset: 3px;
+}
+
+/* 鼠标跟随光晕 */
+.friend-card-glow {
+	position: absolute;
+	inset: 0;
+	z-index: 2;
+	background: radial-gradient(
+		300px circle at var(--mouse-x, 50%) var(--mouse-y, 50%),
+		color-mix(in oklch, var(--primary) 8%, transparent),
+		transparent 60%
+	);
+	opacity: 0;
+	pointer-events: none;
+	transition: opacity 350ms ease;
+}
+
+.friend-card:hover .friend-card-glow {
+	opacity: 1;
+}
+
+/* 站点截图：占卡片上部 2/3，hover 放大 6%，下缘渐隐融入背景 */
+.friend-siteshot {
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	z-index: 0;
+	height: 66.67%;
+	overflow: hidden;
+}
+
+.friend-siteshot img {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	transform: scale(1);
+	transition: transform 400ms ease;
+}
+
+.friend-card:hover .friend-siteshot img {
+	transform: scale(1.06);
+}
+
+/* 朦胧过渡：截图区内下部渐隐到白（与下方 1/3 白色区衔接） */
+.friend-siteshot::after {
+	content: "";
+	position: absolute;
+	inset: 0;
+	background: linear-gradient(to bottom, transparent 62%, var(--float-panel-bg) 100%);
+	pointer-events: none;
+}
+
+/* 信息区：透明容器（头像/名字叠在截图渐隐区，描述黑字在底部） */
+.friend-body {
+	position: absolute;
+	inset: 0;
+	z-index: 1;
+	pointer-events: none;
+}
+
+/* 头像 + 名字 + 域名：叠在网站截图上（卡片 ~42% 处，截图区下部渐隐带内） */
+.friend-main {
+	position: absolute;
+	top: 42%;
+	left: 0.8rem;
+	right: 0.8rem;
+	display: flex;
+	align-items: center;
+	gap: 0.6rem;
+}
+
+/* 描述：白色区顶部开始，区域固定两行高（单行时文字在第一行、下方留一行空位，两行占满） */
+.friend-desc {
+	position: absolute;
+	left: 0.8rem;
+	right: 0.8rem;
+	top: 70%; /* 截图区（66.7%）下方，白色区内 */
+	height: 2.3rem; /* 两行空间（line-height 1.35 × 2） */
+	margin: 0;
+	font-size: 0.9375rem;
+	font-weight: 500;
+	line-height: 1.35;
+	color: var(--deep-text);
+	display: -webkit-box;
+	-webkit-box-orient: vertical;
+	-webkit-line-clamp: 2;
+	line-clamp: 2;
+	overflow: hidden;
+}
+
+/* 无截图：恢复静态流普通卡片（高度由内容决定），无渐隐遮罩 */
+.friend-card--no-shot .friend-body {
+	position: static;
+	display: flex;
+	flex-direction: column;
+	gap: 0.5rem;
+	padding: 0.8rem;
+}
+
+.friend-card--no-shot .friend-main {
+	position: static;
+}
+
+.friend-card--no-shot .friend-desc {
+	position: static;
+	height: auto;
+}
+
+.friend-card--no-shot .friend-siteshot::after {
+	display: none;
+}
+
+/* JS 注入前空徽标不可见（display:inline-flex 会覆盖 UA 的 [hidden]） */
+.friend-status-tag[hidden] {
+	display: none;
+}
+
+/* 头像（30px 圆，沿用涂鸦 fallback） */
+.friend-avatar-wrap {
+	position: relative;
+	width: 1.875rem;
+	height: 1.875rem;
+	flex-shrink: 0;
+	border-radius: 999px;
+	overflow: hidden;
+}
+
+.friend-card-avatar {
+	position: relative;
+	width: 100%;
+	height: 100%;
+	border-radius: 50%;
+	/* 白色描边：叠在截图上更醒目（参考站同款，主题色随浅深模式） */
+	border: 2px solid var(--float-panel-bg);
+	box-shadow: 0 0 0 1px color-mix(in oklch, var(--line-divider) 35%, transparent);
+	transition: border-color 300ms ease;
+	overflow: hidden;
+}
+
+.friend-card:hover .friend-card-avatar {
+	border-color: color-mix(in oklch, var(--primary) 50%, transparent);
+}
+
+.friend-card-avatar__face {
+	position: absolute;
+	inset: 0;
+	opacity: 0;
+	background:
+		radial-gradient(circle at 25% 12%, var(--meta-divider) 15%, transparent 16%),
+		radial-gradient(circle at 50% 6%, var(--meta-divider) 18%, transparent 19%),
+		radial-gradient(circle at 75% 12%, var(--meta-divider) 15%, transparent 16%),
+		radial-gradient(ellipse at 50% 22%, var(--meta-divider) 45%, transparent 46%),
+		var(--inline-code-bg);
+}
+
+.friend-card-avatar.is-error .friend-card-avatar__face {
+	opacity: 1;
+}
+
+.friend-card-avatar__img {
+	position: absolute;
+	inset: 0;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	opacity: 0;
+	z-index: 1;
+	transition: opacity 400ms ease;
+}
+
+.friend-card-avatar.is-loaded .friend-card-avatar__img {
+	opacity: 1;
+}
+
+.friend-card-avatar.is-error .friend-card-avatar__img {
+	display: none;
+}
+
+/* hover 白圆覆盖层 + 外链图标（body 容器 pointer-events:none，此链接需可点） */
+.friend-avatar-overlay {
+	position: absolute;
+	inset: 0;
+	z-index: 3;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	border-radius: 999px;
+	background: rgba(255, 255, 255, 0.75);
+	color: var(--primary);
+	opacity: 0;
+	transition: opacity 200ms ease;
+	pointer-events: auto;
+}
+
+:root.dark .friend-avatar-overlay {
+	background: rgba(0, 0, 0, 0.6);
+}
+
+.friend-avatar-wrap:hover .friend-avatar-overlay {
+	opacity: 1;
+}
+
+.friend-avatar-overlay__icon {
+	font-size: 1rem;
+	font-weight: 700;
+	line-height: 1;
+}
+
+/* 名字 + 域名（两行：主标题加粗，域名灰色小字等宽感） */
+.friend-name-wrap {
+	min-width: 0;
+	display: flex;
+	flex-direction: column;
+	gap: 0.05rem;
+}
+
+.friend-name {
+	display: block;
+	font-size: 1rem;
+	font-weight: 700;
+	color: var(--deep-text);
+	line-height: 1.3;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.friend-host {
+	display: block;
+	font-size: 0.6875rem;
+	line-height: 1.3;
+	color: var(--content-meta);
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+/* 访问状态徽标（JS 注入，四色档位） */
+.friend-status-tag {
+	position: absolute;
+	top: 0.55rem;
+	right: 0.55rem;
+	z-index: 4;
+	display: inline-flex;
+	align-items: center;
+	gap: 0.35rem;
+	padding: 0.18rem 0.5rem;
+	border-radius: 999px;
+	font-size: 0.6875rem;
+	font-weight: 600;
+	font-variant-numeric: tabular-nums;
+	border: 1px solid color-mix(in oklch, var(--friend-status-color) 28%, transparent);
+	background: color-mix(in oklch, var(--card-bg) 70%, transparent);
+	color: var(--friend-status-color);
+	backdrop-filter: blur(4px);
+	transition: transform 200ms ease, border-color 200ms ease, background 200ms ease;
+}
+
+.friend-card:hover .friend-status-tag {
+	transform: translateY(-1px);
+	border-color: color-mix(in oklch, var(--friend-status-color) 42%, transparent);
+	background: color-mix(in oklch, var(--friend-status-color) 14%, color-mix(in oklch, var(--card-bg) 76%, transparent));
+}
+
+.friend-status-dot {
+	width: 0.42rem;
+	height: 0.42rem;
+	flex-shrink: 0;
+	border-radius: 999px;
+	background: currentcolor;
+	box-shadow: 0 0 0 3px color-mix(in oklch, var(--friend-status-color) 12%, transparent);
+}
+
+.friend-status-tag--fast { --friend-status-color: #15803d; }
+.friend-status-tag--ok { --friend-status-color: var(--primary); }
+.friend-status-tag--slow { --friend-status-color: #b45309; }
+.friend-status-tag--down { --friend-status-color: #dc2626; }
+
+:root.dark .friend-status-tag--fast { --friend-status-color: #4ade80; }
+:root.dark .friend-status-tag--slow { --friend-status-color: #fbbf24; }
+:root.dark .friend-status-tag--down { --friend-status-color: #fb7185; }
+
+/* 移动端复用桌面截图卡样式（与桌面同 7/5 横长、66% 截图、渐隐） */
+@media (max-width: 768px) {
+	.friend-card,
+	.friend-card--no-shot {
+		aspect-ratio: 7 / 5;
+	}
+	.friend-card--no-shot .friend-body {
+		position: absolute;
+		inset: 0;
+		padding: 0;
+		gap: 0;
+	}
+	.friend-card--no-shot .friend-main {
+		position: absolute;
+		top: 42%;
+		left: 0.8rem;
+		right: 0.8rem;
+	}
+	.friend-card--no-shot .friend-desc {
+		position: absolute;
+		left: 0.8rem;
+		right: 0.8rem;
+		top: 70%;
+		height: 2.3rem;
+	}
+	/* 头像/标题/域名/描述放大，仅移动端，不动桌面 */
+	.friend-avatar-wrap {
+		width: 2.5rem;
+		height: 2.5rem;
+	}
+	.friend-name {
+		font-size: 1.25rem;
+	}
+	.friend-host {
+		font-size: 0.8125rem;
+	}
+	.friend-desc {
+		font-size: 1.125rem;
+		line-height: 1.4;
+		height: 3.2rem;
+	}
+	/* 底部留白收紧，仅移动端 */
+	.friend-card {
+		aspect-ratio: 7 / 4.6;
+	}
+	.friend-desc {
+		top: 70%;
+		height: 3.2rem;
+	}
+}
+
+/* 尊重减少动画偏好 */
+@media (prefers-reduced-motion: reduce) {
+	.friend-card,
+	.friend-card-glow,
+	.friend-siteshot img,
+	.friend-status-tag {
+		transition: none;
+	}
+}

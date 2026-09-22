@@ -37,6 +37,23 @@ const specCollection = defineCollection({
 	schema: z.object({}),
 });
 
+const momentsCollection = defineCollection({
+	loader: glob({ pattern: "**/*.{md,mdx}", base: "./src/content/moments" }),
+	schema: z.object({
+		author: z.string().optional().default(""),
+		avatar: z.string().optional().default(""),
+		pinned: z.boolean().optional().default(false),
+		published: z.coerce.date(),
+		images: z
+			.union([z.string(), z.array(z.string())])
+			.optional()
+			.default([]),
+		tags: z.array(z.string()).optional().default([]),
+		location: z.string().optional().default(""),
+		order: z.number().optional().default(0),
+	}),
+});
+
 const bangumiCollection = defineCollection({
 	loader: glob({
 		pattern: [
@@ -172,6 +189,19 @@ const friendsCollection = defineCollection({
 		tags: z.array(z.string()).optional().default([]),
 		weight: z.number().optional().default(0),
 		enabled: z.boolean().optional().default(true),
+		added: z.coerce.date().optional(),
+		group: z.string().optional().default("other"),
+		screenshot: z.string().optional(),
+	}),
+});
+
+const friendGroupsCollection = defineCollection({
+	loader: glob({ pattern: "**/*.md", base: "./src/content/friend-groups" }),
+	schema: z.object({
+		name: z.string(),
+		title: z.string().optional(),
+		description: z.string().optional(),
+		sort: z.number().optional().default(0),
 	}),
 });
 
@@ -215,6 +245,7 @@ const galleryCollection = defineCollection({
 export const collections = {
 	posts: postsCollection,
 	spec: specCollection,
+	moments: momentsCollection,
 	bangumi: bangumiCollection,
 	notebooks: notebooksCollection,
 	routines: routinesCollection,
@@ -222,6 +253,7 @@ export const collections = {
 	website: websiteCollection,
 	changelog: changelogCollection,
 	friends: friendsCollection,
+	friendGroups: friendGroupsCollection,
 	gallery: galleryCollection,
 	bills: billsCollection,
 };

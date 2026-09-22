@@ -6,4 +6,5 @@ siteurl: "https://docs-firefly.cuteleaf.cn"
 tags: ["Docs"]
 weight: 9
 enabled: true
+group: "技术站"
 ---

@@ -1,0 +1,86 @@
+/* ============================================
+   友链页 — 网格
+   ============================================ */
+
+.friends-grid {
+	display: grid;
+	grid-template-columns: repeat(3, 1fr);
+	/* 卡片悬停会向下扩展，顶部对齐避免整行被拉伸 */
+	align-items: start;
+	gap: 1rem 0.85rem;
+	padding-top: 1rem;
+	padding-bottom: 1rem;
+}
+
+@media (max-width: 768px) {
+	.friends-grid {
+		grid-template-columns: repeat(1, 1fr);
+	}
+}
+
+/* apps 页筛选共用（apps.astro 在卡片可见时添加此类） */
+.animate-fade-in-up {
+	animation: fadeInUp 0.4s ease-out both;
+}
+
+@keyframes fadeInUp {
+	from {
+		opacity: 0;
+		transform: translateY(12px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+/* 区块计数徽标（蓝色字体 + 淡蓝毛玻璃底） */
+.friend-group-badge {
+	display: inline-flex;
+	align-items: center;
+	white-space: nowrap;
+	flex-shrink: 0;
+	align-self: center;
+	padding: 0.2rem 0.55rem;
+	border-radius: 999px;
+	border: 1px solid color-mix(in oklch, var(--friend-badge-blue) 15%, transparent);
+	background: color-mix(in oklch, var(--friend-badge-blue) 8%, transparent);
+	color: var(--friend-badge-blue);
+	font-size: 0.875rem;
+	font-weight: 600;
+	backdrop-filter: blur(8px);
+}
+
+.friend-group-badge {
+	--friend-badge-blue: oklch(0.55 0.18 0.26);
+}
+
+:root.dark .friend-group-badge {
+	--friend-badge-blue: oklch(0.72 0.16 0.26);
+}
+
+/* 区块标题（emoji + 主标题 + 副句 + 计数徽标，参考站 group-header 结构） */
+.friend-group-head {
+	display: flex;
+	align-items: flex-end;
+	justify-content: space-between;
+	gap: 1rem;
+	margin-bottom: 1rem;
+}
+
+.friend-group-title {
+	display: flex;
+	align-items: center;
+	gap: 0.4rem;
+	margin: 0;
+	font-size: 1.12rem;
+	font-weight: 800;
+	letter-spacing: -0.02em;
+	color: var(--deep-text);
+}
+
+.friend-group-desc {
+	margin: 0.2rem 0 0;
+	font-size: 0.9375rem;
+	color: color-mix(in oklch, var(--deep-text) 56%, transparent);
+}

@@ -10,6 +10,13 @@
 @import './anime-bangumi.css';
 @import './movies-games.css';
 @import './music-visualizer.css';
+@import './components/friend-card.css';
+@import './components/image-pixel-reveal.css';
+@import './components/post-hero.css';
+@import './features/moments.css';
+@import './features/circle.css';
+@import './pages/friends.css';
+@import './pages/article-list.css';
 
 @plugin '@tailwindcss/typography';
 
@@ -445,11 +452,11 @@ html {
 
     .btn-regular-dark {
         @apply flex items-center justify-center
-        bg-[oklch(0.45_0.01_var(--hue))] hover:bg-[oklch(0.50_0.01_var(--hue))] active:bg-[oklch(0.55_0.01_var(--hue))]
-        dark:bg-[oklch(0.30_0.02_var(--hue))] dark:hover:bg-[oklch(0.35_0.03_var(--hue))] dark:active:bg-[oklch(0.40_0.03_var(--hue))]
+        bg-[oklch(0.45_0.01_var(--primary-hue))] hover:bg-[oklch(0.50_0.01_var(--primary-hue))] active:bg-[oklch(0.55_0.01_var(--primary-hue))]
+        dark:bg-[oklch(0.30_0.02_var(--primary-hue))] dark:hover:bg-[oklch(0.35_0.03_var(--primary-hue))] dark:active:bg-[oklch(0.40_0.03_var(--primary-hue))]
     }
     .btn-regular-dark.success {
-        @apply bg-[oklch(0.75_0.14_var(--hue))] dark:bg-[oklch(0.75_0.14_var(--hue))]
+        @apply bg-[oklch(0.75_0.14_var(--primary-hue))] dark:bg-[oklch(0.75_0.14_var(--primary-hue))]
     }
 }
 

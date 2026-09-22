@@ -1,19 +1,13 @@
 ---
 import { getCollection, getEntry, render } from "astro:content";
+import { domainToUnicode } from "node:url";
 import Comment from "@components/comment/index.astro";
 import Markdown from "@components/common/Markdown.astro";
+import FriendCard from "@components/features/FriendCard.astro";
 import { Icon } from "astro-icon/components";
-import {
-	commentConfig,
-	siteConfig,
-} from "@/config";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
-
-if (!siteConfig.pages.friends) {
-	return Astro.redirect("/404/");
-}
 
 const friendsPost = await getEntry("spec", "friends");
 
@@ -23,35 +17,100 @@ if (!friendsPost) {
 
 const { Content } = await render(friendsPost);
 
-const isCommentEnabled =
-	commentConfig?.type &&
-	commentConfig.type !== "none";
-
-const allFriends = await getCollection("friends");
-const items = allFriends
+// 从 content/friends 目录读取友链数据，按权重排序
+const friendsEntries = await getCollection("friends");
+const items = friendsEntries
 	.filter((item) => item.data.enabled !== false)
 	.sort((a, b) => (b.data.weight || 0) - (a.data.weight || 0));
-const allTags = [...new Set(items.flatMap((item) => item.data.tags || []))].sort();
 
+// 新朋友：按添加日期（added）降序取最近 3 个。
+// 禁止用文件 mtime 兜底：CI 全新 clone 时所有文件 mtime 都等于构建时刻，
+// 会让缺 added 的旧友链永远霸占"新朋友"区块（2026-09 线上事故根因）
+const missingAdded = items.filter((item) => !item.data.added);
+if (missingAdded.length > 0) {
+	console.warn(
+		`[friends] ${missingAdded.length} 个友链缺少 added 字段，不参与"新朋友"排序：${missingAdded.map((item) => item.id).join("、")}`,
+	);
+}
+const latestItems = [...items]
+	.sort(
+		(a, b) => (b.data.added?.getTime() ?? 0) - (a.data.added?.getTime() ?? 0),
+	)
+	.slice(0, 3);
+
+// 新朋友区块独立展示后，从分组中排除，避免同一站点出现两次
+const latestIds = new Set(latestItems.map((item) => item.id));
+
+// 自定义分组：读取 friend-groups 定义（name 要与友链 group 一致），构建 title/description 与排序
+const groupEntries = await getCollection("friendGroups");
+const groupDefs: Record<string, { title: string; description?: string; sort: number }> = {};
+const definedKeys = new Set<string>();
+groupEntries.forEach((entry) => {
+	const def = entry.data;
+	groupDefs[def.name] = {
+		title: def.title ?? def.name,
+		description: def.description,
+		sort: def.sort ?? 0,
+	};
+	definedKeys.add(def.name);
+});
+
+// 其余友链按 group（缺省"未分组"）聚成多个小节
+const rest = items.filter((item) => !latestIds.has(item.id));
+const byKey = new Map<string, typeof rest>();
+rest.forEach((item) => {
+	const key = item.data.group ?? "未分组";
+	if (!byKey.has(key)) byKey.set(key, []);
+	byKey.get(key)!.push(item);
+});
+// 分组顺序：已定义分组按 sort 降序，未定义分组按 key 字母序排在最后
+const groups = [...byKey.entries()]
+	.sort((a, b) => {
+		const aDef = definedKeys.has(a[0]);
+		const bDef = definedKeys.has(b[0]);
+		if (aDef !== bDef) return aDef ? -1 : 1;
+		if (aDef) return (groupDefs[b[0]].sort) - (groupDefs[a[0]].sort);
+		return a[0] < b[0] ? -1 : a[0] > b[0] ? 1 : 0;
+	})
+	.map(([key, friends]) => ({ key, friends }));
+
+// 域名（还原为 Unicode 显示，避免 IDN 域名显示成 xn-- punycode；取不到时回退空串）
+const hostOf = (siteurl: string) => {
+	try {
+		const url = new URL(siteurl);
+		const hostname = domainToUnicode(url.hostname);
+		return url.port ? `${hostname}:${url.port}` : hostname;
+	} catch {
+		return "";
+	}
+};
+
+// 页面标题和描述
 const title = i18n(I18nKey.friends);
 const description = i18n(I18nKey.friendsDescription);
 ---
 
 <MainGridLayout title={title} description={description}>
   <div
-    class="flex w-full rounded-(--radius-large) overflow-hidden relative min-h-32"
+    class="flex w-full rounded-(--radius-large) relative min-h-32"
   >
-    <div class="card-base z-10 px-9 py-6 relative w-full">
-      <div class="mb-4">
-        <div class="flex items-center gap-3 mb-3">
-          <div
-            class="h-8 w-8 rounded-lg bg-(--primary) flex items-center justify-center text-white dark:text-black/70"
+    <div class="card-base z-10 px-4 py-6 md:px-9 relative w-full">
+      <!-- 页面标题和描述 -->
+      <div class="mb-6">
+        <div class="flex items-center justify-between mb-3">
+          <div class="flex items-center gap-3">
+            <Icon name="material-symbols:group" class="text-[1.875rem] text-neutral-900 dark:text-neutral-100" />
+            <h1 class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
+              {title}
+            </h1>
+          </div>
+          <button
+            id="btn-add-friend"
+            class="flex items-center gap-1.5 px-4 py-2 rounded-full bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 text-sm font-medium hover:opacity-85 transition-opacity cursor-pointer"
           >
-            <Icon is:inline name="material-symbols:group" class="text-[1.5rem]" />
-          </div>
-          <div class="text-3xl font-bold text-neutral-900 dark:text-neutral-100">
-            {title}
-          </div>
+            <Icon name="material-symbols:person-add-rounded" class="text-base" />
+            添加友链
+          </button>
         </div>
         {
           description && (
@@ -62,222 +121,345 @@ const description = i18n(I18nKey.friendsDescription);
         }
       </div>
 
+      <!-- 新朋友：最近添加的 3 个 -->
       {
-        items.length > 0 && (
-          <friend-filter class="mb-6">
-            <div class="relative mb-3">
-              <Icon is:inline
-                name="material-symbols:search"
-                class="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400 dark:text-neutral-500 text-lg pointer-events-none"
-              />
-              <input
-                type="text"
-                data-search
-                placeholder={i18n(I18nKey.searchFriends) || "搜索友链..."}
-                class="w-full pl-10 pr-4 py-2.5 rounded-xl border border-(--line-divider) bg-transparent text-neutral-900 dark:text-neutral-100 placeholder-neutral-400 dark:placeholder-neutral-500 focus:border-(--primary) focus:ring-1 focus:ring-(--primary) outline-none transition-all duration-200 text-sm"
-              />
+        latestItems.length > 0 && (
+          <section class="friend-section">
+            <div class="friend-group-head">
+              <div>
+                <h2 class="friend-group-title">
+                  {i18n(I18nKey.friendsLatestTitle)}
+                </h2>
+                <p class="friend-group-desc">{i18n(I18nKey.friendsShiningDesc).replace("{n}", String(latestItems.length))}</p>
+              </div>
+              <span class="friend-group-badge">{latestItems.length} {i18n(I18nKey.friendsSites)}</span>
             </div>
-            <div class="flex flex-wrap gap-2">
-              <button
-                data-tag="all"
-                class="btn-regular px-3 py-1.5 rounded-lg bg-(--primary) text-white hover:bg-(--primary) transition-colors duration-200 text-sm font-medium"
-              >
-                {i18n(I18nKey.all)}
-              </button>
-              {allTags.map((tag) => (
-                <button
-                  data-tag={tag}
-                  class="btn-regular px-3 py-1.5 rounded-lg bg-(--btn-regular-bg) text-(--btn-content) hover:bg-(--btn-regular-bg-hover) transition-colors duration-200 text-sm font-medium"
-                >
-                  {tag}
-                </button>
-              ))}
+            <div class="friends-grid" data-friends-grid>
+              {
+                latestItems.map((item) => (
+                  <FriendCard
+                    title={item.data.title}
+                    href={item.data.siteurl}
+                    imgurl={item.data.imgurl}
+                    desc={item.data.desc}
+                    screenshot={item.data.screenshot}
+                    host={hostOf(item.data.siteurl)}
+                  />
+                ))
+              }
             </div>
-          </friend-filter>
+          </section>
         )
       }
 
-      <div class="friends-grid my-4">
-        {
-          items.length === 0 && (
-            <div class="col-span-full flex flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
-              <Icon is:inline name="material-symbols:group-off-outline" class="text-4xl mb-3" />
-              <div class="text-sm">{i18n(I18nKey.friendsEmpty)}</div>
+      <!-- 自定义分组小节：每个分组渲染一个 section -->
+      {
+        groups.map((group) => (
+          <section class="friend-section mt-8">
+            <div class="friend-group-head">
+              <div>
+                <h2 class="friend-group-title">
+                  {groupDefs[group.key]?.title ?? group.key}
+                </h2>
+                {
+                  groupDefs[group.key]?.description && (
+                    <p class="friend-group-desc">{groupDefs[group.key]!.description}</p>
+                  )
+                }
+              </div>
+              <span class="friend-group-badge">{group.friends.length} {i18n(I18nKey.friendsSites)}</span>
             </div>
-          )
-        }
-        {
-          items.map((item) => (
-            <a
-              href={item.data.siteurl}
-              target="_blank"
-              rel="noopener noreferrer"
-              data-tags={item.data.tags?.join(",")}
-              class="friend-card group flex items-center gap-3 p-2.5 rounded-xl border border-(--line-divider) hover:border-(--primary) hover:bg-(--card-bg) transition-all duration-300 hover:shadow-lg relative overflow-hidden"
-            >
-              <div class="absolute inset-0 bg-(--primary) opacity-0 group-hover:opacity-5 transition-opacity duration-300 pointer-events-none" />
-
-              <div class="relative w-16 h-16 shrink-0 rounded-xl overflow-hidden bg-zinc-100 dark:bg-zinc-800 border border-black/5 dark:border-white/5 group-hover:scale-105 transition-transform duration-300">
-                <img
-                  src={item.data.imgurl}
-                  alt={item.data.title}
-                  class="w-full h-full object-cover"
-                />
-              </div>
-
-              <div class="grow min-w-0 flex flex-col justify-center gap-0.5">
-                <div class="flex items-center justify-between">
-                  <div class="font-bold text-base text-neutral-900 dark:text-neutral-100 group-hover:text-(--primary) transition-colors truncate pr-4">
-                    {item.data.title}
-                  </div>
-                  <Icon is:inline
-                    name="material-symbols:arrow-outward-rounded"
-                    class="text-(--primary) text-lg opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300"
+            <div class="friends-grid" data-friends-grid>
+              {
+                group.friends.map((item) => (
+                  <FriendCard
+                    title={item.data.title}
+                    href={item.data.siteurl}
+                    imgurl={item.data.imgurl}
+                    desc={item.data.desc}
+                    screenshot={item.data.screenshot}
+                    host={hostOf(item.data.siteurl)}
                   />
-                </div>
+                ))
+              }
+            </div>
+          </section>
+        ))
+      }
 
-                <div
-                  class="text-sm text-neutral-500 dark:text-neutral-400 line-clamp-1"
-                  title={item.data.desc}
-                >
-                  {item.data.desc}
-                </div>
-
-                <div class="flex flex-wrap gap-1 mt-1">
-                  {item.data.tags && item.data.tags.length > 0
-                    ? item.data.tags
-                        .slice(0, 3)
-                        .map((tag) => (
-                          <span class="text-[0.65rem] px-1.5 py-0.5 rounded bg-neutral-100 dark:bg-neutral-800 text-neutral-500 dark:text-neutral-400 transition-colors duration-300">
-                            {tag}
-                          </span>
-                        ))
-                    : null}
-                </div>
-              </div>
-            </a>
-          ))
-        }
-      </div>
-
-      <div class="friends-empty hidden flex-col items-center justify-center py-12 text-neutral-400 dark:text-neutral-500">
-        <Icon is:inline name="material-symbols:search-off-rounded" class="text-4xl mb-3" />
-        <div class="text-sm">{i18n(I18nKey.searchNoResults)}</div>
-      </div>
-    </div>
-  </div>
-
-  {
-    <div class="mt-4 card-base z-10 px-9 py-6 relative w-full">
-      <Markdown class="">
+      <Markdown class="mt-2">
         <Content />
       </Markdown>
     </div>
-  }
+  </div>
 
-  {isCommentEnabled && (
-    <div class="mt-4">
-      <Comment post={friendsPost} customPath="/friends/" />
-    </div>
-  )}
+  <!-- 评论区（负 margin 抵消评论卡片的 p-8 顶部 padding，收紧与上方内容的间距） -->
+  <div class="-mt-6">
+    <Comment post={friendsPost} customPath="/friends/" />
+  </div>
 
-  <script slot="head" is:inline>
-    if (!customElements.get("friend-filter")) {
-      class FriendFilter extends HTMLElement {
-        selectedTag = "all";
+  <!-- 友链悬浮大图预览 — portal 单例，卡旁白边圆角大图（仅桌面 hover） -->
+  <script is:inline>
+    (function() {
+      if (window.__friendPreviewReady) return;
+      window.__friendPreviewReady = true;
 
-        constructor() {
-          super();
-        }
+      var GAP = 16;
+      var MARGIN = 12;
+      var activeCard = null;
+      var hideTimer = null;
 
-        connectedCallback() {
-          this.addEventListener("click", this.handleClick);
-          const input = this.querySelector("[data-search]");
-          if (input) {
-            input.addEventListener("input", () => this.applyFilters());
-          }
-        }
-
-        disconnectedCallback() {
-          this.removeEventListener("click", this.handleClick);
-        }
-
-        handleClick(e) {
-          const target = e.target;
-          const button = target.closest("button");
-          if (!button) return;
-
-          this.selectedTag = button.dataset.tag;
-          const filters = this.querySelectorAll("button");
-
-          filters.forEach((f) => {
-            f.classList.remove("bg-(--primary)", "text-white");
-            f.classList.remove("hover:bg-(--primary)");
-            f.classList.add("bg-(--btn-regular-bg)", "text-(--btn-content)");
-            f.classList.add("hover:bg-(--btn-regular-bg-hover)");
-
-            if (f === button) {
-              f.classList.remove("bg-(--btn-regular-bg)", "text-(--btn-content)");
-              f.classList.remove("hover:bg-(--btn-regular-bg-hover)");
-              f.classList.add("bg-(--primary)", "text-white");
-              f.classList.add("hover:bg-(--primary)");
-            }
-          });
-
-          this.applyFilters();
-        }
-
-        applyFilters() {
-          const container = this.closest(".card-base");
-          if (!container) return;
-
-          const input = this.querySelector("[data-search]");
-          const query = (input?.value || "").toLowerCase().trim();
-          const cards = container.querySelectorAll(".friend-card");
-
-          let hasVisible = false;
-
-          cards.forEach((card) => {
-            const cardEl = card;
-            const tags = (cardEl.dataset.tags || "").split(",");
-            const name = (cardEl.querySelector(".font-bold")?.textContent || "").toLowerCase();
-            const desc = (cardEl.querySelector(".line-clamp-1")?.textContent || "").toLowerCase();
-
-            const tagMatch =
-              this.selectedTag === "all" ||
-              (this.selectedTag && tags.includes(this.selectedTag));
-            const searchMatch =
-              !query ||
-              name.includes(query) ||
-              desc.includes(query) ||
-              tags.some((t) => t.toLowerCase().includes(query));
-
-            if (tagMatch && searchMatch) {
-              cardEl.style.display = "";
-              cardEl.classList.add("animate-fade-in-up");
-              hasVisible = true;
-            } else {
-              cardEl.style.display = "none";
-              cardEl.classList.remove("animate-fade-in-up");
-            }
-          });
-
-          const emptyEl = container.querySelector(".friends-empty");
-          if (emptyEl) {
-            emptyEl.classList.toggle("hidden", hasVisible);
-            emptyEl.classList.toggle("flex", !hasVisible);
-          }
-        }
+      function canHover() {
+        return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
       }
-      customElements.define("friend-filter", FriendFilter);
-    }
+
+      function ensurePreview() {
+        var el = document.getElementById("friend-preview");
+        if (el) return el;
+        el = document.createElement("div");
+        el.id = "friend-preview";
+        el.setAttribute("aria-hidden", "true");
+        el.hidden = true;
+        var img = document.createElement("img");
+        img.alt = "";
+        img.decoding = "async";
+        el.appendChild(img);
+        document.body.appendChild(el);
+        return el;
+      }
+
+      function getPreview() {
+        return document.getElementById("friend-preview");
+      }
+
+      function positionPreview(card) {
+        var el = getPreview();
+        if (!el || !card) return;
+        var rect = card.getBoundingClientRect();
+        var pw = el.offsetWidth || 360;
+        var ph = el.offsetHeight || 225;
+        var vw = window.innerWidth;
+        var vh = window.innerHeight;
+        var left, top;
+
+        if (rect.right + GAP + pw + MARGIN <= vw) {
+          left = rect.right + GAP;
+          top = rect.top + (rect.height - ph) / 2;
+        } else if (rect.left - GAP - pw - MARGIN >= 0) {
+          left = rect.left - pw - GAP;
+          top = rect.top + (rect.height - ph) / 2;
+        } else if (rect.top - ph - GAP >= MARGIN) {
+          left = rect.left + (rect.width - pw) / 2;
+          top = rect.top - ph - GAP;
+        } else if (rect.bottom + ph + GAP <= vh - MARGIN) {
+          left = rect.left + (rect.width - pw) / 2;
+          top = rect.bottom + GAP;
+        } else {
+          left = (vw - pw) / 2;
+          top = (vh - ph) / 2;
+        }
+
+        left = Math.max(MARGIN, Math.min(left, vw - pw - MARGIN));
+        top = Math.max(MARGIN, Math.min(top, vh - ph - MARGIN));
+        el.style.left = left + "px";
+        el.style.top = top + "px";
+      }
+
+      function showPreview(card) {
+        if (!canHover()) return;
+        if (!card || !card.dataset.screenshot) return;
+        if (card.classList.contains("friend-card--no-shot")) return;
+        var el = ensurePreview();
+        var img = el.querySelector("img");
+        var src = card.dataset.screenshot;
+        if (!src) return;
+        if (img.getAttribute("src") !== src) img.src = src;
+        el.hidden = false;
+        void el.offsetWidth;
+        el.classList.add("is-visible");
+        activeCard = card;
+        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
+        requestAnimationFrame(function() { positionPreview(card); });
+      }
+
+      function hidePreview() {
+        var el = getPreview();
+        if (!el) return;
+        el.classList.remove("is-visible");
+        activeCard = null;
+        if (hideTimer) clearTimeout(hideTimer);
+        hideTimer = setTimeout(function() {
+          if (!el.classList.contains("is-visible")) el.hidden = true;
+        }, 220);
+      }
+
+      function bindPreview() {
+        if (!canHover()) return;
+        ensurePreview();
+        document.querySelectorAll("[data-friends-grid]").forEach(function(grid) {
+          if (grid.dataset.previewBound) return;
+          grid.dataset.previewBound = "1";
+          grid.addEventListener("pointerover", function(e) {
+            var card = e.target.closest(".friend-card");
+            if (!card || !grid.contains(card)) return;
+            if (card === activeCard) return;
+            showPreview(card);
+          });
+          grid.addEventListener("pointerout", function(e) {
+            var card = e.target.closest(".friend-card");
+            if (!card) return;
+            var related = e.relatedTarget;
+            if (related && related.closest && related.closest(".friend-card") === card) return;
+            var nextCard = related && related.closest ? related.closest(".friend-card") : null;
+            if (nextCard && nextCard.dataset.screenshot && !nextCard.classList.contains("friend-card--no-shot")) return;
+            hidePreview();
+          });
+          grid.addEventListener("pointerleave", hidePreview);
+        });
+        window.addEventListener("scroll", hidePreview, { passive: true });
+        window.addEventListener("resize", function() {
+          if (activeCard) positionPreview(activeCard);
+        });
+      }
+
+      function initPreview() {
+        bindPreview();
+      }
+
+      initPreview();
+      document.addEventListener("astro:page-load", initPreview);
+      document.addEventListener("swup:content:replaced", initPreview);
+      document.addEventListener("swup:willReplaceContent", hidePreview);
+    })();
   </script>
 
-  <style is:global>
-    .friends-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
-      gap: 0.75rem;
-    }
-  </style>
+  <!-- "添加友链" 按钮滚动到评论区 -->
+  <script slot="head" is:inline>
+    document.addEventListener('click', function(e) {
+      var btn = e.target.closest('#btn-add-friend');
+      if (!btn) return;
+      var comment = document.querySelector('.comment-container, #post-comments, #waline, #tcomment, .giscus');
+      if (comment) { comment.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+    });
+  </script>
+
+  <!-- 友链卡片交互：光晕跟随 / 整卡点击 / 头像懒加载 / 状态注入
+       （守卫防 document 级监听重复注册；Swup 导航后新 DOM 的 inline script 会重新执行，
+        init 由 astro:page-load / swup:content:replaced 驱动重新绑定） -->
+  <script is:inline>
+    (function() {
+      if (window.__friendCardReady) return;
+      window.__friendCardReady = true;
+
+      /* --- 头像懒加载（data-src → src，失败显示涂鸦） --- */
+      function loadAvatar(card) {
+        var img = card.querySelector(".friend-card-avatar__img");
+        if (!img || img.dataset.avatarLoaded) return;
+        img.dataset.avatarLoaded = "1";
+        var wrap = img.parentElement;
+        var src = img.dataset.src;
+        if (!wrap || !src) return;
+        var TIMEOUT = 5000;
+        var timer = setTimeout(function() {
+          if (!wrap.classList.contains("is-loaded")) wrap.classList.add("is-error");
+        }, TIMEOUT);
+        img.addEventListener("load", function() {
+          clearTimeout(timer);
+          wrap.classList.remove("is-error");
+          wrap.classList.add("is-loaded");
+        });
+        img.addEventListener("error", function() {
+          clearTimeout(timer);
+          wrap.classList.add("is-error");
+        });
+        img.src = src;
+        if (img.complete && img.naturalWidth > 0) {
+          clearTimeout(timer);
+          wrap.classList.remove("is-error");
+          wrap.classList.add("is-loaded");
+        }
+      }
+
+      var io = null;
+      function bindAvatarObserver() {
+        if (io) io.disconnect();
+        var cards = document.querySelectorAll(".friend-card");
+        if (!cards.length) return;
+        io = new IntersectionObserver(function(entries) {
+          entries.forEach(function(entry) {
+            if (!entry.isIntersecting) return;
+            loadAvatar(entry.target);
+            io.unobserve(entry.target);
+          });
+        }, { rootMargin: "200px 0px" });
+        cards.forEach(function(card) { io.observe(card); });
+      }
+
+      /* --- 鼠标跟随光晕（事件委托到网格容器，一次绑定） --- */
+      function bindGlow() {
+        document.querySelectorAll("[data-friends-grid]").forEach(function(grid) {
+          if (grid.dataset.glowBound) return;
+          grid.dataset.glowBound = "1";
+          grid.addEventListener("mousemove", function(e) {
+            var card = e.target.closest(".friend-card");
+            if (!card) return;
+            var rect = card.getBoundingClientRect();
+            card.style.setProperty("--mouse-x", (e.clientX - rect.left) + "px");
+            card.style.setProperty("--mouse-y", (e.clientY - rect.top) + "px");
+          });
+        });
+      }
+
+      /* --- 整卡点击（事件委托：click / Enter / Space；头像 overlay 链接优先） --- */
+      function bindCardClick() {
+        document.addEventListener("click", function(e) {
+          var card = e.target.closest(".friend-card");
+          if (!card || e.target.closest("a")) return;
+          var href = card.dataset.href;
+          if (href) window.open(href, "_blank", "noopener,noreferrer");
+        });
+        document.addEventListener("keydown", function(e) {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          var card = e.target.closest(".friend-card");
+          if (!card) return;
+          var href = card.dataset.href;
+          if (href) { e.preventDefault(); window.open(href, "_blank", "noopener,noreferrer"); }
+        });
+      }
+
+      /* --- 状态注入：fetch friends-status.json 按 siteurl 匹配（无 JSON 静默隐藏） --- */
+      var statusFetched = false;
+      function bindStatus() {
+        if (statusFetched) return;
+        statusFetched = true;
+        fetch("/friends-status.json")
+          .then(function(r) { if (!r.ok) throw new Error("status json missing"); return r.json(); })
+          .then(function(data) {
+            var sites = data.sites || {};
+            document.querySelectorAll(".friend-card").forEach(function(card) {
+              var info = sites[card.dataset.siteurl];
+              var tag = card.querySelector(".friend-status-tag");
+              if (!tag || !info) return;
+              tag.classList.add("friend-status-tag--" + info.status);
+              tag.querySelector(".friend-status-text").textContent =
+                info.status === "down" ? "DOWN" : (info.ms + " MS");
+              tag.hidden = false;
+            });
+          })
+          .catch(function() { /* 无 JSON：静默隐藏徽标 */ });
+      }
+
+      function init() {
+        bindAvatarObserver();
+        bindGlow();
+        bindCardClick();
+        bindStatus();
+      }
+
+      init();
+      document.addEventListener("astro:page-load", init);
+      document.addEventListener("swup:content:replaced", init);
+    })();
+  </script>
+
 </MainGridLayout>

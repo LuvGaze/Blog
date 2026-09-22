@@ -57,6 +57,11 @@ export const zh_CN: Translation = {
 	[Key.friendsDescription]: "这里是我的朋友们，欢迎互相访问交流",
 	[Key.searchFriends]: "搜索友链...",
 	[Key.friendsEmpty]: "暂无友情链接",
+	[Key.friendsLatestTitle]: "✨ 新朋友 · 最近加入的伙伴们！",
+	[Key.friendsMyFriendsTitle]: "🤪 好盆友 · 有些人呀，天天到处转！",
+	[Key.friendsMoreTitle]: "🤤 友情链接 · 那些人，那些事儿~",
+	[Key.friendsShiningDesc]: "这里有 {n} 个正在发光的小站点。",
+	[Key.friendsSites]: "sites",
 	[Key.guestbook]: "留言",
 	[Key.guestbookDescription]: "欢迎在这里留下你的足迹，分享你的想法和建议",
 	[Key.untitled]: "无标题",
@@ -484,4 +489,17 @@ export const zh_CN: Translation = {
 
 	// 动态
 	[Key.moments]: "动态",
+
+	// 推文
+	[Key.circle]: "推文",
+	[Key.circleTitle]: "推文",
+	[Key.circleSubtitle]: "好友们的最新文章动态",
+	[Key.circleFriends]: "友链总数",
+	[Key.circleActive]: "活跃友链",
+	[Key.circleLost]: "失联友链",
+	[Key.circleArticles]: "文章总数",
+	[Key.circleLastUpdated]: "最近更新",
+	[Key.circleNoData]: "暂无文章数据",
+	[Key.circleLoading]: "正在加载推文数据...",
+	[Key.circleError]: "加载失败，请稍后再试",
 };

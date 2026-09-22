@@ -58,6 +58,11 @@ export const ja: Translation = {
 		"ここは私の友達です、お互いに訪問して交流することを歓迎します",
 	[Key.searchFriends]: "友達を検索...",
 	[Key.friendsEmpty]: "まだ友達がいません",
+	[Key.friendsLatestTitle]: "✨ 新しい友達 · 最近参加した仲間たち！",
+	[Key.friendsMyFriendsTitle]: "🤪 仲間たち · いつも遊びに来てくれる！",
+	[Key.friendsMoreTitle]: "🤤 リンク · あの人たち、あの話~",
+	[Key.friendsShiningDesc]: "ここには {n} 個の輝く小さなサイトがあります。",
+	[Key.friendsSites]: "サイト",
 	[Key.guestbook]: "ゲストブック",
 	[Key.guestbookDescription]:
 		"ここに足跡を残して、あなたの考えや提案を共有してください",
@@ -396,4 +401,17 @@ export const ja: Translation = {
 	[Key.videoPrev]: "前の動画",
 	[Key.videoNext]: "次の動画",
 	[Key.videoLoadError]: "動画の読み込みに失敗しました",
+
+	// 友達サークル
+	[Key.circle]: "サークル",
+	[Key.circleTitle]: "友達サークル",
+	[Key.circleSubtitle]: "友達の最新記事",
+	[Key.circleFriends]: "友達総数",
+	[Key.circleActive]: "アクティブ",
+	[Key.circleLost]: "連絡不能",
+	[Key.circleArticles]: "記事総数",
+	[Key.circleLastUpdated]: "最終更新",
+	[Key.circleNoData]: "まだ記事がありません",
+	[Key.circleLoading]: "友達サークルを読み込み中...",
+	[Key.circleError]: "読み込みに失敗しました。後でもう一度お試しください",
 };

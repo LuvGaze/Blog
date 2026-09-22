@@ -83,6 +83,11 @@ enum I18nKey {
 	friendsDescription = "friendsDescription",
 	searchFriends = "searchFriends",
 	friendsEmpty = "friendsEmpty",
+	friendsLatestTitle = "friendsLatestTitle",
+	friendsMyFriendsTitle = "friendsMyFriendsTitle",
+	friendsMoreTitle = "friendsMoreTitle",
+	friendsShiningDesc = "friendsShiningDesc",
+	friendsSites = "friendsSites",
 	guestbook = "guestbook",
 	guestbookDescription = "guestbookDescription",
 	bangumi = "bangumi",
@@ -480,6 +485,19 @@ enum I18nKey {
 
 	// 动态
 	moments = "moments",
+
+	// 推文
+	circle = "circle",
+	circleTitle = "circleTitle",
+	circleSubtitle = "circleSubtitle",
+	circleFriends = "circleFriends",
+	circleActive = "circleActive",
+	circleLost = "circleLost",
+	circleArticles = "circleArticles",
+	circleLastUpdated = "circleLastUpdated",
+	circleNoData = "circleNoData",
+	circleLoading = "circleLoading",
+	circleError = "circleError",
 }
 
 export default I18nKey;
