@@ -5,7 +5,7 @@ import type { ProfileConfig } from "../types/profileConfig";
  * 用于侧边栏和页脚显示的个人信息
  */
 export const profileConfig: ProfileConfig = {
-	// 头像图片路径（相对于public目录）
+	// 头像图片路径（无前导斜杠 = src/assets 目录，经 astro:assets 优化；以 / 开头 = public 目录）
 	avatar: "assets/images/picture.webp",
 	// 用户名/昵称（显示在头像下方）
 	name: "LuvGaze",
