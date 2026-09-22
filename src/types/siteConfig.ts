@@ -35,7 +35,11 @@ export type SiteConfig = {
 	lang: "en" | "zh_CN" | "zh_TW" | "ja" | "ru";
 
 	themeColor: {
-		hue: number;
+		/**
+		 * 主题主色（16进制，如 "#5B8FF9"）。
+		 * 主色精确等于该 hex，整套颜色族按其色相生成。
+		 */
+		color?: string;
 		fixed: boolean;
 		defaultMode?: LIGHT_DARK_MODE; // 默认模式：浅色、深色或跟随系统
 	};
@@ -80,6 +84,8 @@ export type SiteConfig = {
 	// 页面开关配置
 	pages: {
 		friends: boolean; // 友链页面开关
+		moments: boolean; // 朋友圈页面开关（/moments/）
+		circle: boolean; // 推文页面开关（/circle/ 友链动态聚合）
 		sponsor: boolean; // 打赏页面开关
 		guestbook: boolean; // 留言板页面开关
 		bangumi: boolean;
@@ -98,6 +104,12 @@ export type SiteConfig = {
 
 	// 分类导航栏开关
 	categoryBar?: boolean;
+
+	// 朋友圈页封面配置（微信朋友圈风格）
+	momentsCover?: {
+		enable: boolean; // 是否显示封面区域
+		image: string; // 封面图片URL
+	};
 
 	// 归档页是否折叠非最新年份文章
 	foldArticle?: boolean;

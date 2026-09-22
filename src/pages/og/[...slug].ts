@@ -6,7 +6,7 @@ import satori from "satori";
 import { removeFileExtension } from "@/utils/url-utils";
 
 import { profileConfig } from "../../config/profileConfig";
-import { siteConfig } from "../../config/siteConfig";
+import { siteConfig, THEME_HUE } from "../../config/siteConfig";
 
 type Weight = 100 | 200 | 300 | 400 | 500 | 600 | 700 | 800 | 900;
 
@@ -125,9 +125,14 @@ export async function GET({
 	const iconBuffer = fs.readFileSync(iconPath);
 	const iconBase64 = `data:image/png;base64,${iconBuffer.toString("base64")}`;
 
-	const hue = siteConfig.themeColor.hue;
-	const primaryColor = `hsl(${hue}, 90%, 65%)`;
-	const textColor = "hsl(0, 0%, 95%)";
+	const hue = THEME_HUE;
+const hexColor =
+	typeof siteConfig.themeColor.color === "string" &&
+	/^#[0-9a-fA-F]{6}$/.test(siteConfig.themeColor.color.trim())
+		? siteConfig.themeColor.color.trim()
+		: "";
+const primaryColor = hexColor || `hsl(${hue}, 90%, 65%)`;
+const textColor = "hsl(0, 0%, 95%)";
 
 	const subtleTextColor = `hsl(${hue}, 10%, 75%)`;
 	const backgroundColor = `hsl(${hue}, 15%, 12%)`;

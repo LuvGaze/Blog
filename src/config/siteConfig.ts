@@ -1,4 +1,5 @@
-import type { SiteConfig } from "@/types/siteConfig";
+import type { SiteConfig } from "../types/siteConfig";
+import { getThemeHue } from "../utils/color";
 
 /**
  * 站点基础配置
@@ -20,8 +21,10 @@ export const siteConfig: SiteConfig = {
 
 	// 主题颜色配置
 	themeColor: {
-		// 主题色相值（0-360），0=红色，120=绿色，240=蓝色，360=红色
-		hue: 265,
+			// 主题主色（6位16进制 #RRGGBB）。主色精确等于该色，整套颜色族按其色相生成；
+			// 注意：请填真实颜色（如 #78AB9C），填 #000000/#FFFFFF 等无彩色时没有色相，
+			// 会退回默认色相族而看不到主色生效
+			color: "#B39DDB",
 		// 是否固定主题色（true=用户无法通过控制面板调整）
 		fixed: true,
 		// 默认主题模式："system"跟随系统，"light"亮色，"dark"暗色
@@ -62,11 +65,11 @@ export const siteConfig: SiteConfig = {
 		// 导航栏标题（显示在Logo右侧）
 		title: "一只喵⁹",
 		// 导航栏是否全屏宽度
-		widthFull: false,
+		widthFull: true,
 		// 菜单对齐方式："left"左对齐，"center"居中，"right"右对齐
 		menuAlign: "center",
 		// 导航栏颜色是否跟随主题色
-		followTheme: false,
+		followTheme: true,
 		// 是否启用粘性导航栏（滚动时保持在顶部）
 		stickyNavbar: true,
 	},
@@ -80,6 +83,8 @@ export const siteConfig: SiteConfig = {
 	// 将对应的项设为 true 显示该页面，设为 false 隐藏该页面
 	pages: {
 		friends: true,      // 友链页面
+		moments: true,      // 朋友圈页面（/moments/）
+		circle: false,       // 推文页面（/circle/ 友链动态聚合）
 		sponsor: true,      // 打赏页面
 		guestbook: false,    // 留言板页面
 		bangumi: false,     // 番组计划页面
@@ -97,7 +102,13 @@ export const siteConfig: SiteConfig = {
 	},
 
 	// 是否在主页显示分类栏（文章顶部的分类标签条）
-	categoryBar: false,
+	categoryBar: true,
+
+	// 朋友圈页封面配置（微信朋友圈风格）
+	momentsCover: {
+		enable: true,
+		image: "/assets/images/moments-cover.jpg",
+	},
 	// 文章列表是否默认折叠长文章
 	foldArticle: true,
 
@@ -110,7 +121,7 @@ export const siteConfig: SiteConfig = {
 		// 是否显示文章标签
 		showTags: true,
 		// 文章描述显示行数（0表示不限制）
-		descriptionLines: 2,
+		descriptionLines: 3,
 		// 是否允许用户切换布局模式
 		allowSwitch: false,
 		// 网格布局配置
@@ -182,3 +193,6 @@ export const siteConfig: SiteConfig = {
 	// 站点语言
 	lang: SITE_LANG,
 };
+
+// 主题色相：由主色 color 推导（未配置/非法时用默认色相）。themeColor 不再提供手动 hue 字段。
+export const THEME_HUE = getThemeHue(siteConfig.themeColor.color);
