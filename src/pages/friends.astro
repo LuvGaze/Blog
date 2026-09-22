@@ -344,7 +344,7 @@ const description = i18n(I18nKey.friendsDescription);
   </script>
 
   <!-- 友链卡片交互：光晕跟随 / 整卡点击 / 头像懒加载 / 状态注入
-       （守卫防 document 级监听重复注册；Swup 导航后新 DOM 的 inline script 会重新执行，
+       （守卫防 document 级监听重复注册; Swup 导航后新 DOM 的 inline script 会重新执行，
         init 由 astro:page-load / swup:content:replaced 驱动重新绑定） -->
   <script is:inline>
     (function() {
