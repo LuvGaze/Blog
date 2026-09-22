@@ -58,6 +58,11 @@ export const en: Translation = {
 		"Here are my friends, welcome to visit and communicate with each other",
 	[Key.searchFriends]: "Search friends...",
 	[Key.friendsEmpty]: "No friends yet.",
+	[Key.friendsLatestTitle]: "✨ New Friends · The latest to join!",
+	[Key.friendsMyFriendsTitle]: "🤪 Best Buddies · Always around!",
+	[Key.friendsMoreTitle]: "🤤 Friend Links · Those people, those stories~",
+	[Key.friendsShiningDesc]: "Here are {n} shining little sites.",
+	[Key.friendsSites]: "sites",
 	[Key.guestbook]: "Guestbook",
 	[Key.guestbookDescription]:
 		"Welcome to leave your mark here, share your thoughts and suggestions",
@@ -397,4 +402,17 @@ export const en: Translation = {
 	[Key.videoPrev]: "Previous video",
 	[Key.videoNext]: "Next video",
 	[Key.videoLoadError]: "Video failed to load",
+
+	// Friends Circle
+	[Key.circle]: "Circle",
+	[Key.circleTitle]: "Friends Circle",
+	[Key.circleSubtitle]: "Latest articles from friends",
+	[Key.circleFriends]: "Total Friends",
+	[Key.circleActive]: "Active",
+	[Key.circleLost]: "Lost Contact",
+	[Key.circleArticles]: "Total Articles",
+	[Key.circleLastUpdated]: "Last Updated",
+	[Key.circleNoData]: "No articles yet",
+	[Key.circleLoading]: "Loading friends circle...",
+	[Key.circleError]: "Failed to load, please try again later",
 };
