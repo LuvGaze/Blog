@@ -17,7 +17,7 @@ export const siteConfig: SiteConfig = {
 	// 站点描述（用于SEO和社交分享）
 	description: "项目开发测试中 ~",
 	// 站点关键词（用于SEO）
-	keywords: ["LuvGaze", "Blog"],
+	keywords: ["LuvGaze", "Blog", "一只喵"],
 
 	// 主题颜色配置
 	themeColor: {
