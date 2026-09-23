@@ -1,0 +1,56 @@
+---
+import AboutChatBubble from "@/components/about/AboutChatBubble.astro";
+import AboutProfileCard from "@/components/about/AboutProfileCard.astro";
+import AboutSocialLinks from "@/components/about/AboutSocialLinks.astro";
+import AboutTechStack from "@/components/about/AboutTechStack.astro";
+import AboutTimeline from "@/components/about/AboutTimeline.astro";
+
+{/* ~~ 编辑提示 ~~
+个人介绍/说明文字改正文即可；社交链接、技术栈、时间线是独立组件，
+想增删条目时打开 src/components/about/ 下同名 .astro 编辑里面的数据数组。
+社交平台读自 profileConfig.ts 的 links。 */}
+## 关于我 / About Me
+
+你好呀，这里是<AboutProfileCard id="luvgaze" trigger="LuvGaze" name="LuvGaze" role="技术博主 / 生活记录者" description="喜欢折腾技术，也认真记录生活。博客基于 Astro 与 Firefly 深度定制。" />的小窝。
+
+如果你喜欢，那么欢迎来到我的世界！这里会分享技术、生活和一些有趣的想法。
+
+本站是基于 **Firefly** 主题深度定制的个人博客，使用 **Astro** 构建，内容涵盖编程开发、工具推荐、ACG 与日常随想，记录成长的每一步。
+
+### Q1：这个站点用到了哪些技术栈？
+
+这个小窝从 Firefly 模板 fork 后一点点魔改而来：骨架是 `Astro`，交互是 `Svelte`，样式是 `Tailwind CSS`，换页靠 `Swup` 做无缝过渡，搜索用 `Pagefind`。从排版到动效，每一块都是慢慢打磨出来的。
+
+具体用了哪些技术，点开下面看看吧：
+
+<AboutTechStack />
+
+小卡片里藏着的，就是把这个小窝搭起来的工具与依赖。
+
+这个小窝也不是一天建成的，下面这条时间线记录了关键的演进节点：
+
+<AboutTimeline />
+
+### Q2：站长社交圈有哪些？
+
+如果你也喜欢折腾技术，或者只是想聊聊天、打个招呼，都可以通过下面的方式找到我：
+
+<AboutSocialLinks />
+
+欢迎常来逛逛，也欢迎留下一个 `star` 或一条留言。
+
+### Q3：站点的代码开源吗？
+
+<AboutChatBubble>开源的，代码就在 GitHub 上，欢迎围观、提 issue 或点个 star。</AboutChatBubble>
+
+::github{repo="LuvGaze/Blog"}
+
+<AboutChatBubble>如果你也喜欢折腾技术，或者想来聊聊，欢迎通过上面的方式找我。</AboutChatBubble>
+
+如果你喜欢这个主题的细节，也欢迎直接去 Firefly 上游看看原版实现。
+
+::github{repo="CuteLeaf/Firefly"}
+
+博客复刻的部分功能参考自 团子和蛋糕。
+
+::github{repo="tianshihao2003/dumplingandcakeblog"}
