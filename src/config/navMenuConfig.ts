@@ -191,17 +191,17 @@ export const navMenuConfig = {
 			enabled: true,
 			children: [
 				{
+					name: "关于我",
+					url: "/about/",
+					icon: "material-symbols:person",
+					enabled: true,
+				},
+				{
 					name: "更新日志",
 					url: "/changelog/",
 					icon: "material-symbols:history",
 					enabled: true,
 					pageKey: "changelog",
-				},
-				{
-					name: "关于我",
-					url: "/about/",
-					icon: "material-symbols:person",
-					enabled: true,
 				},
 				{
 					name: "友链",
