@@ -1,0 +1,29 @@
+---
+import { profileConfig } from "@/config/profileConfig";
+// 博客默认头像（与 profileConfig.avatar 对应）。
+import profileAvatar from "@/assets/images/picture.webp";
+
+const nameValue = profileConfig.name || "LuvGaze";
+const avatarValue = profileAvatar.src;
+const fallbackText = nameValue.slice(0, 1);
+---
+
+<div class="about-chat-bubble">
+	<span class="about-chat-bubble__avatar" aria-hidden="true">
+		{avatarValue ? (
+			<img
+				class="about-chat-bubble__avatar-image"
+				src={avatarValue}
+				alt=""
+				loading="lazy"
+				decoding="async"
+			/>
+		) : (
+			<span class="about-chat-bubble__avatar-fallback">{fallbackText}</span>
+		)}
+	</span>
+	<div class="about-chat-bubble__content">
+		<span class="about-chat-bubble__name">{nameValue}</span>
+		<div class="about-chat-bubble__text"><slot /></div>
+	</div>
+</div>

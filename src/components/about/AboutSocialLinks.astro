@@ -1,0 +1,50 @@
+---
+import { Icon } from "astro-icon/components";
+import { profileConfig } from "@/config/profileConfig";
+
+// 平台名 → 品牌样式后缀（对应 about.css 里的 --about-social-brand）
+const brandMap: Record<string, string> = {
+	qq: "qq",
+	GitHub: "github",
+	Email: "email",
+	RSS: "rss",
+};
+
+const socialLinks = profileConfig.links
+	.filter((link) => link.url && link.url.trim() !== "")
+	.map((link) => ({
+		platform: link.name,
+		handle: link.name,
+		note: link.url,
+		href: link.url,
+		icon: link.icon,
+		brand: brandMap[link.name] || "default",
+	}));
+---
+
+<section class="about-social-links" aria-label="站长社交账号">
+	{socialLinks.map((link) => (
+		<a
+			class={`about-social-links__item about-social-links__item--${link.brand} no-styling`}
+			href={link.href}
+			target={link.href.startsWith("http") ? "_blank" : undefined}
+			rel={link.href.startsWith("http") ? "noopener noreferrer" : undefined}
+			aria-label={`${link.platform}：${link.handle}`}
+		>
+			<span class="about-social-links__icon" aria-hidden="true">
+				<Icon is:inline name={link.icon} />
+			</span>
+			<span class="about-social-links__content">
+				<span class="about-social-links__platform">{link.platform}</span>
+				<span class="about-social-links__handle">{link.handle}</span>
+				<span class="about-social-links__note">{link.note}</span>
+			</span>
+			<Icon
+				is:inline
+				name="material-symbols:arrow-outward-rounded"
+				class="about-social-links__arrow"
+				aria-hidden="true"
+			/>
+		</a>
+	))}
+</section>

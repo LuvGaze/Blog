@@ -1,0 +1,232 @@
+---
+import { Icon } from "astro-icon/components";
+
+interface TechItem {
+	name: string;
+	desc: string;
+	icon: string;
+	url: string;
+	color: string;
+	darkColor?: string;
+}
+
+interface TechGroup {
+	id: string;
+	label: string;
+	icon: string;
+	items: TechItem[];
+}
+
+// 按你自己的实际技术栈编辑（增删组/条目都很直观）
+const techGroups: TechGroup[] = [
+	{
+		id: "core",
+		label: "核心框架",
+		icon: "material-symbols:code-blocks",
+		items: [
+			{
+				name: "Astro 7",
+				desc: "站点骨架，内容驱动的静态框架",
+				icon: "simple-icons:astro",
+				url: "https://astro.build",
+				color: "#ff5d01",
+			},
+			{
+				name: "Svelte 5",
+				desc: "交互组件与留言板的界面层",
+				icon: "simple-icons:svelte",
+				url: "https://svelte.dev",
+				color: "#ff3e00",
+			},
+			{
+				name: "TypeScript",
+				desc: "全站类型安全",
+				icon: "simple-icons:typescript",
+				url: "https://www.typescriptlang.org",
+				color: "#3178c6",
+			},
+			{
+				name: "Tailwind CSS 4",
+				desc: "原子化样式引擎",
+				icon: "simple-icons:tailwindcss",
+				url: "https://tailwindcss.com",
+				color: "#38bdf8",
+			},
+		],
+	},
+	{
+		id: "motion",
+		label: "体验与动效",
+		icon: "material-symbols:auto-awesome",
+		items: [
+			{
+				name: "Swup 4",
+				desc: "页面无缝过渡，丝滑不闪屏",
+				icon: "material-symbols:transition-fade",
+				url: "https://swup.js.org",
+				color: "#0ea5e9",
+			},
+			{
+				name: "three.js",
+				desc: "3D 交互与背景动效",
+				icon: "simple-icons:threedotjs",
+				url: "https://threejs.org",
+				color: "#111111",
+				darkColor: "#ffffff",
+			},
+			{
+				name: "Pagefind",
+				desc: "静态全文搜索",
+				icon: "material-symbols:search",
+				url: "https://pagefind.app",
+				color: "#2563eb",
+			},
+		],
+	},
+	{
+		id: "content",
+		label: "内容与渲染",
+		icon: "material-symbols:terminal",
+		items: [
+			{
+				name: "MDX",
+				desc: "关于页的组件化内容",
+				icon: "simple-icons:mdx",
+				url: "https://mdxjs.com",
+				color: "#f9ac00",
+			},
+			{
+				name: "Expressive Code",
+				desc: "代码块美化",
+				icon: "material-symbols:data-object",
+				url: "https://expressive-code.com",
+				color: "#8b5cf6",
+			},
+			{
+				name: "KaTeX",
+				desc: "数学公式渲染",
+				icon: "material-symbols:functions",
+				url: "https://katex.org",
+				color: "#4f6bed",
+			},
+			{
+				name: "Mermaid",
+				desc: "流程图与图表",
+				icon: "simple-icons:mermaid",
+				url: "https://mermaid.js.org",
+				color: "#ff3670",
+			},
+		],
+	},
+	{
+		id: "deploy",
+		label: "部署与数据",
+		icon: "material-symbols:rocket-launch",
+		items: [
+			{
+				name: "Moebun",
+				desc: "存储与托管",
+				icon: "material-symbols:cloud",
+				url: "https://moebun.com/",
+				color: "#f38020",
+			},
+			{
+				name: "GitHub Actions",
+				desc: "CI 流水线",
+				icon: "simple-icons:githubactions",
+				url: "https://github.com/features/actions",
+				color: "#2088ff",
+			},
+			{
+				name: "pnpm",
+				desc: "包管理与发布",
+				icon: "simple-icons:pnpm",
+				url: "https://pnpm.io",
+				color: "#f9ad00",
+			},
+		],
+	},
+	{
+		id: "engineering",
+		label: "工程化",
+		icon: "material-symbols:commit",
+		items: [
+			{
+				name: "Biome",
+				desc: "Lint 与格式化",
+				icon: "simple-icons:biome",
+				url: "https://biomejs.dev",
+				color: "#6f7bf7",
+			},
+			{
+				name: "Playwright",
+				desc: "端到端测试",
+				icon: "simple-icons:playwright",
+				url: "https://playwright.dev",
+				color: "#2ead33",
+			},
+			{
+				name: "Twikoo",
+				desc: "评论与留言系统",
+				icon: "material-symbols:chat-bubble-outline",
+				url: "https://twikoo.js.org/",
+				color: "#39a9f5",
+			},
+		],
+	},
+];
+
+const totalTech = techGroups.reduce(
+	(sum, group) => sum + group.items.length,
+	0,
+);
+---
+
+<section class="about-tech-stack" aria-label={`站点技术栈（共 ${totalTech} 项）`}>
+	{techGroups.map((group, index) => (
+		<div class="tech-accordion" data-tech-accordion={index === 0 ? "open" : "closed"}>
+			<button type="button" class="tech-accordion__head" aria-expanded={index === 0 ? "true" : "false"}>
+				<span class="tech-accordion__group-icon" aria-hidden="true"><Icon is:inline name={group.icon} /></span>
+				<span class="tech-accordion__label">{group.label}</span>
+				<span class="tech-accordion__count">{group.items.length} 项</span>
+				<Icon is:inline name="material-symbols:keyboard-arrow-down-rounded" class="tech-accordion__arrow" aria-hidden="true" />
+			</button>
+			<div class="tech-accordion__body">
+				<div class="tech-accordion__body-inner">
+					<div class="tech-accordion__grid">
+						{group.items.map((item, itemIndex) => (
+							<a
+								class="tech-card no-styling"
+								href={item.url}
+								target="_blank"
+								rel="noopener noreferrer"
+								aria-label={`${item.name}：${item.desc}`}
+								style={`--tech-color: ${item.color};${item.darkColor ? `--tech-color-dark: ${item.darkColor};` : ""}--i: ${itemIndex};`}
+							>
+								<span class="tech-card__icon" aria-hidden="true"><Icon is:inline name={item.icon} /></span>
+								<span class="tech-card__name">{item.name}</span>
+								<span class="tech-card__desc">{item.desc}</span>
+							</a>
+						))}
+					</div>
+				</div>
+			</div>
+		</div>
+	))}
+</section>
+
+<script is:inline>
+	(function () {
+		if (window.__aboutTechAccordionReady) return;
+		window.__aboutTechAccordionReady = true;
+		document.addEventListener("click", function (e) {
+			var head = e.target.closest(".tech-accordion__head");
+			if (!head) return;
+			var item = head.closest("[data-tech-accordion]");
+			if (!item) return;
+			var open = item.getAttribute("data-tech-accordion") === "open";
+			item.setAttribute("data-tech-accordion", open ? "closed" : "open");
+			head.setAttribute("aria-expanded", open ? "false" : "true");
+		});
+	})();
+</script>
