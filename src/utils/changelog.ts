@@ -51,9 +51,24 @@ function normalizeType(raw: string | undefined): ChangelogType {
 export function changelogEntriesFromCollection(
 	entries: CollectionEntry<"changelog">[],
 ): ChangelogEntry[] {
+	const versionNums = (v?: string): number[] =>
+		(v ?? "").replace(/^v/i, "").split(".").map((s) => parseInt(s, 10) || 0);
+
 	return entries
 		.slice()
-		.sort((a, b) => b.data.date.getTime() - a.data.date.getTime())
+		.sort((a, b) => {
+			// 先按日期倒序；同一天发布的再按版本号从新到旧（版本号越大越新）
+			const byDate = b.data.date.getTime() - a.data.date.getTime();
+			if (byDate !== 0) return byDate;
+			const va = versionNums(a.data.version);
+			const vb = versionNums(b.data.version);
+			const len = Math.max(va.length, vb.length);
+			for (let i = 0; i < len; i++) {
+				const diff = (vb[i] ?? 0) - (va[i] ?? 0);
+				if (diff !== 0) return diff;
+			}
+			return 0;
+		})
 		.map((e) => {
 			const raw = e.body ?? "";
 			const detail = raw.trim();
