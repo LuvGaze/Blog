@@ -17,6 +17,7 @@
 @import './features/circle.css';
 @import './pages/friends.css';
 @import './pages/article-list.css';
+@import './pages/about.css';
 
 @plugin '@tailwindcss/typography';
 
