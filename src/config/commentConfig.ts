@@ -11,7 +11,7 @@ export const commentConfig: CommentConfig = {
 	// Twikoo 评论系统配置（轻量级，支持微信登录）
 	twikoo: {
 		// Twikoo 环境ID（在Vercel或其他平台部署后获得）
-		envId: "https://twikoo.vercel.app",
+		envId: "https://twikoo.luvgaze.com",
 		// 语言："zh-CN"中文，"en"英文等
 		lang: "zh-CN",
 		// 是否显示文章阅读量
