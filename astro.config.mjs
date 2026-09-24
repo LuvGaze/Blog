@@ -60,6 +60,9 @@ export default defineConfig({
 	base: "/",
 	trailingSlash: "always",
 
+	// 本地 dev 时隐藏 Astro 底部开发工具条（功能菜单）；生产构建本就不显示
+	devToolbar: { enabled: false },
+
 	// 字体配置 - 只加载实际使用的字体，跳过未引用的以加快构建
 	fonts: (() => {
 		// 禁用字体功能时直接返回空数组，跳过 Astro Font image-api 集成
