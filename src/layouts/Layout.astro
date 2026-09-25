@@ -1454,7 +1454,6 @@ function disableAnimation() {
 
     const scrollTop = document.documentElement.scrollTop;
     const bannerHeight = window.innerHeight * (BANNER_HEIGHT / 100);
-    const navbarElement = document.getElementById("navbar");
 
     // 根据滚动位置动态更新侧边栏 sticky 间距
     updateSidebarStickySpacing();
@@ -1495,19 +1494,6 @@ function disableAnimation() {
           navbar!.classList.add("navbar-hidden");
         }
         navbarLastScrollY = scrollTop;
-      });
-    }
-
-    if (navbarElement) {
-      operations.push(() => {
-        if (scrollTop > 8) {
-          navbarElement.classList.add("navbar-sticky-shadow");
-          // 滚动后导航栏压缩：logo 与右侧按钮向中间靠拢（参考模板效果）
-          navbarElement.classList.add("navbar-compact");
-        } else {
-          navbarElement.classList.remove("navbar-sticky-shadow");
-          navbarElement.classList.remove("navbar-compact");
-        }
       });
     }
 
