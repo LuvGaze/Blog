@@ -240,14 +240,14 @@ html {
         @apply transition-all duration-300 border border-(--line-divider) shadow-xs;
     }
 
-    /* 导航栏样式适配 */
-    .enable-card-border #navbar > div:not(.absolute) {
+    /* 导航栏样式适配（原整条横条内层已移除，改为命中不存在的元素，避免给悬浮胶囊段加线框） */
+    .enable-card-border #navbar > .legacy-navbar-bar {
         @apply transition-all duration-300 border shadow-xs;
         border-color: var(--line-divider) !important;
     }
 
     /* 壁纸模式切换期间禁止导航栏边框和阴影闪现 */
-    .is-wallpaper-transitioning #navbar > div {
+    .is-wallpaper-transitioning #navbar > .legacy-navbar-bar {
         border-color: transparent !important;
         box-shadow: none !important;
         transition: none !important;
@@ -264,17 +264,17 @@ html {
     }
  
     
-    .wallpaper-transparent #navbar > div {
+    .wallpaper-transparent #navbar > .legacy-navbar-bar {
         background-color: var(--card-bg-transparent) !important;
     }
 
     /* Overlay 模式下，滚动后提高导航栏背景模糊度，增强与正文区分 */
-    .wallpaper-transparent #navbar.navbar-sticky-shadow > div {
+    .wallpaper-transparent #navbar.navbar-sticky-shadow > .legacy-navbar-bar {
         backdrop-filter: blur(20px) !important;
      
     }
 
-    :root.dark .wallpaper-transparent #navbar.navbar-sticky-shadow > div {
+    :root.dark .wallpaper-transparent #navbar.navbar-sticky-shadow > .legacy-navbar-bar {
         backdrop-filter: blur(20px) !important;
     }
     
