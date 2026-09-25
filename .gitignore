@@ -52,3 +52,9 @@ github.md
 /API/
 # 自动生成的随机文章数据源（构建/dev 时由 generate-post-meta 插件生成）
 /public/api/
+
+# agent skills（本地安装，不上传）
+.agents/
+.claude/
+.trae/
+skills-lock.json
