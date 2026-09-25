@@ -5,7 +5,6 @@ import type { ImageMetadata } from "astro";
 import { Icon } from "astro-icon/components";
 import DisplaySettings from "@/components/controls/DisplaySettingsIntegrated.svelte";
 import LightDarkSwitch from "@/components/controls/LightDarkSwitch.svelte";
-import Search from "@/components/controls/Search.svelte";
 import MusicPlayer from "@/components/features/MusicPlayer.astro";
 import { backgroundWallpaper, navBarConfig, siteConfig } from "@/config";
 import { musicPlayerConfig } from "@/config/musicConfig";
@@ -20,31 +19,11 @@ import NavMenuPanel from "./NavMenuPanel.astro";
 
 const className = Astro.props.class;
 
-// 获取导航栏透明模式配置
-const navbarTransparentMode =
-	backgroundWallpaper.mode === "banner"
-		? backgroundWallpaper.common?.navbar?.transparentMode || "semi"
-		: "semi";
-
-// 获取导航栏毛玻璃效果配置
-const navbarEnableBlur =
-	backgroundWallpaper.mode === "banner"
-		? (backgroundWallpaper.common?.navbar?.enableBlur ?? true)
-		: false;
-
-// 获取导航栏模糊度
-const navbarBlur =
-	backgroundWallpaper.mode === "banner"
-		? (backgroundWallpaper.common?.navbar?.blur ?? 20)
-		: 0;
-
 // 获取导航栏标题，如果没有设置则使用 siteConfig.title
 const navbarTitle = siteConfig.navbar.title || siteConfig.title;
 
 // 获取导航栏宽度配置
 const navbarWidthFull = siteConfig.navbar.widthFull ?? false;
-const navbarMenuAlign = siteConfig.navbar.menuAlign ?? "center";
-const isNavbarMenuCentered = navbarMenuAlign === "center";
 
 // 检查是否为首页
 const isHomePageCheck = isHomePage(Astro.url.pathname);
@@ -76,7 +55,7 @@ function filterLinks(link: NavBarLink): NavBarLink | null {
 	return { ...link, children: filteredChildren };
 }
 
-let links: NavBarLink[] = navBarConfig.links
+const links: NavBarLink[] = navBarConfig.links
 	.map(filterLinks)
 	.filter((link): link is NavBarLink => link !== null);
 
@@ -103,444 +82,494 @@ if (isLocalSrcLogo) {
 	}
 }
 ---
-<div id="navbar" class="z-50" style={`--navbar-glass-blur: ${navbarBlur}px;`} data-transparent-mode={navbarTransparentMode} data-enable-blur={String(navbarEnableBlur)} data-is-home={isHomePageCheck} data-full-width={navbarWidthFull}>
-    <div class:list={[
-        className,
-        "overflow-visible! h-18 px-4"
-    ]}>
-        <div class="navbar-segments mx-auto h-full w-full max-w-(--page-width)">
-            <div class="navbar-seg navbar-seg--left">
-            <a href={url('/')} class="btn-plain scale-animation rounded-lg h-13 px-5 font-bold active:scale-95">
-                <div class:list={[
-                    "flex flex-row items-center text-md",
-                    siteConfig.navbar.followTheme ? "text-(--primary)" : "dark:text-white text-black"
-                ]} style="font-family: var(--font-navbar-title, inherit)">
-                                    {siteConfig.navbar.logo?.type === "icon" ? (
-                                        <Icon is:inline name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} class="text-[1.75rem] mb-1 mr-2" />
-                                    ) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
-                                        <Picture
-                                            src={logoImg}
-                                            alt={siteConfig.navbar.logo.alt || siteConfig.title}
-                                            class="h-7 w-7 mb-1 mr-2 object-contain"
-                                            formats={getImageFormats()}
-                                            fallbackFormat={getFallbackFormat()}
-                                            widths={[28, 56]}
-                                            loading="eager"
-                                            fetchpriority="high"
-                                        />
-                                    ) : siteConfig.navbar.logo?.type === "image" ? (
-                                        <img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mb-1 mr-2 object-contain" fetchpriority="high" />
-                                    ) : siteConfig.navbar.logo?.type === "url" ? (
-                                        <img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-7 w-7 mb-1 mr-2 object-contain" fetchpriority="high" />
-                                    ) : (
-                                        <Icon is:inline name="material-symbols:home-pin-outline" class="text-[1.75rem] mb-1 mr-2" />
-                                    )}
-                    {navbarTitle}
-                </div>
-            </a>
-            </div>
-            <div class="navbar-seg navbar-seg--center">
-            <div class:list={[
-                "hidden lg:flex items-center space-x-1 flex-nowrap whitespace-nowrap",
-                isNavbarMenuCentered
-                    ? "justify-center"
-                    : "justify-start pl-2"
-            ]}>
-                {links.map((l) => {
-                    return <DropdownMenu link={l} />;
-                })}
-            </div>
-            </div>
-            <div class="navbar-seg navbar-seg--right">
-            <div class="flex">
-                <!--<SearchPanel client:load>-->
-                <Search
-                    client:load
-                />
-                {musicPlayerConfig.showInNavbar && (
-                    <button aria-label={i18n(I18nKey.music)} class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="music-player-switch">
-                        <Icon is:inline name="material-symbols:music-note-rounded" class="text-[1.25rem]"></Icon>
-                    </button>
-                )}
-                {backgroundWallpaper.playerEnable && backgroundWallpaper.mode !== "none" && (
-                    <button
-                        aria-label={i18n(I18nKey.videoPlay)}
-                        class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90"
-                        id="bg-player-toggle"
-                        data-i18n-play={i18n(I18nKey.videoPlay)}
-                        data-i18n-pause={i18n(I18nKey.videoPause)}
-                    >
-                        <Icon is:inline name="material-symbols:play-arrow-rounded" class="text-[1.5rem]" />
-                    </button>
-                )}
-                {hasDisplaySettings && (
-                        <button aria-label="Display Settings" class="btn-plain scale-animation rounded-lg h-11 w-11 active:scale-90" id="display-settings-switch">
-                            <Icon is:inline name="material-symbols:palette-outline" class="text-[1.25rem]"></Icon>
-                        </button>
-                )}
-                {/* @ts-ignore */}
-                <LightDarkSwitch client:load></LightDarkSwitch>
-                <button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-11 h-11 active:scale-90 lg:hidden!" id="nav-menu-switch">
-                    <Icon is:inline name="material-symbols:menu-rounded" class="text-[1.25rem]"></Icon>
-                </button>
-            </div>
-            </div>
-        </div>
-        {musicPlayerConfig.showInNavbar && (
-            <div id="music-nav-panel" class="float-panel float-panel-closed absolute transition-all right-16 p-2 pt-4.5 w-80 z-50">
-                <MusicPlayer />
-            </div>
-        )}
-        <NavMenuPanel links={links}></NavMenuPanel>
-        <DisplaySettings client:load></DisplaySettings>
-    </div>
+
+<div id="navbar" class={`z-50 ${className ?? ""}`} style="margin: 0 auto; margin-top: 10px;" data-is-home={isHomePageCheck} data-full-width={navbarWidthFull}>
+	<div class="navbar-segments">
+		<!-- 左段：logo + 标题（滚动收缩成球） -->
+		<div class="navbar-seg navbar-seg--left">
+			<a href={url("/")} class="navbar-logo scale-animation flex items-center text-(--deep-text)">
+				{siteConfig.navbar.logo?.type === "icon" ? (
+					<Icon is:inline name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} class="text-[1.35rem] flex-shrink-0" />
+				) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
+					logoImg.format === "svg" ? (
+						<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+					) : (
+						<Picture
+							src={logoImg}
+							alt={siteConfig.navbar.logo.alt || siteConfig.title}
+							class="h-6 w-6 object-contain flex-shrink-0"
+							formats={getImageFormats()}
+							fallbackFormat={getFallbackFormat()}
+							widths={[24, 48]}
+							loading="eager"
+							fetchpriority="high"
+						/>
+					)
+				) : siteConfig.navbar.logo?.type === "image" ? (
+					<img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+				) : siteConfig.navbar.logo?.type === "url" ? (
+					<img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+				) : (
+					<Icon is:inline name="material-symbols:home-pin-outline" class="text-[1.35rem] flex-shrink-0" />
+				)}
+				<span class="navbar-logo-text font-mono uppercase tracking-[0.12em] text-xs font-semibold ml-2">{navbarTitle}</span>
+			</a>
+		</div>
+
+		<!-- 中段：紧凑导航椭圆（滚动不变，带滑动高亮胶囊） -->
+		<div class="navbar-seg navbar-seg--center" data-navbar-nav>
+			<div class="navbar-nav hidden lg:flex items-center gap-0.5 relative">
+				<div class="navbar-hover-highlight" data-hover-border></div>
+				{links.map((l) => <DropdownMenu link={l} />)}
+			</div>
+		</div>
+
+		<!-- 右段：操作按钮（音乐/背景播放/显示设置/深浅色/移动端菜单），滚动收缩贴近中段 -->
+		<div class="navbar-seg navbar-seg--right">
+			{musicPlayerConfig.showInNavbar && (
+				<button aria-label={i18n(I18nKey.music)} class="btn-plain scale-animation rounded-lg h-9 w-9 active:scale-90" id="music-player-switch">
+					<Icon is:inline name="material-symbols:music-note-rounded" class="text-[1.2rem]"></Icon>
+				</button>
+			)}
+			{backgroundWallpaper.playerEnable && backgroundWallpaper.mode !== "none" && (
+				<button
+					aria-label={i18n(I18nKey.videoPlay)}
+					class="btn-plain scale-animation rounded-lg h-9 w-9 active:scale-90"
+					id="bg-player-toggle"
+					data-i18n-play={i18n(I18nKey.videoPlay)}
+					data-i18n-pause={i18n(I18nKey.videoPause)}
+				>
+					<Icon is:inline name="material-symbols:play-arrow-rounded" class="text-[1.3rem]" />
+				</button>
+			)}
+			{hasDisplaySettings && (
+				<button aria-label="Display Settings" class="btn-plain scale-animation rounded-lg h-9 w-9 active:scale-90" id="display-settings-switch">
+					<Icon is:inline name="material-symbols:palette-outline" class="text-[1.2rem]"></Icon>
+				</button>
+			)}
+			{/* @ts-ignore */}
+			<LightDarkSwitch client:load></LightDarkSwitch>
+			<button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-9 h-9 active:scale-90 lg:hidden!" id="nav-menu-switch">
+				<Icon is:inline name="material-symbols:menu-rounded" class="text-[1.2rem]"></Icon>
+			</button>
+		</div>
+	</div>
+
+	{musicPlayerConfig.showInNavbar && (
+		<div id="music-nav-panel" class="float-panel float-panel-closed absolute transition-all right-16 p-2 pt-4.5 w-80 z-50">
+			<MusicPlayer />
+		</div>
+	)}
+	<NavMenuPanel links={links}></NavMenuPanel>
+	<DisplaySettings client:load></DisplaySettings>
 </div>
 
 <style>
-  /* 当前所在页导航高亮 */
-  #navbar a.navlink-active,
-  #navbar a.navlink-active .navbar-icon {
-    color: var(--primary);
-  }
-  #navbar a.navlink-active {
-    font-weight: 700;
-  }
+	/* 当前所在页导航高亮 */
+	#navbar a.navlink-active,
+	#navbar a.navlink-active .navbar-icon {
+		color: var(--primary);
+	}
+	#navbar a.navlink-active {
+		font-weight: 700;
+	}
 </style>
 
 <style is:global>
-  .navlink-active {
-    color: var(--primary) !important;
-  }
+	.navlink-active {
+		color: var(--primary) !important;
+	}
 </style>
 
 <script>
 function setNavActive() {
-  var path = location.pathname;
-  var current = (path === '/' ? '/' : path.replace(/\/+$/, '') + '/');
-  var links = document.querySelectorAll('#navbar a[href]');
-  var activeByDropdown = new Map();
-  for (var i = 0; i < links.length; i++) {
-    var a = links[i];
-    var href = a.getAttribute('href');
-    if (!href) continue;
-    var urlObj: URL | null = null;
-    try { urlObj = new URL(href, location.origin); } catch (e) { continue; }
-    if (!urlObj || urlObj.origin !== location.origin) continue;
-    var linkPath = (urlObj.pathname === '/' ? '/' : urlObj.pathname.replace(/\/+$/, '') + '/');
-    var active = current === linkPath || (linkPath !== '/' && current.indexOf(linkPath) === 0);
-    a.classList.toggle('navlink-active', active);
-    // 子链接高亮时，同时记录其所属的下拉容器，用于联动父按钮高亮
-    if (active) {
-      var dropdown = a.closest('[data-dropdown]');
-      if (dropdown) activeByDropdown.set(dropdown, true);
-    }
-  }
-  // 子页所在的下拉菜单：父级触发按钮也高亮，体现“当前所在父栏”状态
-  var triggers = document.querySelectorAll('#navbar [data-dropdown-trigger]');
-  for (var j = 0; j < triggers.length; j++) {
-    var trigger = triggers[j];
-    var container = trigger.closest('[data-dropdown]');
-    triggers[j].classList.toggle('navlink-active', !!(container && activeByDropdown.get(container)));
-  }
+	var path = location.pathname;
+	var current = (path === '/' ? '/' : path.replace(/\/+$/, '') + '/');
+	var links = document.querySelectorAll('#navbar a[href]');
+	var activeByDropdown = new Map();
+	for (var i = 0; i < links.length; i++) {
+		var a = links[i];
+		var href = a.getAttribute('href');
+		if (!href) continue;
+		var urlObj: URL | null = null;
+		try { urlObj = new URL(href, location.origin); } catch (e) { continue; }
+		if (!urlObj || urlObj.origin !== location.origin) continue;
+		var linkPath = (urlObj.pathname === '/' ? '/' : urlObj.pathname.replace(/\/+$/, '') + '/');
+		var active = current === linkPath || (linkPath !== '/' && current.indexOf(linkPath) === 0);
+		a.classList.toggle('navlink-active', active);
+		// 子链接高亮时，同时记录其所属的下拉容器，用于联动父按钮高亮
+		if (active) {
+			var dropdown = a.closest('[data-dropdown]');
+			if (dropdown) activeByDropdown.set(dropdown, true);
+		}
+	}
+	// 子页所在的下拉菜单：父级触发按钮也高亮，体现“当前所在父栏”状态
+	var triggers = document.querySelectorAll('#navbar [data-dropdown-trigger]');
+	for (var j = 0; j < triggers.length; j++) {
+		var trigger = triggers[j];
+		var container = trigger.closest('[data-dropdown]');
+		triggers[j].classList.toggle('navlink-active', !!(container && activeByDropdown.get(container)));
+	}
 }
 
 setNavActive();
 if (window.swup && window.swup.hooks) {
-  window.swup.hooks.on('content:replace', setNavActive);
+	window.swup.hooks.on('content:replace', setNavActive);
 } else {
-  document.addEventListener('swup:enable', function () {
-    window.swup.hooks.on('content:replace', setNavActive);
-  });
+	document.addEventListener('swup:enable', function () {
+		window.swup.hooks.on('content:replace', setNavActive);
+	});
 }
 
 function initLinkPrefetch() {
-    // 悬停内链时预加载目标页，配合 Layout 中的 rel=prefetch 缓存，切换更跟手
-    var done = {};
-    document.addEventListener('mouseover', function (e) {
-        if (typeof window === 'undefined' || !window.swup || !window.swup.preload) return;
-        if (document.documentElement.classList.contains('is-page-transitioning')) return;
-        var t = e.target;
-        var a = t && t.closest ? t.closest('a[href]') : null;
-        if (!a) return;
-        var href = a.getAttribute('href');
-        if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('//')) return;
-        var path = href.split('#')[0].split('?')[0];
-        if (!path.startsWith('/')) return;
-        if (path === window.location.pathname) return;
-        if (done[path]) return;
-        done[path] = true;
-        try {
-            window.swup.preload(path === '/' ? '/' : path.replace(/\/+$/, '') + '/');
-        } catch (e) {}
-    });
+	// 悬停内链时预加载目标页，配合 Layout 中的 rel=prefetch 缓存，切换更跟手
+	var done = {};
+	document.addEventListener('mouseover', function (e) {
+		if (typeof window === 'undefined' || !window.swup || !window.swup.preload) return;
+		if (document.documentElement.classList.contains('is-page-transitioning')) return;
+		var t = e.target as HTMLElement | null;
+		var a = t && t.closest ? t.closest('a[href]') : null;
+		if (!a) return;
+		var href = a.getAttribute('href');
+		if (!href || href.startsWith('#') || href.startsWith('http') || href.startsWith('//')) return;
+		var path = href.split('#')[0].split('?')[0];
+		if (!path.startsWith('/')) return;
+		if (path === window.location.pathname) return;
+		if (done[path]) return;
+		done[path] = true;
+		try {
+			window.swup.preload(path === '/' ? '/' : path.replace(/\/+$/, '') + '/');
+		} catch (e) {}
+	});
 }
 initLinkPrefetch();
 
 function loadButtonScript() {
-    let settingBtn = document.getElementById("display-settings-switch");
-    if (settingBtn) {
-        settingBtn.onclick = function () {
-            let settingPanel = document.getElementById("display-setting");
-            if (settingPanel) {
-                settingPanel.classList.toggle("float-panel-closed");
-            }
-        };
-    }
+	let settingBtn = document.getElementById("display-settings-switch");
+	if (settingBtn) {
+		settingBtn.onclick = function () {
+			let settingPanel = document.getElementById("display-setting");
+			if (settingPanel) {
+				settingPanel.classList.toggle("float-panel-closed");
+			}
+		};
+	}
 
-    let menuBtn = document.getElementById("nav-menu-switch");
-    if (menuBtn) {
-        menuBtn.onclick = function () {
-            let menuPanel = document.getElementById("nav-menu-panel");
-            if (menuPanel) {
-                menuPanel.classList.toggle("float-panel-closed");
-            }
-        };
-    }
+	let menuBtn = document.getElementById("nav-menu-switch");
+	if (menuBtn) {
+		menuBtn.onclick = function () {
+			let menuPanel = document.getElementById("nav-menu-panel");
+			if (menuPanel) {
+				menuPanel.classList.toggle("float-panel-closed");
+			}
+		};
+	}
 
-    let musicBtn = document.getElementById("music-player-switch");
-    if (musicBtn) {
-        musicBtn.onclick = function () {
-            let musicPanel = document.getElementById("music-nav-panel");
-            if (musicPanel) {
-                musicPanel.classList.toggle("float-panel-closed");
-            }
-        };
-    }
+	let musicBtn = document.getElementById("music-player-switch");
+	if (musicBtn) {
+		musicBtn.onclick = function () {
+			let musicPanel = document.getElementById("music-nav-panel");
+			if (musicPanel) {
+				musicPanel.classList.toggle("float-panel-closed");
+			}
+		};
+	}
 
-    // 背景视频播放器控制按钮
-    let bgPlayerBtn = document.getElementById("bg-player-toggle");
-    if (bgPlayerBtn) {
-        bgPlayerBtn.onclick = function () {
-            window.dispatchEvent(new CustomEvent("bg-player-toggle"));
-        };
-        window.addEventListener("bg-player-state-change", function (e) {
-            var ce = e as CustomEvent;
-            var playing = ce.detail && ce.detail.playing;
-            var i18nPlay = bgPlayerBtn!.getAttribute("data-i18n-play") ?? "";
-            var i18nPause = bgPlayerBtn!.getAttribute("data-i18n-pause") ?? "";
-            var label = playing ? i18nPause : i18nPlay;
-            bgPlayerBtn!.innerHTML = playing
-                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16 19q-.825 0-1.412-.587T14 17V7q0-.825.588-1.412T16 5t1.413.588T18 7v10q0 .825-.587 1.413T16 19m-8 0q-.825 0-1.412-.587T6 17V7q0-.825.588-1.412T8 5t1.413.588T10 7v10q0 .825-.587 1.413T8 19"/></svg>'
-                : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
-            bgPlayerBtn!.setAttribute("title", label);
-            bgPlayerBtn!.setAttribute("aria-label", label);
-        });
-        // 切换壁纸模式时隐藏/显示播放按钮
-        window.addEventListener("wallpaperModeChange", function (e) {
-            var ce = e as CustomEvent;
-            var mode = ce.detail && ce.detail.mode;
-            bgPlayerBtn!.style.display = mode === "none" ? "none" : "";
-        });
-        // Swup 导航时同步播放按钮状态（BackgroundPlayer 可能被重建，也可能持久存在）
-        function syncBgPlayerBtn() {
-            var playing = document.documentElement.hasAttribute("data-bg-video-playing");
-            var i18nPlay = bgPlayerBtn!.getAttribute("data-i18n-play") ?? "";
-            var i18nPause = bgPlayerBtn!.getAttribute("data-i18n-pause") ?? "";
-            var label = playing ? i18nPause : i18nPlay;
-            bgPlayerBtn!.innerHTML = playing
-                ? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16 19q-.825 0-1.412-.587T14 17V7q0-.825.588-1.412T16 5t1.413.588T18 7v10q0 .825-.587 1.413T16 19m-8 0q-.825 0-1.412-.587T6 17V7q0-.825.588-1.412T8 5t1.413.588T10 7v10q0 .825-.587 1.413T8 19"/></svg>'
-                : '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
-            bgPlayerBtn!.setAttribute("title", label);
-            bgPlayerBtn!.setAttribute("aria-label", label);
-        }
-        if (window.swup && window.swup.hooks) {
-            window.swup.hooks.on("content:replace", syncBgPlayerBtn);
-        } else {
-            document.addEventListener("swup:enable", function () {
-                window.swup.hooks.on("content:replace", syncBgPlayerBtn);
-            });
-        }
-    }
+	// 背景视频播放器控制按钮
+	let bgPlayerBtn = document.getElementById("bg-player-toggle");
+	if (bgPlayerBtn) {
+		bgPlayerBtn.onclick = function () {
+			window.dispatchEvent(new CustomEvent("bg-player-toggle"));
+		};
+		window.addEventListener("bg-player-state-change", function (e) {
+			var ce = e as CustomEvent;
+			var playing = ce.detail && ce.detail.playing;
+			var i18nPlay = bgPlayerBtn!.getAttribute("data-i18n-play") ?? "";
+			var i18nPause = bgPlayerBtn!.getAttribute("data-i18n-pause") ?? "";
+			var label = playing ? i18nPause : i18nPlay;
+			bgPlayerBtn!.innerHTML = playing
+				? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16 19q-.825 0-1.412-.587T14 17V7q0-.825.588-1.412T16 5t1.413.588T18 7v10q0 .825-.587 1.413T16 19m-8 0q-.825 0-1.412-.587T6 17V7q0-.825.588-1.412T8 5t1.413.588T10 7v10q0 .825-.587 1.413T8 19"/></svg>'
+				: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
+			bgPlayerBtn!.setAttribute("title", label);
+			bgPlayerBtn!.setAttribute("aria-label", label);
+		});
+		// 切换壁纸模式时隐藏/显示播放按钮
+		window.addEventListener("wallpaperModeChange", function (e) {
+			var ce = e as CustomEvent;
+			var mode = ce.detail && ce.detail.mode;
+			bgPlayerBtn!.style.display = mode === "none" ? "none" : "";
+		});
+		// Swup 导航时同步播放按钮状态（BackgroundPlayer 可能被重建，也可能持久存在）
+		function syncBgPlayerBtn() {
+			var playing = document.documentElement.hasAttribute("data-bg-video-playing");
+			var i18nPlay = bgPlayerBtn!.getAttribute("data-i18n-play") ?? "";
+			var i18nPause = bgPlayerBtn!.getAttribute("data-i18n-pause") ?? "";
+			var label = playing ? i18nPause : i18nPlay;
+			bgPlayerBtn!.innerHTML = playing
+				? '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M16 19q-.825 0-1.412-.587T14 17V7q0-.825.588-1.412T16 5t1.413.588T18 7v10q0 .825-.587 1.413T16 19m-8 0q-.825 0-1.412-.587T6 17V7q0-.825.588-1.412T8 5t1.413.588T10 7v10q0 .825-.587 1.413T8 19"/></svg>'
+				: '<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"><path fill="currentColor" d="M8 17.175V6.825q0-.425.3-.713t.7-.287q.125 0 .263.037t.262.113l8.15 5.175q.225.15.338.375t.112.475t-.112.475t-.338.375l-8.15 5.175q-.125.075-.262.113T9 18.175q-.4 0-.7-.288t-.3-.712"/></svg>';
+			bgPlayerBtn!.setAttribute("title", label);
+			bgPlayerBtn!.setAttribute("aria-label", label);
+		}
+		if (window.swup && window.swup.hooks) {
+			window.swup.hooks.on("content:replace", syncBgPlayerBtn);
+		} else {
+			document.addEventListener("swup:enable", function () {
+				window.swup.hooks.on("content:replace", syncBgPlayerBtn);
+			});
+		}
+	}
 
-    let themeSwitchBtn = document.getElementById("scheme-switch");
-    if (themeSwitchBtn) {
-        themeSwitchBtn.onclick = function () {
-            let themePanel = document.getElementById("theme-mode-panel");
-            if (themePanel) {
-                themePanel.classList.toggle("float-panel-closed");
-            }
-        };
-    }
+	let themeSwitchBtn = document.getElementById("scheme-switch");
+	if (themeSwitchBtn) {
+		themeSwitchBtn.onclick = function () {
+			let themePanel = document.getElementById("theme-mode-panel");
+			if (themePanel) {
+				themePanel.classList.toggle("float-panel-closed");
+			}
+		};
+	}
 
-    document.addEventListener("click", function(event) {
-        const panels = ["display-setting", "nav-menu-panel", "music-nav-panel", "theme-mode-panel"];
-        const buttons = ["display-settings-switch", "nav-menu-switch", "music-player-switch", "scheme-switch"];
+	document.addEventListener("click", function(event) {
+		const panels = ["display-setting", "nav-menu-panel", "music-nav-panel", "theme-mode-panel"];
+		const buttons = ["display-settings-switch", "nav-menu-switch", "music-player-switch", "scheme-switch"];
 
-        panels.forEach((id, index) => {
-            const panel = document.getElementById(id);
-            const button = document.getElementById(buttons[index]);
-            if (panel && button && !panel.classList.contains("float-panel-closed")) {
-                if (event.target instanceof Node && !panel.contains(event.target) && !button.contains(event.target)) {
-                    panel.classList.add("float-panel-closed");
-                }
-            }
-        });
-    });
+		panels.forEach((id, index) => {
+			const panel = document.getElementById(id);
+			const button = document.getElementById(buttons[index]);
+			if (panel && button && !panel.classList.contains("float-panel-closed")) {
+				if (event.target instanceof Node && !panel.contains(event.target) && !button.contains(event.target)) {
+					panel.classList.add("float-panel-closed");
+				}
+			}
+		});
+	});
 }
 
 loadButtonScript();
-
-// 为semifull模式添加滚动检测逻辑
-function initSemifullScrollDetection() {
-    const navbar = document.getElementById('navbar');
-    if (!navbar) return;
-
-    const transparentMode = navbar.getAttribute('data-transparent-mode');
-    if (transparentMode !== 'semifull') return;
-
-    // 无论首页/非首页，semifull 都由滚动位置决定是否进入 scrolled 状态
-    // 先移除之前的滚动监听器，避免重复绑定
-    if (window.semifullScrollHandler) {
-        window.removeEventListener('scroll', window.semifullScrollHandler as () => void);
-        window.semifullScrollHandler = undefined;
-    }
-
-    // 初始状态不强制加 scrolled，保持透明；滚动后再切换
-    navbar.classList.remove('scrolled');
-
-    let ticking = false;
-
-    function updateNavbarState() {
-        if (document.documentElement.classList.contains('is-page-transitioning')) {
-            navbar!.classList.remove('scrolled');
-            ticking = false;
-            return;
-        }
-
-        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
-        const threshold = 50; // 滚动阈值，可以根据需要调整
-        // 使用批量DOM操作优化性能
-        if (scrollTop > threshold) {
-            navbar!.classList.add('scrolled');
-        } else {
-            navbar!.classList.remove('scrolled');
-        }
-
-        ticking = false;
-    }
-
-    function requestTick() {
-        if (!ticking) {
-            requestAnimationFrame(updateNavbarState);
-            ticking = true;
-        }
-    }
-
-    // 移除之前的滚动事件监听器（如果存在）
-    if (window.semifullScrollHandler) {
-        window.removeEventListener('scroll', window.semifullScrollHandler as () => void);
-    }
-
-    // 保存新的事件处理器引用
-    window.semifullScrollHandler = requestTick as unknown as (() => void);
-
-    // 监听滚动事件
-    window.addEventListener('scroll', requestTick, { passive: true });
-
-    // 初始化状态
-    updateNavbarState();
-}
-
-// 将函数暴露到全局对象，供页面切换时调用
-window.initSemifullScrollDetection = initSemifullScrollDetection;
-
-// 页面加载完成后初始化滚动检测
-if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', initSemifullScrollDetection);
-} else {
-    initSemifullScrollDetection();
-}
 </script>
 
-<script>
-// 参考模板：导航栏压缩动画——滚动后左(logo)/右(操作)段平移贴紧中(导航)段
-// 依赖 Layout 中滚动时给 #navbar 添加/移除的 navbar-compact 类
+<script is:inline>
+// 参考模板：导航栏 hover 滑动高亮胶囊 + 滚动收缩动画
 (function () {
-  function updateCompactLayout() {
-    var navbar = document.getElementById('navbar');
-    var segments = document.querySelector('.navbar-segments');
-    var center = document.querySelector('.navbar-seg--center');
-    var left = document.querySelector('.navbar-seg--left');
-    var right = document.querySelector('.navbar-seg--right');
-    if (!navbar || !segments || !center || !left || !right) return;
+	var _hoverSliderAbortController = null;
+	var _hoverSliderMouseEnterHandlers = [];
 
-    var isMobile = window.matchMedia('(max-width: 1023px)').matches;
-    if (isMobile) {
-      left.style.left = ''; left.style.right = '';
-      right.style.left = ''; right.style.right = '';
-      return;
-    }
+	function cleanupHoverSlider() {
+		if (_hoverSliderAbortController) {
+			_hoverSliderAbortController.abort();
+			_hoverSliderAbortController = null;
+		}
+		_hoverSliderMouseEnterHandlers.forEach(function (entry) {
+			entry[0].removeEventListener('mouseenter', entry[1]);
+		});
+		_hoverSliderMouseEnterHandlers = [];
+	}
 
-    var compact = navbar.classList.contains('navbar-compact');
-    if (!compact) {
-      left.style.left = '0px'; left.style.right = 'auto';
-      right.style.left = 'auto'; right.style.right = '0px';
-      return;
-    }
+	function normalizePath(p) {
+		return p.replace(/\/$/, '') || '/';
+	}
 
-    var segRect = segments.getBoundingClientRect();
-    var centerRect = center.getBoundingClientRect();
-    var leftRect = left.getBoundingClientRect();
-    var rightRect = right.getBoundingClientRect();
-    var GAP = 14;
-    left.style.left = (centerRect.left - segRect.left - GAP - leftRect.width) + 'px';
-    left.style.right = 'auto';
-    right.style.left = (centerRect.right - segRect.left + GAP) + 'px';
-    right.style.right = 'auto';
-  }
+	function pathMatches(currentPath, href) {
+		var cp = normalizePath(currentPath);
+		var hp = normalizePath(href);
+		if (hp === '/') return cp === '/';
+		return cp === hp || cp.startsWith(hp + '/');
+	}
 
-  function schedule() {
-    requestAnimationFrame(updateCompactLayout);
-  }
+	function moveHighlight(navContainer, hoverBorder, item) {
+		if (!item) {
+			hoverBorder.style.opacity = '0';
+			return;
+		}
+		var rect = item.getBoundingClientRect();
+		var containerRect = navContainer.getBoundingClientRect();
+		hoverBorder.style.width = rect.width + 'px';
+		hoverBorder.style.height = rect.height + 'px';
+		hoverBorder.style.left = (rect.left - containerRect.left) + 'px';
+		hoverBorder.style.top = (rect.top - containerRect.top) + 'px';
+	}
 
-  window.addEventListener('load', schedule);
-  window.addEventListener('scroll', schedule, { passive: true });
-  window.addEventListener('resize', schedule, { passive: true });
-  document.addEventListener('astro:page-load', schedule);
-  if (window.swup && window.swup.hooks) {
-    window.swup.hooks.on('content:replace', schedule);
-  } else {
-    document.addEventListener('swup:enable', function () {
-      window.swup.hooks.on('content:replace', schedule);
-    });
-  }
-  schedule();
+	function initHoverSlider() {
+		cleanupHoverSlider();
+
+		var navContainer = document.querySelector('[data-navbar-nav] .navbar-nav');
+		var hoverBorder = document.querySelector('[data-hover-border]');
+		if (!navContainer || !hoverBorder) return;
+
+		_hoverSliderAbortController = new AbortController();
+		var navItems = Array.from(navContainer.querySelectorAll(':scope > .dropdown-container'));
+
+		function detectActiveItem() {
+			var currentPath = window.location.pathname;
+			var activeItem = null;
+
+			navItems.forEach(function (item) {
+				item.classList.remove('nav-item-active');
+				var hrefs = [];
+				var selfLink = item.querySelector(':scope > a');
+				if (selfLink) {
+					var href = selfLink.getAttribute('href');
+					if (href) hrefs.push(href);
+				}
+				item.querySelectorAll('.dropdown-item[href]').forEach(function (el) {
+					var href = el.getAttribute('href');
+					if (href) hrefs.push(href);
+				});
+
+				var matched = hrefs.some(function (href) { return pathMatches(currentPath, href); });
+				if (matched) {
+					item.classList.add('nav-item-active');
+					if (!activeItem) activeItem = item;
+				}
+			});
+
+			if (activeItem) {
+				navContainer.classList.add('nav-has-active');
+				requestAnimationFrame(function () {
+					moveHighlight(navContainer, hoverBorder, activeItem);
+				});
+			} else {
+				navContainer.classList.remove('nav-has-active');
+				hoverBorder.style.opacity = '0';
+			}
+		}
+
+		navItems.forEach(function (item) {
+			var handler = function () { moveHighlight(navContainer, hoverBorder, item); };
+			item.addEventListener('mouseenter', handler);
+			_hoverSliderMouseEnterHandlers.push([item, handler]);
+		});
+
+		navContainer.addEventListener('mouseleave', function () {
+			var activeItem = navContainer.querySelector('.nav-item-active');
+			moveHighlight(navContainer, hoverBorder, activeItem);
+		}, { signal: _hoverSliderAbortController.signal });
+
+		navContainer.addEventListener('mouseenter', function () {
+			hoverBorder.style.opacity = '1';
+		}, { signal: _hoverSliderAbortController.signal });
+
+		detectActiveItem();
+		document.addEventListener('astro:page-load', detectActiveItem, { signal: _hoverSliderAbortController.signal });
+	}
+
+	initHoverSlider();
+
+	// 滚动收缩：左段 logo 收球、左/右段平移贴近中段
+	(function () {
+		var navbar = document.getElementById('navbar');
+
+		var SCROLL_IN = 80;
+		var SCROLL_OUT = 40;
+		var COMPACT_GAP = 8;
+		var ticking = false;
+		var resizeTicking = false;
+
+		// 右段含多个功能按钮（保持展开），滚动时仅左段 logo 收球并滑向中段左侧
+		function updateCompactLayout() {
+			var segments = document.querySelector('.navbar-segments');
+			var center = document.querySelector('.navbar-seg--center');
+			var left = document.querySelector('.navbar-seg--left');
+			var right = document.querySelector('.navbar-seg--right');
+			if (!navbar || !segments || !center || !left || !right) return;
+
+			var isScrolled = navbar.classList.contains('scrolled');
+			var isMobile = window.matchMedia('(max-width: 1023px)').matches;
+
+			if (isMobile) {
+				left.style.left = '';
+				left.style.transform = '';
+				right.style.left = '';
+				right.style.right = '';
+				right.style.transform = '';
+				return;
+			}
+
+			var segmentsRect = segments.getBoundingClientRect();
+			var centerRect = center.getBoundingClientRect();
+			var leftRect = left.getBoundingClientRect();
+
+			if (isScrolled) {
+				left.style.left = (centerRect.left - segmentsRect.left - COMPACT_GAP - leftRect.width) + 'px';
+				left.style.transform = 'translateY(-50%)';
+			} else {
+				left.style.left = '0px';
+				left.style.transform = 'translateY(-50%)';
+			}
+			// 右段始终贴右缘（CSS right:0），无需在此重定位
+		}
+
+		function handleScroll() {
+			var y = window.scrollY;
+			var wasScrolled = navbar.classList.contains('scrolled');
+
+			if (y > SCROLL_IN) {
+				navbar.classList.add('scrolled');
+			} else if (y < SCROLL_OUT) {
+				navbar.classList.remove('scrolled');
+			}
+
+			var isScrolled = navbar.classList.contains('scrolled');
+			if (wasScrolled !== isScrolled || isScrolled) {
+				requestAnimationFrame(updateCompactLayout);
+			}
+			ticking = false;
+		}
+
+		window.addEventListener('scroll', function () {
+			if (!ticking) {
+				requestAnimationFrame(handleScroll);
+				ticking = true;
+			}
+		}, { passive: true });
+
+		window.addEventListener('resize', function () {
+			if (!resizeTicking) {
+				requestAnimationFrame(function () {
+					updateCompactLayout();
+					resizeTicking = false;
+				});
+				resizeTicking = true;
+			}
+		}, { passive: true });
+
+		handleScroll();
+		requestAnimationFrame(updateCompactLayout);
+	})();
 })();
 </script>
 
 {
-    import.meta.env.PROD && (
-        <script is:inline data-swup-ignore-script define:vars={{ scriptUrl: url('/pagefind/pagefind.js') }}>
-            {/* 你的 loadPagefind 函数的完整内容放在这里 */}
-            async function loadPagefind() {
-                try {
-                    const response = await fetch(scriptUrl, { method: 'HEAD' });
-                    if (!response.ok) {
-                        throw new Error(`Pagefind script not found: ${response.status}`);
-                    }
-                    const pagefind = await import(scriptUrl);
-                    await pagefind.options({
-                        excerptLength: 20
-                    });
-                    window.pagefind = pagefind;
-                    document.dispatchEvent(new CustomEvent('pagefindready'));
-                    console.log('Pagefind loaded and initialized successfully, event dispatched.');
-                } catch (error) {
-                    console.error('Failed to load Pagefind:', error);
-                    window.pagefind = {
-                        search: () => Promise.resolve({ results: [] }),
-                        options: () => Promise.resolve(),
-                    };
-                    document.dispatchEvent(new CustomEvent('pagefindloaderror'));
-                    console.log('Pagefind load error, event dispatched.');
-                }
-            }
+	import.meta.env.PROD && (
+		<script is:inline data-swup-ignore-script define:vars={{ scriptUrl: url('/pagefind/pagefind.js') }}>
+			async function loadPagefind() {
+				try {
+					const response = await fetch(scriptUrl, { method: 'HEAD' });
+					if (!response.ok) {
+						throw new Error(`Pagefind script not found: ${response.status}`);
+					}
+					const pagefind = await import(scriptUrl);
+					await pagefind.options({ excerptLength: 20 });
+					window.pagefind = pagefind;
+					document.dispatchEvent(new CustomEvent('pagefindready'));
+					console.log('Pagefind loaded and initialized successfully, event dispatched.');
+				} catch (error) {
+					console.error('Failed to load Pagefind:', error);
+					window.pagefind = {
+						search: () => Promise.resolve({ results: [] }),
+						options: () => Promise.resolve(),
+					};
+					document.dispatchEvent(new CustomEvent('pagefindloaderror'));
+					console.log('Pagefind load error, event dispatched.');
+				}
+			}
 
-            if (document.readyState === 'loading') {
-                document.addEventListener('DOMContentLoaded', loadPagefind);
-            } else {
-                loadPagefind();
-            }
-        </script>
-    )
+			if (document.readyState === 'loading') {
+				document.addEventListener('DOMContentLoaded', loadPagefind);
+			} else {
+				loadPagefind();
+			}
+		</script>
+	)
 }
