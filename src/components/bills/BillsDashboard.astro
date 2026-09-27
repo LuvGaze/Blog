@@ -1,0 +1,144 @@
+---
+import BillCalendarCard from "./BillCalendarCard.astro";
+import BalanceCard from "./BalanceCard.astro";
+import DailyTrendCard from "./DailyTrendCard.astro";
+import ExpenseRankCard from "./ExpenseRankCard.astro";
+import IncomeCategoryCard from "./IncomeCategoryCard.astro";
+import MonthlyFlowCard from "./MonthlyFlowCard.astro";
+import MonthlySummaryCard from "./MonthlySummaryCard.astro";
+import YearlyFlowCard from "./YearlyFlowCard.astro";
+
+interface Props {
+	yearStats: { income: number; expense: number; count: number; label: string };
+	yearBalance: number;
+	monthIncome: number;
+	monthExpense: number;
+	monthBalance: number;
+	flowMonths: {
+		key: string;
+		label: string;
+		days: {
+			key: string;
+			label: string;
+			income: number;
+			expense: number;
+			entries: {
+				cat: string;
+				desc: string;
+				time: string;
+				amount: number;
+				type: string;
+			}[];
+		}[];
+	}[];
+	nowMonth: string;
+	calendar: {
+		key: string;
+		label: string;
+		weeks: {
+			day: number;
+			lunar: string;
+			inMonth: boolean;
+			income: number;
+			expense: number;
+			dateKey: string;
+		}[][];
+	}[];
+	daily: { day: string; income: number; expense: number }[];
+	incomeList: { category: string; amount: number; count: number }[];
+	incomeTotalCount: number;
+	incomeTotalAmt: number;
+	yearly: { month: string; income: number; expense: number; balance: number }[];
+	expenseRank: { category: string; amount: number; count: number }[];
+	expenseCount: number;
+	expenseTotal: number;
+	year: number;
+	month: number;
+}
+
+const {
+	yearStats,
+	yearBalance,
+	monthIncome,
+	monthExpense,
+	monthBalance,
+	flowMonths,
+	nowMonth,
+	calendar,
+	daily,
+	incomeList,
+	incomeTotalCount,
+	incomeTotalAmt,
+	yearly,
+	expenseRank,
+	expenseCount,
+	expenseTotal,
+	year,
+	month,
+} = Astro.props;
+---
+
+<div class="bills-page">
+	<div class="bills-grid">
+		<div class="bills-col">
+			<div class="order-net"><BalanceCard income={yearStats.income} expense={yearStats.expense} balance={yearBalance} /></div>
+		</div>
+		<div class="bills-col">
+			<div class="order-monthly"><MonthlySummaryCard income={monthIncome} expense={monthExpense} balance={monthBalance} /></div>
+		</div>
+	</div>
+	<div class="order-today">
+		<MonthlyFlowCard months={flowMonths} currentMonth={nowMonth} />
+	</div>
+	<div class="order-cal">
+		<BillCalendarCard months={calendar} currentMonth={nowMonth} />
+	</div>
+	<div class="bills-grid">
+		<div class="bills-col">
+			<div class="order-daily"><DailyTrendCard year={year} month={month} data={daily} /></div>
+			<div class="order-income"><IncomeCategoryCard data={incomeList} totalCount={incomeTotalCount} totalIncome={incomeTotalAmt} /></div>
+		</div>
+		<div class="bills-col">
+			<div class="order-yearly"><YearlyFlowCard year={year} data={yearly} /></div>
+			<div class="order-expense"><ExpenseRankCard data={expenseRank} totalCount={expenseCount} totalExpense={expenseTotal} /></div>
+		</div>
+	</div>
+</div>
+
+<style>
+	.bills-page {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+		padding: 0.6rem 0 1.2rem;
+	}
+	.bills-grid {
+		display: grid;
+		grid-template-columns: 1fr 1fr;
+		gap: 0.9rem;
+		align-items: start;
+	}
+	.bills-col {
+		display: flex;
+		flex-direction: column;
+		gap: 0.9rem;
+	}
+	@media (max-width: 900px) {
+		.bills-grid {
+			grid-template-columns: 1fr;
+		}
+		.bills-col {
+			display: contents;
+		}
+	}
+	@media (max-width: 1200px) {
+		.bills-page {
+			zoom: 0.92;
+		}
+	}
+	@media (max-width: 1024px) {
+		.bills-page {
+			zoom: 0.88;
+		}
+	}
+</style>
