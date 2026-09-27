@@ -1,0 +1,365 @@
+---
+import { Icon } from "astro-icon/components";
+import { circleConfig } from "@/config/circleConfig";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import "@/styles/features/circle.css";
+import { siteConfig } from "@/config";
+
+// 检查页面是否启用
+if (!siteConfig.pages.circle) {
+	return Astro.redirect("/404/");
+}
+
+const title = i18n(I18nKey.circleTitle);
+const description = i18n(I18nKey.circleSubtitle);
+---
+
+<MainGridLayout title={title} description={description}>
+  <div class="circle-container">
+    <!-- 顶部导航栏 -->
+    <div class="circle-header">
+      <div class="circle-header-left">
+        <span class="circle-header-icon"><img src="/assets/images/emoji/1000023906.gif" alt="" class="header-icon-img" width="32" height="32" /></span>
+        <span class="circle-header-title">{i18n(I18nKey.circleTitle)}</span>
+        <button class="circle-refresh-btn" id="refresh-btn" title="刷新">
+          <Icon name="material-symbols:refresh" class="text-lg" />
+        </button>
+      </div>
+      <a href="/friends/" class="circle-header-link">
+        {i18n(I18nKey.friends)}
+        <Icon name="material-symbols:chevron-right-rounded" class="text-base" />
+      </a>
+    </div>
+
+    <!-- 动态通知条 -->
+    <div class="circle-notice" id="circle-notice" style="display:none;">
+      <span class="notice-icon"><img src="/assets/images/emoji/1000023903.gif" alt="" class="notice-icon-img" width="20" height="20" /></span>
+      <span class="notice-text" id="notice-text"></span>
+    </div>
+
+    <!-- 统计区域 -->
+    <div class="circle-stats-bar">
+      <div class="stats-left">
+        <span class="stats-title"><img src="/assets/images/emoji/1000023901.gif" alt="" class="stats-icon-img" width="20" height="20" /> 鱼塘</span>
+        <span class="stats-item">{i18n(I18nKey.circleFriends)} <strong id="stat-friends">0</strong></span>
+        <span class="stats-divider">·</span>
+        <span class="stats-item">{i18n(I18nKey.circleActive)} <strong id="stat-active">0</strong></span>
+        <span class="stats-divider">·</span>
+        <span class="stats-item">{i18n(I18nKey.circleArticles)} <strong id="stat-articles">0</strong></span>
+      </div>
+      <div class="stats-right">
+        <button class="sort-btn is-active" data-sort="created" id="sort-created">最新发布</button>
+        <button class="sort-btn" data-sort="updated" id="sort-updated">最近更新</button>
+      </div>
+    </div>
+
+    <!-- 加载状态 -->
+    <div class="circle-loading" id="circle-loading">
+      <div class="loading-spinner"></div>
+      <p class="loading-text">{i18n(I18nKey.circleLoading)}</p>
+    </div>
+
+    <!-- 错误状态 -->
+    <div class="circle-error" id="circle-error" style="display:none;">
+      <Icon name="material-symbols:error-outline" class="text-4xl text-red-400" />
+      <p class="error-text">{i18n(I18nKey.circleError)}</p>
+      <button class="retry-btn" id="retry-btn">
+        <Icon name="material-symbols:refresh" class="text-base" />
+        重试
+      </button>
+    </div>
+
+    <!-- 文章网格 -->
+    <div class="circle-grid" id="circle-grid" style="display:none;"></div>
+
+    <!-- 加载更多 -->
+    <div class="circle-load-more" id="circle-load-more" style="display:none;">
+      <div class="load-more-spinner"></div>
+    </div>
+
+    <!-- 没有更多 -->
+    <div class="circle-no-more" id="circle-no-more" style="display:none;">
+      <span>—— 没有更多了 ——</span>
+    </div>
+  </div>
+
+<script is:inline define:vars={{ dataUrl: circleConfig.dataUrl, pageSize: circleConfig.pageSize, cacheTime: circleConfig.cacheTime }}>
+(function() {
+
+  var CACHE_KEY = "__circleDataCache";
+  var allArticles = [];
+  var currentData = null;
+  var displayedCount = 0;
+  var currentSort = "created";
+  var isLoadingMore = false;
+
+  function $(id) { return document.getElementById(id); }
+
+  function esc(t) {
+    var d = document.createElement("div");
+    d.textContent = t;
+    return d.innerHTML;
+  }
+
+  function formatDate(dateStr) {
+    if (!dateStr) return "";
+    return dateStr.split(" ")[0];
+  }
+
+  function renderCard(item) {
+    var title = esc(item.title || "无标题");
+    var author = esc(item.author || "未知");
+    var link = item.link || "#";
+    var avatar = item.avatar || "";
+    var date = formatDate(item.created);
+    var initial = (item.author || "?").slice(0, 1);
+
+    return '<a href="' + esc(link) + '" target="_blank" rel="noopener noreferrer" class="circle-card">' +
+      '<div class="card-avatar-watermark" data-initial="' + initial + '">' +
+        '<img src="' + esc(avatar) + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />' +
+      '</div>' +
+      '<span class="card-date-overlay">' + date + '</span>' +
+      '<h3 class="card-title">' + title + '</h3>' +
+      '<span class="card-author-tag">' + author + '</span>' +
+    '</a>';
+  }
+
+  function renderGrid() {
+    var grid = $("circle-grid");
+    if (!grid) return;
+
+    var sorted = allArticles.slice();
+    if (currentSort === "updated") {
+      sorted.sort(function(a, b) {
+        return (b.updated || b.created || "").localeCompare(a.updated || a.created || "");
+      });
+    } else {
+      sorted.sort(function(a, b) {
+        return (b.created || "").localeCompare(a.created || "");
+      });
+    }
+
+    var toShow = sorted.slice(0, displayedCount);
+    grid.innerHTML = toShow.map(renderCard).join("");
+
+    var loadMore = $("circle-load-more");
+    var noMore = $("circle-no-more");
+    if (displayedCount >= sorted.length) {
+      if (loadMore) loadMore.style.display = "none";
+      if (noMore) noMore.style.display = "";
+    } else {
+      if (loadMore) loadMore.style.display = "";
+      if (noMore) noMore.style.display = "none";
+    }
+  }
+
+  function showNotice(data) {
+    var notice = $("circle-notice");
+    var noticeText = $("notice-text");
+    if (!notice || !noticeText || !data.article_data || data.article_data.length === 0) return;
+
+    var latest6 = data.article_data.slice(0, 6);
+    var picked = latest6[Math.floor(Math.random() * latest6.length)];
+
+    var authorHtml = '<a href="' + esc(picked.link || "#") + '" target="_blank" class="notice-author">' + esc(picked.author || "未知") + '</a>';
+    var titleHtml = '<a href="' + esc(picked.link || "#") + '" target="_blank" class="notice-title">' + esc(picked.title || "无标题") + '</a>';
+
+    noticeText.innerHTML = '来自友链 ' + authorHtml + ' 的文章: ' + titleHtml;
+    notice.style.display = "";
+  }
+
+  function showLoading() {
+    var el;
+    el = $("circle-loading"); if (el) el.style.display = "";
+    el = $("circle-grid"); if (el) el.style.display = "none";
+    el = $("circle-error"); if (el) el.style.display = "none";
+  }
+
+  function showGrid() {
+    var el;
+    el = $("circle-loading"); if (el) el.style.display = "none";
+    el = $("circle-grid"); if (el) el.style.display = "";
+    el = $("circle-error"); if (el) el.style.display = "none";
+  }
+
+  function showError() {
+    var el;
+    el = $("circle-loading"); if (el) el.style.display = "none";
+    el = $("circle-grid"); if (el) el.style.display = "none";
+    el = $("circle-error"); if (el) el.style.display = "";
+  }
+
+  function renderStats(data) {
+    if (!data.statistical_data) return;
+    var s = data.statistical_data;
+    var el;
+    el = $("stat-friends"); if (el) el.textContent = String(s.friends_num || 0);
+    el = $("stat-active"); if (el) el.textContent = String(s.active_num || 0);
+    el = $("stat-articles"); if (el) el.textContent = String(s.article_num || 0);
+  }
+
+  function loadMore() {
+    if (isLoadingMore) return;
+    isLoadingMore = true;
+    setTimeout(function() {
+      displayedCount += pageSize;
+      renderGrid();
+      isLoadingMore = false;
+    }, 300);
+  }
+
+  function onScroll() {
+    var loadMoreEl = $("circle-load-more");
+    if (!loadMoreEl || loadMoreEl.style.display === "none") return;
+
+    var rect = loadMoreEl.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 200) {
+      loadMore();
+    }
+  }
+
+  function fetchData() {
+    showLoading();
+
+    if (window[CACHE_KEY] && window[CACHE_KEY].time > Date.now() - cacheTime) {
+      onData(window[CACHE_KEY].data);
+      return;
+    }
+
+    fetch(dataUrl)
+      .then(function(res) {
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        return res.json();
+      })
+      .then(function(data) {
+        window[CACHE_KEY] = { data: data, time: Date.now() };
+        onData(data);
+      })
+      .catch(function() {
+        showError();
+      });
+  }
+
+  function onData(data) {
+    if (!data || !data.article_data || data.article_data.length === 0) {
+      showError();
+      return;
+    }
+
+    currentData = data;
+    allArticles = data.article_data;
+    displayedCount = pageSize;
+
+    renderStats(data);
+    showNotice(data);
+    renderGrid();
+    showGrid();
+  }
+
+  function bindEvents() {
+    var retryBtn = $("retry-btn");
+    var refreshBtn = $("refresh-btn");
+    var sortCreated = $("sort-created");
+    var sortUpdated = $("sort-updated");
+
+    if (retryBtn) retryBtn.addEventListener("click", fetchData);
+    if (refreshBtn) {
+      refreshBtn.addEventListener("click", function() {
+        if (!currentData) return;
+        var notice = $("circle-notice");
+        var noticeText = $("notice-text");
+        if (!notice || !noticeText) return;
+        notice.style.display = "";
+        noticeText.innerHTML = '钓鱼中... （Lv.7 当前称号：钓鱼高手）<img src="/assets/images/emoji/1000023901.gif" alt="" style="display:inline-block;width:1.25rem;height:1.25rem;vertical-align:middle;margin-left:0.125rem;" />';
+        setTimeout(function() {
+          showNotice(currentData);
+        }, 1600);
+      });
+    }
+    if (sortCreated) {
+      sortCreated.addEventListener("click", function() {
+        currentSort = "created";
+        sortCreated.classList.add("is-active");
+        if (sortUpdated) sortUpdated.classList.remove("is-active");
+        renderGrid();
+      });
+    }
+    if (sortUpdated) {
+      sortUpdated.addEventListener("click", function() {
+        currentSort = "updated";
+        sortUpdated.classList.add("is-active");
+        if (sortCreated) sortCreated.classList.remove("is-active");
+        renderGrid();
+      });
+    }
+
+    window.addEventListener("scroll", onScroll, { passive: true });
+  }
+
+  // 使用事件委托，避免重复绑定问题
+  document.addEventListener("click", function(e) {
+    if (e.target.closest("#retry-btn")) fetchData();
+    if (e.target.closest("#refresh-btn")) {
+      if (!currentData) return;
+      var notice = $("circle-notice");
+      var noticeText = $("notice-text");
+      if (!notice || !noticeText) return;
+      notice.style.display = "";
+      noticeText.innerHTML = '钓鱼中... （Lv.7 当前称号：钓鱼高手）<img src="/assets/images/emoji/1000023901.gif" alt="" style="display:inline-block;width:1.25rem;height:1.25rem;vertical-align:middle;margin-left:0.125rem;" />';
+      setTimeout(function() {
+        showNotice(currentData);
+      }, 1600);
+    }
+    if (e.target.closest("#sort-created")) {
+      currentSort = "created";
+      $("sort-created").classList.add("is-active");
+      if ($("sort-updated")) $("sort-updated").classList.remove("is-active");
+      renderGrid();
+    }
+    if (e.target.closest("#sort-updated")) {
+      currentSort = "updated";
+      $("sort-updated").classList.add("is-active");
+      if ($("sort-created")) $("sort-created").classList.remove("is-active");
+      renderGrid();
+    }
+  });
+
+  window.addEventListener("scroll", function() {
+    var loadMoreEl = $("circle-load-more");
+    if (!loadMoreEl || loadMoreEl.style.display === "none") return;
+    var rect = loadMoreEl.getBoundingClientRect();
+    if (rect.top < window.innerHeight + 200) {
+      loadMore();
+    }
+  }, { passive: true });
+
+  // 初始化
+  function doInit() {
+    // 确保 DOM 元素存在
+    if (!document.getElementById("circle-grid")) return;
+    // 重置状态
+    currentData = null;
+    allArticles = [];
+    displayedCount = 0;
+    currentSort = "created";
+    isLoadingMore = false;
+    // 延迟确保 DOM 完全就绪
+    setTimeout(function() {
+      fetchData();
+    }, 50);
+  }
+
+  // Swup/Astro 客户端导航
+  document.addEventListener("astro:page-load", doInit);
+  // 直接访问（页面已加载完成）
+  if (document.readyState !== "loading") {
+    doInit();
+  } else {
+    document.addEventListener("DOMContentLoaded", doInit);
+  }
+})();
+</script>
+
+</MainGridLayout>
