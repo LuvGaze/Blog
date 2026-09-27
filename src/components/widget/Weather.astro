@@ -1,0 +1,375 @@
+---
+interface Props {
+	class?: string;
+	style?: string;
+}
+const { class: className, style } = Astro.props;
+---
+
+<div class:list={["weather-widget", className]} style={style}>
+  <div class="weather-card" id="weather-main">
+    <div class="weather-loading">
+      <div class="weather-loading-icon">☁️</div>
+      <span class="weather-loading-text">获取天气中...</span>
+    </div>
+  </div>
+  <div class="weather-error" id="weather-error" style="display:none">
+    <span class="weather-error-text" id="weather-error-text">天气加载失败</span>
+  </div>
+</div>
+
+<style is:global>
+  .weather-widget {
+    width: 100%;
+    border: 1px solid var(--line-divider);
+    border-radius: var(--radius-lg);
+    background: var(--card-bg);
+    box-shadow: var(--shadow-md);
+    padding: 0.75rem 1rem;
+    transition: box-shadow 0.3s ease, border-color 0.3s ease;
+  }
+
+  .weather-widget:hover {
+    border-color: var(--line-color);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .weather-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .weather-header {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+  }
+
+  .weather-header-title {
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: var(--deep-text);
+    letter-spacing: 0.01em;
+  }
+
+  .weather-body {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 1rem;
+  }
+
+  .weather-left {
+    display: flex;
+    flex-direction: column;
+    gap: 0.125rem;
+  }
+
+  .weather-temp {
+    font-size: 2.25rem;
+    font-weight: 400;
+    color: var(--deep-text);
+    line-height: 1;
+    letter-spacing: -0.03em;
+  }
+
+  .weather-location {
+    font-size: 0.8125rem;
+    color: var(--content-meta);
+    font-weight: 400;
+  }
+
+  .weather-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 0.1875rem;
+    min-width: 0;
+    flex-shrink: 0;
+  }
+
+  .weather-highlow {
+    font-size: 0.75rem;
+    color: var(--content-meta);
+    font-weight: 400;
+    white-space: nowrap;
+    text-align: right;
+  }
+
+  .weather-aqi {
+    font-size: 0.75rem;
+    white-space: nowrap;
+    text-align: right;
+    font-weight: 400;
+    color: var(--content-meta);
+  }
+
+  /* 附加信息区：多组三列指标，整组轮换 */
+  .weather-extra {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-top: 1px solid var(--line-divider);
+    padding-top: 0.55rem;
+    min-height: 3.1rem;
+  }
+  .weather-group {
+    display: none;
+    flex: 1;
+    min-width: 0;
+    align-items: stretch;
+  }
+  .weather-group.is-active {
+    display: flex;
+  }
+  .weather-stat {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.125rem;
+    text-align: center;
+  }
+  .weather-stat + .weather-stat {
+    border-left: 1px solid var(--line-divider);
+  }
+  .weather-stat-label {
+    font-size: 0.6875rem;
+    color: var(--content-meta);
+    white-space: nowrap;
+  }
+  .weather-stat-value {
+    font-size: 0.8125rem;
+    font-weight: 600;
+    color: var(--deep-text);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+  .weather-dots {
+    display: flex;
+    gap: 4px;
+    margin-left: 10px;
+    flex-shrink: 0;
+  }
+  .weather-dots i {
+    width: 5px;
+    height: 5px;
+    border-radius: 9999px;
+    background: var(--line-color);
+    transition: background 0.3s;
+  }
+  .weather-dots i.on {
+    background: var(--deep-text);
+  }
+
+  /* 加载状态 */
+  .weather-loading {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.5rem 0;
+  }
+  .weather-loading-icon {
+    font-size: 1.25rem;
+    opacity: 0.5;
+    animation: weatherPulse 2s ease-in-out infinite;
+  }
+  .weather-loading-text {
+    font-size: 0.8125rem;
+    color: var(--content-meta);
+  }
+  @keyframes weatherPulse {
+    0%, 100% { opacity: 0.5; }
+    50% { opacity: 0.2; }
+  }
+
+  .weather-error {
+    padding: 0.5rem 0;
+  }
+  .weather-error-text {
+    font-size: 0.75rem;
+    color: var(--content-meta);
+  }
+</style>
+
+<script is:inline>
+(function() {
+  var WEATHER_API = "https://uapis.cn/api/v1/misc/weather";
+  var CACHE_KEY = "__weatherCache_v5";
+  var WEATHER_TTL = 30 * 60 * 1000;
+
+  function getCached(key, ttl) {
+    try {
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      var data = JSON.parse(raw);
+      if (data.time > Date.now() - ttl) return data.value;
+    } catch(e) {}
+    return null;
+  }
+
+  function setCache(key, value) {
+    try {
+      localStorage.setItem(key, JSON.stringify({ value: value, time: Date.now() }));
+    } catch(e) {}
+  }
+
+  function showError(msg) {
+    var main = document.getElementById("weather-main");
+    var err = document.getElementById("weather-error");
+    var errText = document.getElementById("weather-error-text");
+    if (main) main.style.display = "none";
+    if (err) err.style.display = "";
+    if (errText) errText.textContent = msg || "天气加载失败";
+  }
+
+  function esc(t) {
+    var d = document.createElement("div");
+    d.textContent = t;
+    return d.innerHTML;
+  }
+
+  function renderWeather(data) {
+    var main = document.getElementById("weather-main");
+    if (!main || !data) return;
+
+    var temp = data.temperature != null ? Math.round(data.temperature) : "--";
+    var desc = data.weather || "未知";
+    var city = data.city || data.district || data.province || "未知";
+    var tempMax = data.temp_max != null ? Math.round(data.temp_max) : "--";
+    var tempMin = data.temp_min != null ? Math.round(data.temp_min) : "--";
+    var aqi = data.aqi;
+    var aqiCategory = data.aqi_category || "";
+    var humidity = data.humidity;
+    var wind = (data.wind_direction || "") + (data.wind_power || "");
+    if (!wind) wind = "--";
+
+    // AQI：样式与右侧「高/低温」保持一致（统一配色，不做污染等级变色）
+    var aqiText = aqi != null
+      ? "AQI " + aqi + (aqiCategory ? " (" + aqiCategory + ")" : "")
+      : (aqiCategory || "--");
+
+    var html = "";
+    html += '<div class="weather-header">';
+    html += '  <span style="font-size:1.25rem;line-height:1;">⛅</span>';
+    html += '  <span class="weather-header-title">天气预报</span>';
+    html += '</div>';
+
+    html += '<div class="weather-body">';
+    html += '  <div class="weather-left">';
+    html += '    <span class="weather-temp">' + temp + '°</span>';
+    html += '    <span class="weather-location">' + esc(city) + '，' + esc(desc) + '</span>';
+    html += '  </div>';
+    html += '  <div class="weather-right">';
+    html += '    <span class="weather-highlow">高 ' + tempMax + '° 低 ' + tempMin + '°</span>';
+    html += '    <span class="weather-aqi">' + esc(aqiText) + '</span>';
+    html += '  </div>';
+    html += '</div>';
+
+    // 收集指标（去掉能见度），每 3 个一组，整组轮换展示（每组固定 3 项）
+    var metrics = [];
+    var push = function(lbl, val) {
+      if (val != null && String(val).trim() !== "" && val !== "--") {
+        metrics.push({ lbl: lbl, val: String(val) });
+      }
+    };
+    push("湿度", humidity != null ? humidity + "%" : null);
+    push("风力", wind);
+    push(
+      "空气质量",
+      aqiCategory ? aqiCategory + (aqi != null ? " " + aqi : "") : (aqi != null ? "AQI " + aqi : null)
+    );
+    push("体感温度", data.feels_like != null ? Math.round(data.feels_like) + "°" : null);
+    push("气压", data.pressure != null ? (data.pressure / 10).toFixed(1) + " kPa" : null);
+    push("紫外线", data.uv != null ? data.uv : null);
+    push("降水", data.precipitation > 0 ? data.precipitation + " mm" : null);
+    push("云量", data.cloud != null ? data.cloud + "%" : null);
+    push("风向", data.wind_direction || null);
+
+    var groups = [];
+    for (var i = 0; i < metrics.length; i += 3) {
+      groups.push(metrics.slice(i, i + 3));
+    }
+
+    var extraHtml = '<div class="weather-extra">';
+    if (groups.length) {
+      for (var g = 0; g < groups.length; g++) {
+        extraHtml += '<div class="weather-group' + (g === 0 ? ' is-active' : '') + '">';
+        for (var m = 0; m < groups[g].length; m++) {
+          extraHtml += '<div class="weather-stat">'
+            + '<span class="weather-stat-label">' + esc(groups[g][m].lbl) + '</span>'
+            + '<span class="weather-stat-value">' + esc(groups[g][m].val) + '</span>'
+            + '</div>';
+        }
+        extraHtml += '</div>';
+      }
+      if (groups.length > 1) {
+        extraHtml += '<div class="weather-dots" data-weather-dots>';
+        for (var di = 0; di < groups.length; di++) {
+          extraHtml += '<i' + (di === 0 ? ' class="on"' : '') + '></i>';
+        }
+        extraHtml += '</div>';
+      }
+    }
+    extraHtml += '</div>';
+
+    html += extraHtml;
+    main.innerHTML = html;
+
+    if (groups.length > 1) {
+      var groupEls = main.querySelectorAll('.weather-group');
+      var dotEls = main.querySelectorAll('.weather-dots i');
+      var gIdx = 0;
+      if (window.__weatherGroupInterval) clearInterval(window.__weatherGroupInterval);
+      window.__weatherGroupInterval = setInterval(function() {
+        groupEls[gIdx].classList.remove('is-active');
+        if (dotEls[gIdx]) dotEls[gIdx].classList.remove('on');
+        gIdx = (gIdx + 1) % groupEls.length;
+        groupEls[gIdx].classList.add('is-active');
+        if (dotEls[gIdx]) dotEls[gIdx].classList.add('on');
+      }, 4000);
+    }
+  }
+
+  function fetchWeather() {
+    if (!document.getElementById("weather-main")) return;
+    var cached = getCached(CACHE_KEY, WEATHER_TTL);
+    if (cached) {
+      renderWeather(cached);
+      return;
+    }
+
+    fetch(WEATHER_API + "?extended=true&forecast=true&hourly=false&minutely=false&indices=false&lang=zh")
+      .then(function(r) { return r.json(); })
+      .then(function(res) {
+        if (res && res.weather) {
+          renderWeather(res);
+          setCache(CACHE_KEY, res);
+        } else if (res && res.message) {
+          showError(res.message);
+        } else {
+          showError("天气数据获取失败");
+        }
+      })
+      .catch(function() {
+        showError("网络请求失败");
+      });
+  }
+
+  function init() {
+    if (!document.getElementById("weather-main")) return;
+    fetchWeather();
+    if (!window.__weatherRefresh) {
+      window.__weatherRefresh = setInterval(fetchWeather, 30 * 60 * 1000);
+    }
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
+  else init();
+  document.addEventListener("swup:contentReplaced", function() { setTimeout(init, 50); });
+})();
+</script>
