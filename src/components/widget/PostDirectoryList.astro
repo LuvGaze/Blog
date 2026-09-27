@@ -1,0 +1,579 @@
+---
+import { Icon } from "astro-icon/components";
+import { getSortedPostsList } from "@/utils/content-utils";
+import { getPostUrlBySlug, removeFileExtension } from "@/utils/url-utils";
+
+// 文件夹图标映射（Iconify 图标名）
+// key 统一小写，因为 Astro 在 Windows 上会把 content collection ID 转为小写
+const folderIcons: Record<string, string> = {
+	javawebai: "material-symbols:code-blocks-outline",
+	java笔记本: "mdi:language-java",
+	java进阶: "material-symbols:school-outline",
+	java菜鸟: "material-symbols:child-care-outline",
+	english笔记本: "material-symbols:translate",
+	mysql数据库: "simple-icons:mysql",
+	mysql进阶: "material-symbols:database-outline",
+	前端基础: "simple-icons:html5",
+	后端基础: "material-symbols:dns-outline",
+	博客指南: "material-symbols:menu-book-outline",
+	技术分享: "material-symbols:share-outline",
+	资源整理: "material-symbols:folder-special-outline",
+	测试文件: "material-symbols:science-outline",
+};
+
+function getFolderIcon(name: string): string | undefined {
+	return folderIcons[name.toLowerCase()] || folderIcons[name];
+}
+
+interface Props {
+	currentSlug?: string;
+	class?: string;
+}
+
+type DirectoryArticle = {
+	type: "article";
+	depth: number;
+	slug: string;
+	title: string;
+	url: string;
+	date: string;
+};
+
+type DirectoryFolder = {
+	type: "folder";
+	depth: number;
+	name: string;
+	folderId: string;
+	hasCurrent: boolean;
+	icon?: string;
+};
+
+type DirectoryRow = DirectoryArticle | DirectoryFolder;
+
+const { currentSlug = "", class: className = "" } = Astro.props;
+const normalizedCurrentSlug = removeFileExtension(currentSlug);
+const posts = await getSortedPostsList();
+
+function toDateString(date: Date): string {
+	return new Date(date).toISOString().slice(0, 10);
+}
+
+// 按文章 frontmatter.category 分组：每个分类生成一个顶层文件夹，其下是该分类的文章
+const categoryMap = new Map<string, DirectoryArticle[]>();
+
+for (const post of posts) {
+	const slug = removeFileExtension(post.id).replace(/\\/g, "/");
+	const category = post.data.category || "未分类";
+	if (!categoryMap.has(category)) categoryMap.set(category, []);
+	categoryMap.get(category)!.push({
+		type: "article",
+		depth: 1,
+		slug,
+		title: post.data.title || category,
+		url: getPostUrlBySlug(post.id),
+		date: toDateString(post.data.published),
+	});
+}
+
+// 分类文件夹排序（zh-CN），每个分类内文章按 published 日期倒序
+const rows: DirectoryRow[] = [];
+const sortedCategories = [...categoryMap.entries()].sort(([a], [b]) =>
+	a.localeCompare(b, "zh-CN", { numeric: true }),
+);
+
+let folderCounter = 0;
+for (const [name, articles] of sortedCategories) {
+	const sortedArticles = [...articles].sort((a, b) =>
+		b.date.localeCompare(a.date),
+	);
+	rows.push({
+		type: "folder",
+		depth: 0,
+		name,
+		folderId: `folder-${folderCounter++}`,
+		hasCurrent: sortedArticles.some(
+			(a) => a.slug === normalizedCurrentSlug,
+		),
+		icon: getFolderIcon(name),
+	});
+	rows.push(...sortedArticles);
+}
+---
+
+<div
+	class:list={["post-directory-list", className]}
+	data-current-slug={normalizedCurrentSlug}
+>
+	<div class="post-directory-scroll custom-scrollbar">
+		<ul class="post-directory-tree">
+			{rows.map((row) =>
+				row.type === "folder" ? (
+					<li
+						class:list={["pd-folder", { expanded: row.hasCurrent }]}
+						style={`--depth: ${row.depth}`}
+						data-folder-id={row.folderId}
+						data-has-current={String(row.hasCurrent)}
+						tabindex="0"
+					>
+						{row.icon ? (
+						<Icon name={row.icon} class="pd-icon pd-icon-custom" />
+					) : (
+						<span class="pd-icon pd-icon-folder" aria-hidden="true" data-state={row.hasCurrent ? "open" : "closed"}>
+							<Icon name="material-symbols:folder" class="pd-folder-icon-closed" />
+							<Icon name="material-symbols:folder-open" class="pd-folder-icon-open" />
+						</span>
+					)}
+						<span class="pd-name">{row.name}</span>
+					</li>
+				) : (
+					<li
+						class="pd-item"
+						data-depth={row.depth}
+					>
+						<a
+							href={row.url}
+							class:list={[
+								"pd-row pd-link",
+								{ current: row.slug === normalizedCurrentSlug },
+							]}
+							style={`--depth: ${row.depth}`}
+							data-post-slug={row.slug}
+							title={`${row.title} · ${row.date}`}
+						>
+							<Icon name="material-symbols:article-outline" class="pd-icon pd-icon-article" aria-hidden="true" />
+							<span class="pd-title">{row.title}</span>
+							<span class="pd-date">{row.date}</span>
+						</a>
+					</li>
+				)
+			)}
+		</ul>
+	</div>
+</div>
+
+<style>
+	.post-directory-list {
+		min-width: 0;
+	}
+
+	.post-directory-scroll {
+		max-height: calc(100vh - 18rem);
+		overflow-y: auto;
+		padding-right: 0.125rem;
+	}
+
+	.post-directory-tree {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	/* ===== 树线 ===== */
+	.pd-folder,
+	.pd-row {
+		position: relative;
+	}
+
+	.pd-folder::before,
+	.pd-row::before {
+		content: "";
+		position: absolute;
+		top: 0;
+		bottom: 0;
+		left: 0;
+		width: 100%;
+		pointer-events: none;
+	}
+
+	/* 线条颜色 */
+	:root {
+		--tree-line: oklch(0.80 0 0);
+	}
+	:root.dark {
+		--tree-line: oklch(0.35 0 0);
+	}
+
+	/* depth-1 子项：0.5rem 处一条竖线 */
+	.pd-folder[style*="--depth: 1"]::before,
+	.pd-row[style*="--depth: 1"]::before {
+		background:
+			linear-gradient(var(--tree-line), var(--tree-line)) no-repeat
+			0.4rem 0 / 1px 100%;
+	}
+
+	/* depth-2 子项：0.5rem + 0.85rem = 1.35rem 处一条竖线 */
+	.pd-folder[style*="--depth: 2"]::before,
+	.pd-row[style*="--depth: 2"]::before {
+		background:
+			linear-gradient(var(--tree-line), var(--tree-line)) no-repeat
+			1.25rem 0 / 1px 100%;
+	}
+
+	/* depth-3 子项：0.5rem + 0.85rem*2 = 2.2rem 处一条竖线 */
+	.pd-folder[style*="--depth: 3"]::before,
+	.pd-row[style*="--depth: 3"]::before {
+		background:
+			linear-gradient(var(--tree-line), var(--tree-line)) no-repeat
+			2.1rem 0 / 1px 100%;
+	}
+
+	/* ===== 文件夹行 ===== */
+	.pd-folder {
+		--depth: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-height: 2rem;
+		padding: 0.35rem 0.5rem 0.35rem calc(0.5rem + var(--depth) * 0.85rem);
+		border-radius: 0.65rem;
+		line-height: 1.3;
+		color: var(--primary);
+		font-size: 0.78rem;
+		font-weight: 700;
+		opacity: 1;
+		cursor: pointer;
+		user-select: none;
+		transition: background-color 0.15s ease;
+	}
+
+	.pd-folder:hover {
+		background: var(--toc-btn-hover);
+	}
+
+	.pd-icon {
+		width: 1rem;
+		height: 1rem;
+		flex: 0 0 auto;
+		text-align: center;
+		font-size: 0.9rem;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+	}
+
+	/* 文件夹图标：closed / open 切换 */
+	.pd-icon-folder .pd-folder-icon-open {
+		display: none;
+	}
+	.pd-icon-folder .pd-folder-icon-closed {
+		display: block;
+	}
+	.pd-icon-folder[data-state="open"] .pd-folder-icon-open {
+		display: block;
+	}
+	.pd-icon-folder[data-state="open"] .pd-folder-icon-closed {
+		display: none;
+	}
+
+	.pd-icon-custom {
+		width: 1rem;
+		height: 1rem;
+		flex: 0 0 auto;
+		opacity: 0.85;
+	}
+
+	.pd-icon-article {
+		opacity: 0.45;
+	}
+
+	.pd-name {
+		min-width: 0;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	/* ===== 折叠项（由 JS 控制） ===== */
+	.pd-item.collapsed,
+	.pd-folder.collapsed {
+		display: none;
+	}
+
+	/* ===== 文章行 ===== */
+	.pd-row {
+		--depth: 0;
+		display: flex;
+		align-items: center;
+		gap: 0.45rem;
+		min-height: 2rem;
+		padding: 0.35rem 0.5rem 0.35rem calc(0.5rem + var(--depth) * 0.85rem);
+		border-radius: 0.65rem;
+		line-height: 1.3;
+	}
+
+	.pd-link {
+		color: var(--deep-text);
+		opacity: 0.55;
+		text-decoration: none;
+		transition:
+			background-color 0.15s ease,
+			color 0.15s ease,
+			opacity 0.15s ease,
+			transform 0.15s ease;
+	}
+
+	.pd-link:hover {
+		background: var(--toc-btn-hover);
+		color: var(--primary);
+		opacity: 1;
+	}
+
+	.pd-link:active {
+		transform: scale(0.98);
+	}
+
+	.pd-link.current {
+		background: var(--toc-btn-active);
+		color: var(--primary);
+		font-weight: 700;
+		opacity: 1;
+	}
+
+	.pd-title {
+		min-width: 0;
+		flex: 1 1 auto;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+		font-size: 0.82rem;
+	}
+
+	.pd-date {
+		flex: 0 0 auto;
+		font-size: 0.68rem;
+		color: currentColor;
+		opacity: 0.45;
+	}
+
+	@media (max-width: 768px) {
+		.post-directory-scroll {
+			max-height: calc(70vh - 5rem);
+		}
+	}
+</style>
+
+<script is:inline>
+	(function () {
+		function currentPostSlug() {
+			var path = window.location.pathname.replace(/\/+$/, "");
+			var index = path.indexOf("/posts/");
+			if (index < 0) return "";
+			var slug = path.slice(index + 7).replace(/^\/+|\/+$/g, "");
+			try { return decodeURIComponent(slug); } catch (_) { return slug; }
+		}
+
+		/**
+		 * 递归收起文件夹及其所有后代
+		 * 用于展开父文件夹时，确保子文件夹的内容保持隐藏
+		 */
+		function collapseDescendants(folder) {
+			var depth = parseInt(folder.style.getPropertyValue("--depth")) || 0;
+			var el = folder.nextElementSibling;
+			while (el) {
+				if (el.classList.contains("pd-folder")) {
+					var elDepth = parseInt(el.style.getPropertyValue("--depth")) || 0;
+					if (elDepth <= depth) break;
+					if (elDepth === depth + 1) {
+						el.classList.add("collapsed");
+						el.classList.remove("expanded");
+						var childIcon = el.querySelector(".pd-icon-folder");
+						if (childIcon) childIcon.setAttribute("data-state", "closed");
+						collapseDescendants(el);
+					}
+				}
+				if (el.classList.contains("pd-item")) {
+					el.classList.add("collapsed");
+				}
+				el = el.nextElementSibling;
+			}
+		}
+
+		/**
+		 * 切换文件夹展开/收起
+		 * 展开时：显示直接子项（文章 + 子文件夹头部），但递归收起子文件夹的后代
+		 * 收起时：隐藏所有后代（文章 + 子文件夹及其内容）
+		 */
+		function toggleFolder(folder, expand) {
+			var depth = parseInt(folder.style.getPropertyValue("--depth")) || 0;
+			var el = folder.nextElementSibling;
+			while (el) {
+				if (el.classList.contains("pd-folder")) {
+					var elDepth = parseInt(el.style.getPropertyValue("--depth")) || 0;
+					if (elDepth <= depth) break;
+					if (elDepth === depth + 1) {
+						if (expand) {
+							el.classList.remove("collapsed");
+							collapseDescendants(el);
+						} else {
+							el.classList.add("collapsed");
+							el.classList.remove("expanded");
+						}
+					}
+				} else if (el.classList.contains("pd-item")) {
+					var itemDepth = parseInt(el.getAttribute("data-depth")) || 0;
+					if (itemDepth === depth + 1) {
+						el.classList.toggle("collapsed", !expand);
+					}
+				}
+				el = el.nextElementSibling;
+			}
+			folder.classList.toggle("expanded", expand);
+			// 切换文件夹图标状态
+			var iconEl = folder.querySelector(".pd-icon-folder");
+			if (iconEl) {
+				iconEl.setAttribute("data-state", expand ? "open" : "closed");
+			}
+		}
+
+		/* 手风琴：点击文件夹 */
+		function bindAccordion(root) {
+			root.querySelectorAll(".pd-folder").forEach(function (folder) {
+				if (folder._accordionBound) return;
+				folder._accordionBound = true;
+
+				folder.addEventListener("click", function () {
+					var isExpanding = !folder.classList.contains("expanded");
+
+					if (isExpanding) {
+						// 先收起同级其他已展开的文件夹（手风琴效果）
+						var depth = parseInt(folder.style.getPropertyValue("--depth")) || 0;
+						var prev = folder.previousElementSibling;
+						while (prev) {
+							if (prev.classList.contains("pd-folder")) {
+								var prevDepth = parseInt(prev.style.getPropertyValue("--depth")) || 0;
+								if (prevDepth < depth) break;
+								if (prevDepth === depth && prev.classList.contains("expanded")) {
+									toggleFolder(prev, false);
+								}
+							}
+							prev = prev.previousElementSibling;
+						}
+						var next = folder.nextElementSibling;
+						while (next) {
+							if (next.classList.contains("pd-folder")) {
+								var nextDepth = parseInt(next.style.getPropertyValue("--depth")) || 0;
+								if (nextDepth < depth) break;
+								if (nextDepth === depth && next.classList.contains("expanded")) {
+									toggleFolder(next, false);
+								}
+							}
+							next = next.nextElementSibling;
+						}
+					}
+
+					toggleFolder(folder, isExpanding);
+				});
+
+				folder.addEventListener("keydown", function (e) {
+					if (e.key === "Enter" || e.key === " ") {
+						e.preventDefault();
+						folder.click();
+					}
+				});
+			});
+		}
+
+		/* 初始化文件夹状态：默认收起所有文件夹，只展开当前文章的祖先链 */
+		function initFolderStates(root) {
+			root.querySelectorAll(".pd-folder").forEach(function (folder) {
+				toggleFolder(folder, false);
+			});
+			var current = root.querySelector(".pd-link.current");
+			if (!current) return;
+			var item = current.closest(".pd-item");
+			if (!item) return;
+			expandAncestors(item);
+		}
+
+		/**
+		 * 展开当前文章的祖先文件夹链
+		 * 逐级向上查找：先找直接父文件夹（depth = itemDepth - 1），
+		 * 再从父文件夹位置向上找祖父文件夹（depth = itemDepth - 2），以此类推
+		 */
+		function expandAncestors(item) {
+			var itemDepth = parseInt(item.getAttribute("data-depth")) || 0;
+			if (itemDepth <= 0) return;
+			var targetDepth = itemDepth - 1;
+			var cursor = item.previousElementSibling;
+			while (cursor && targetDepth >= 0) {
+				if (cursor.classList.contains("pd-folder")) {
+					var d = parseInt(cursor.style.getPropertyValue("--depth")) || 0;
+					if (d < targetDepth) {
+						// 深度不够，说明这个层级没有文件夹，跳到更浅的层级
+						targetDepth = d - 1;
+						continue;
+					}
+					if (d === targetDepth) {
+						if (!cursor.classList.contains("expanded")) {
+							toggleFolder(cursor, true);
+						}
+						targetDepth--;
+					}
+				}
+				cursor = cursor.previousElementSibling;
+			}
+		}
+
+		/* 高亮当前文章 */
+		function updatePostDirectories() {
+			var slug = currentPostSlug();
+			document.querySelectorAll(".post-directory-list").forEach(function (root) {
+				bindAccordion(root);
+
+				// 清除旧高亮
+				root.querySelectorAll(".pd-link.current").forEach(function (link) {
+					link.classList.remove("current");
+				});
+
+				// 初始化文件夹状态
+				initFolderStates(root);
+
+				if (!slug) return;
+
+				var current = root.querySelector(
+					'.pd-link[data-post-slug="' + CSS.escape(slug) + '"]',
+				);
+				if (!current) return;
+
+				current.classList.add("current");
+
+				// 确保当前文章所在文件夹链全部展开
+				var item = current.closest(".pd-item");
+				if (item) {
+					expandAncestors(item);
+				}
+
+				// 滚动到当前文章
+				var scroll = root.querySelector(".post-directory-scroll");
+				if (scroll) {
+					var top = current.offsetTop - scroll.clientHeight / 2 + current.clientHeight / 2;
+					scroll.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+				}
+			});
+		}
+
+		window.fireflyUpdatePostDirectories = updatePostDirectories;
+
+		if (!window.__fireflyPostDirectoryBound) {
+			window.__fireflyPostDirectoryBound = true;
+			document.addEventListener("astro:page-load", function () {
+				setTimeout(updatePostDirectories, 60);
+			});
+			document.addEventListener("swup:content:replaced", function () {
+				setTimeout(updatePostDirectories, 60);
+			});
+			window.addEventListener("popstate", function () {
+				setTimeout(updatePostDirectories, 60);
+			});
+		}
+
+		if (document.readyState === "loading") {
+			document.addEventListener("DOMContentLoaded", updatePostDirectories, { once: true });
+		} else {
+			setTimeout(updatePostDirectories, 0);
+		}
+	})();
+</script>
