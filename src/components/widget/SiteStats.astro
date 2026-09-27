@@ -1,0 +1,226 @@
+---
+import { getCollection } from "astro:content";
+import { Icon } from "astro-icon/components";
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import { siteConfig } from "@/config";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import type { WidgetComponentConfig } from "@/types/config";
+import {
+	getCategoryList,
+	getSortedPosts,
+	getTagList,
+} from "@/utils/content-utils";
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+
+const { class: className, style, widgetConfig } = Astro.props;
+
+const showTitle = widgetConfig?.showTitle !== false;
+
+// 站点统计组件专属配置：false 即隐藏对应统计项（缺省全部显示）
+const statsCfg = widgetConfig?.specificConfig?.stats;
+const showStat = (key: string) => (statsCfg ? statsCfg[key] !== false : true);
+
+// 从配置中获取站点开始日期
+const siteStartDate = siteConfig.siteStartDate || "2025-01-01";
+
+// 获取所有文章
+const posts = await getSortedPosts();
+const categories = await getCategoryList();
+const tags = await getTagList();
+
+// 统计全站正文总字数：src/content 下所有集合的 md 正文（文章/笔记本/规划/足迹/关于/友链/相册等）
+const contentCollections = [
+	"posts",
+	"spec",
+	"bangumi",
+	"notebooks",
+	"routines",
+	"travel",
+	"website",
+	"changelog",
+	"friends",
+	"gallery",
+] as const;
+const allContentEntries = (await Promise.all(contentCollections.map((c) => getCollection(c)))).flat();
+
+// 计算总字数
+let totalWords = 0;
+for (const entry of allContentEntries) {
+	if (entry.body) {
+		// 移除代码块和内联代码后计算字数
+		let text = entry.body
+			.replace(/```[\s\S]*?```/g, "") // 移除代码块
+			.replace(/`[^`]*`/g, "") // 移除内联代码
+			.replace(/\s+/g, " ") // 合并空白
+			.trim();
+
+		// 分别计算中文字符和英文字符
+		const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
+		const englishChars = text.match(/[a-zA-Z]/g) || [];
+
+		totalWords += chineseChars.length + englishChars.length;
+	}
+}
+
+// 格式化数字（添加千位分隔符）
+function formatNumber(num: number): string {
+	return num.toLocaleString();
+}
+
+// 「最后活动」时间：遍历全站所有内容，取各条目日期字段（published/updated/date）的最大值。
+// 这样任何 content 集合新建或修改（更新日期字段）都会刷新该统计，而不只依赖文章。
+const activityDateKeys = ["published", "updated", "date"] as const;
+let lastActivityDate: Date | null = null;
+for (const entry of allContentEntries) {
+	for (const key of activityDateKeys) {
+		const v = entry.data[key];
+		if (v instanceof Date && (!lastActivityDate || v > lastActivityDate)) {
+			lastActivityDate = v;
+		}
+	}
+}
+
+const lastPostDate = lastActivityDate ? lastActivityDate.toISOString() : null;
+
+const todayText = i18n(I18nKey.today);
+
+const stats = [
+	{
+		key: "showPostCount",
+		icon: "material-symbols:article-outline",
+		label: i18n(I18nKey.siteStatsPostCount),
+		value: posts.length,
+	},
+	{
+		key: "showCategoryCount",
+		icon: "material-symbols:folder-outline",
+		label: i18n(I18nKey.siteStatsCategoryCount),
+		value: categories.length,
+	},
+	{
+		key: "showTagCount",
+		icon: "material-symbols:label-outline",
+		label: i18n(I18nKey.siteStatsTagCount),
+		value: tags.length,
+	},
+	{
+		key: "showTotalWords",
+		icon: "material-symbols:text-ad-outline-rounded",
+		label: i18n(I18nKey.siteStatsTotalWords),
+		value: totalWords,
+		formatted: true,
+	},
+	{
+		key: "showRunningDays",
+		icon: "material-symbols:calendar-clock-outline",
+		label: i18n(I18nKey.siteStatsRunningDays),
+		value: "--", // 将由客户端以 "1年2月3日" 形式更新
+		dynamic: true,
+		id: "running-days",
+	},
+	{
+		key: "showLastUpdate",
+		icon: "mingcute:heartbeat-line",
+		label: i18n(I18nKey.siteStatsLastUpdate),
+		value: 0, // 将由客户端更新
+		suffix: i18n(I18nKey.siteStatsDaysAgo).replace("{days}", ""),
+		dynamic: true,
+		id: "last-update",
+	},
+].filter((s) => showStat(s.key));
+---
+
+<WidgetLayout name={i18n(I18nKey.siteStats)} showTitle={showTitle} id="site-stats" class={className} style={style}>
+  <div class="flex flex-col gap-2">
+    {stats.map((stat) => (
+      <div class="flex items-center justify-between px-3 py-1.5">
+        <div class="flex items-center gap-2.5">
+          <div class="text-(--primary) text-xl">
+            <Icon is:inline name={stat.icon} />
+          </div>
+          <span class="text-neutral-700 dark:text-neutral-300 font-medium text-sm">
+            {stat.label}
+          </span>
+        </div>
+        <div class="flex items-center">
+          <span 
+            class="text-base font-bold text-neutral-900 dark:text-neutral-100"
+            data-stat-id={stat.id}
+          >
+            {stat.formatted ? formatNumber(stat.value) : stat.value}
+          </span>
+          {stat.suffix && (
+            <span class="text-sm text-neutral-500 dark:text-neutral-400 ml-1">
+              {stat.suffix}
+            </span>
+          )}
+        </div>
+      </div>
+    ))}
+  </div>
+</WidgetLayout>
+
+<script is:inline define:vars={{ siteStartDate, lastPostDate, todayText }}>
+  function updateDynamicStats() {
+    const today = new Date();
+
+    // 将天数折算为 年/月/日 组合，规则：年>0 加"X年"，月>0 加"X月"，日>0 加"X日"
+    function formatDuration(totalDays) {
+      const years = Math.floor(totalDays / 365);
+      const rem = totalDays % 365;
+      const months = Math.floor(rem / 30);
+      const days = rem % 30;
+      let s = "";
+      if (years > 0) s += years + "年";
+      if (months > 0) s += months + "月";
+      s += days + "日";
+      return s;
+    }
+
+    // 更新运行时长（年月日）
+    const startDate = new Date(siteStartDate);
+    const diffTime = Math.abs(today.getTime() - startDate.getTime());
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+    const runningDaysElements = document.querySelectorAll('[data-stat-id="running-days"]');
+    runningDaysElements.forEach((element) => {
+      element.textContent = formatDuration(diffDays);
+    });
+
+    // 更新最后活动时间
+    if (lastPostDate) {
+      const lastPost = new Date(lastPostDate);
+      const timeSinceLastPost = Math.abs(today.getTime() - lastPost.getTime());
+      const daysSinceLastUpdate = Math.floor(timeSinceLastPost / (1000 * 60 * 60 * 24));
+
+      const lastUpdateElements = document.querySelectorAll('[data-stat-id="last-update"]');
+      lastUpdateElements.forEach((element) => {
+        if (daysSinceLastUpdate === 0) {
+          element.textContent = todayText;
+          if (element.nextElementSibling) {
+            element.nextElementSibling.style.display = 'none';
+          }
+        } else {
+          element.textContent = daysSinceLastUpdate.toString();
+          if (element.nextElementSibling) {
+            element.nextElementSibling.style.display = '';
+          }
+        }
+      });
+    }
+  }
+
+  // 页面加载时更新
+  updateDynamicStats();
+
+  // 页面切换时重新更新
+  document.addEventListener("swup:contentReplaced", () => {
+    setTimeout(updateDynamicStats, 100);
+  });
+</script>
