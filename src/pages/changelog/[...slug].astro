@@ -1,0 +1,130 @@
+---
+import { getCollection, render } from "astro:content";
+import { Icon } from "astro-icon/components";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import { siteConfig } from "@/config";
+import { removeFileExtension } from "@/utils/url-utils";
+import Markdown from "@/components/common/Markdown.astro";
+
+if (!siteConfig.pages.changelog) {
+	return Astro.redirect("/404/");
+}
+
+export async function getStaticPaths() {
+	const entries = await getCollection("changelog");
+	return entries.map((entry) => ({
+		params: { slug: removeFileExtension(entry.id) },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+// 解析作者手选的相关日志（按文件名 id 或 version 匹配）
+const allEntries = await getCollection("changelog");
+const relatedEntries = (entry.data.related ?? [])
+	.map((r) => allEntries.find((x) => x.id === r || x.data.version === r))
+	.filter((x): x is NonNullable<typeof x> => !!x);
+
+const typeConfig = {
+	feature: {
+		label: i18n(I18nKey.changelogFeature),
+		icon: "material-symbols:rocket-launch",
+		color: "bg-blue-500",
+	},
+	improvement: {
+		label: i18n(I18nKey.changelogImprovement),
+		icon: "material-symbols:build",
+		color: "bg-green-500",
+	},
+	fix: {
+		label: i18n(I18nKey.changelogFix),
+		icon: "material-symbols:bug-report",
+		color: "bg-red-500",
+	},
+	removal: {
+		label: i18n(I18nKey.changelogRemoval),
+		icon: "material-symbols:delete",
+		color: "bg-gray-500",
+	},
+};
+
+const typeInfo = typeConfig[entry.data.type] || typeConfig.improvement;
+const dateStr = entry.data.date.toISOString().slice(0, 10);
+---
+
+<MainGridLayout
+	title={`${entry.data.version} - 更新日志`}
+	description={entry.data.description}
+>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
+		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<div class="onload-animation">
+				<div class="flex items-center gap-3 mb-4">
+					<div class={`w-10 h-10 rounded-xl ${typeInfo.color} flex items-center justify-center`}>
+						<Icon name={typeInfo.icon} class="text-white text-lg" />
+					</div>
+					<div>
+						<h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-2xl font-bold text-(--deep-text)">
+							{entry.data.version}
+						</h1>
+						<p class="text-sm text-(--content-meta)">
+							{dateStr}{entry.data.time ? " · " + entry.data.time : ""}
+						</p>
+					</div>
+				</div>
+
+				<div class="flex flex-wrap gap-2 mb-6">
+					<span class={`px-3 py-1 rounded-full text-xs font-medium text-white ${typeInfo.color}`}>
+						{typeInfo.label}
+					</span>
+				</div>
+
+				<div class="bg-(--card-bg) p-4 rounded-xl border border-(--line-divider) mb-6">
+					<h3 class="text-sm font-semibold text-(--deep-text) mb-2">更新内容</h3>
+					<p class="text-sm text-(--content-meta) leading-relaxed">{entry.data.description}</p>
+				</div>
+
+				{entry.body && (
+					<Markdown class="mb-6"><Content /></Markdown>
+				)}
+
+				{relatedEntries.length > 0 && (
+					<div class="mb-6">
+						<h3 class="text-sm font-semibold text-(--deep-text) mb-3">相关更新</h3>
+						<div class="flex flex-wrap gap-2">
+							{relatedEntries.map((rel) => {
+								const relType = typeConfig[rel.data.type] || typeConfig.improvement;
+								return (
+									<a
+										href={`/changelog/${rel.id}/`}
+										class:list={[
+											"inline-flex items-center gap-2 px-3 py-1.5 rounded-full text-xs font-medium",
+											"bg-(--btn-regular-bg) text-(--deep-text) hover:opacity-80 transition-opacity",
+										]}
+									>
+										<span class={`w-2 h-2 rounded-full ${relType.color}`} />
+										{rel.data.version || rel.id}
+									</a>
+								);
+							})}
+						</div>
+					</div>
+				)}
+
+				<div class="mt-6 flex items-center gap-4">
+					<a
+						href="/changelog/"
+						class="flex items-center gap-2 text-sm text-(--content-meta) hover:text-(--primary) transition-colors"
+					>
+						<Icon name="material-symbols:arrow-back" class="w-4 h-4" />
+						{i18n(I18nKey.back)}
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
