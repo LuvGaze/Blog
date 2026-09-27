@@ -1,0 +1,50 @@
+---
+interface Milestone {
+	date: string;
+	title: string;
+	desc: string;
+	tag?: string;
+}
+
+const milestones: Milestone[] = [
+	{
+		date: "2026.06",
+		title: "博客诞生",
+		desc: "Fork Firefly 模板，开始属于 LuvGaze 的小窝搭建。",
+		tag: "起点",
+	},
+	{
+		date: "2026.07",
+		title: "多页面项目上线",
+		desc: "新增相册与足迹等，生活记录不再只是文字。",
+	},
+	{
+		date: "2026.08",
+		title: "音乐、相册等重构",
+		desc: "本地音乐、相册与多集合内容全面成型。",
+	},
+	{
+		date: "2026.09",
+		title: "持续打磨中",
+		desc: "首页多层动效、交互细节与内容生态仍在不断迭代。",
+	},
+];
+---
+
+<section class="about-timeline" aria-label="站点更新时间线">
+	<ol class="about-timeline__list">
+		{milestones.map((milestone, index) => (
+			<li class="about-timeline__item" style={`--i: ${index};`}>
+				<span class="about-timeline__date">{milestone.date}</span>
+				<span class="about-timeline__rail" aria-hidden="true"><span class="about-timeline__dot"></span></span>
+				<div class="about-timeline__card">
+					<div class="about-timeline__card-head">
+						<span class="about-timeline__title">{milestone.title}</span>
+						{milestone.tag && <span class="about-timeline__tag">{milestone.tag}</span>}
+					</div>
+					<p class="about-timeline__desc">{milestone.desc}</p>
+				</div>
+			</li>
+		))}
+	</ol>
+</section>
