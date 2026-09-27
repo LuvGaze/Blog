@@ -1,0 +1,16 @@
+---
+import { getCollection } from "astro:content";
+import BangumiDetail from "@/components/pages/bangumi/BangumiDetail.astro";
+
+export async function getStaticPaths() {
+	const allEntries = await getCollection("bangumi");
+	return allEntries.map((entry) => ({
+		params: { slug: entry.id.replace(/\\/g, "/").replace(/\.md$/, "") },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+---
+
+<BangumiDetail entry={entry} />
