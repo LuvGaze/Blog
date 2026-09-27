@@ -1,0 +1,331 @@
+/* ============================================
+   导航栏 — 悬浮胶囊三段式（复刻「参考模板」）
+   左段（logo+标题→球）、中段（紧凑导航，带滑动高亮胶囊，滚动不变）、
+   右段（音乐/背景播放/显示设置/深浅色/菜单，滚动保持展开贴右）
+   ============================================ */
+
+@reference "tailwindcss";
+
+/* ── 三段式容器 ── */
+.navbar-segments {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-height: 2.75rem;
+    margin-inline: auto;
+    position: relative;
+}
+
+/* ── 椭圆段通用样式：微透明白色背景（Apple 风格） ── */
+.navbar-seg {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    border-radius: 9999px;
+    padding: 0.25rem 0.5rem;
+    background: color-mix(in oklch, var(--float-panel-bg) 92%, transparent);
+    border: none;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+    will-change: max-width, padding, border-radius, left, transform;
+    transform: translateZ(0);
+    -webkit-transform: translateZ(0);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+    transition: max-width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    width 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    height 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    padding 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    border-radius 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    left 0.4s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+:root.dark .navbar-seg {
+    background: color-mix(in oklch, var(--float-panel-bg) 90%, transparent);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 左段：默认贴最左 */
+.navbar-seg--left {
+    position: absolute;
+    left: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    justify-content: flex-start;
+}
+
+/* 中段：绝对定位居中，永远不受左右段宽度变化影响 */
+.navbar-seg--center {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    justify-content: center;
+    z-index: 20;
+    transition: padding 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 右段：默认贴最右 */
+.navbar-seg--right {
+    position: absolute;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    justify-content: flex-end;
+    gap: 0.25rem;
+}
+
+/* 移动端：中段隐藏，左右段恢复 flex 排列 */
+@media (max-width: 1023px) {
+    .navbar-segments {
+        justify-content: space-between;
+    }
+
+    .navbar-seg--left,
+    .navbar-seg--right {
+        position: relative;
+        left: auto;
+        right: auto;
+        top: auto;
+        transform: none;
+    }
+
+    .navbar-seg--center {
+        display: none;
+    }
+}
+
+/* ── Logo ── */
+.navbar-logo {
+    display: flex;
+    align-items: center;
+    height: 2.25rem;
+    padding: 0 0.25rem;
+    font-weight: 600;
+    position: relative;
+    z-index: 10;
+    text-decoration: none;
+    color: var(--deep-text);
+}
+
+.navbar-logo::before {
+    background-color: transparent !important;
+    scale: 0.85;
+}
+
+.navbar-logo:hover::before {
+    background-color: transparent !important;
+}
+
+/* logo 文字：滚动后淡出收缩（左段成球） */
+.navbar-logo-text {
+    display: inline-block;
+    max-width: 12rem;
+    overflow: hidden;
+    white-space: nowrap;
+    opacity: 1;
+    transform: translateX(0);
+    will-change: opacity, transform, max-width;
+    transition: opacity 0.3s cubic-bezier(0.4, 0, 0.2, 1),
+    transform 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    max-width 0.35s cubic-bezier(0.4, 0, 0.2, 1),
+    margin 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+#navbar.scrolled .navbar-seg--left {
+    width: 2.25rem;
+    min-width: 2.25rem;
+    max-width: 2.25rem;
+    height: 2.25rem;
+    min-height: 2.25rem;
+    max-height: 2.25rem;
+    padding: 0;
+    border-radius: 9999px;
+    overflow: hidden;
+}
+
+#navbar.scrolled .navbar-logo-text {
+    max-width: 0;
+    opacity: 0;
+    transform: translateX(-6px);
+    margin-left: 0 !important;
+}
+
+#navbar.scrolled .navbar-logo {
+    padding: 0;
+    width: 100%;
+    justify-content: center;
+}
+
+/* ── 中段导航菜单（滚动不变） ── */
+.navbar-nav {
+    display: flex;
+    align-items: center;
+    gap: 0.125rem;
+    white-space: nowrap;
+    position: relative;
+}
+
+/* ── 右段：操作按钮（滚动保持展开，仅收紧内边距） ── */
+.navbar-seg--right .btn-plain {
+    background-color: transparent !important;
+}
+
+.navbar-seg--right .btn-plain::before {
+    background-color: transparent !important;
+    scale: 0.85;
+}
+
+.navbar-seg--right .btn-plain:hover::before {
+    background-color: transparent !important;
+}
+
+#navbar.scrolled .navbar-seg--right {
+    padding: 0.25rem;
+}
+
+/* 移动端：滚动收缩不触发（左右段保持展开） */
+@media (max-width: 1023px) {
+    #navbar.scrolled .navbar-seg--left,
+    #navbar.scrolled .navbar-seg--right {
+        width: auto;
+        min-width: auto;
+        max-width: none;
+        height: auto;
+        min-height: auto;
+        max-height: none;
+        padding: 0.25rem 0.5rem;
+    }
+
+    #navbar.scrolled .navbar-logo-text {
+        max-width: 12rem;
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    #navbar.scrolled .navbar-logo {
+        padding: 0 0.25rem;
+        width: auto;
+    }
+
+    #navbar.scrolled .navbar-segments {
+        justify-content: space-between;
+    }
+}
+
+/* ── hover 滑动高亮指示器（无边框，纯背景） ── */
+.navbar-hover-highlight {
+    position: absolute;
+    height: 2.25rem;
+    border-radius: 9999px;
+    border: none;
+    background-color: color-mix(in oklch, var(--deep-text) 8%, transparent);
+    opacity: 0;
+    transition: left 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    width 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    height 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    top 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    opacity 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+    background-color 0.25s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* 选中态：更深一层背景 */
+.navbar-nav.nav-has-active .navbar-hover-highlight {
+    background-color: color-mix(in oklch, var(--deep-text) 12%, transparent);
+}
+
+.navbar-nav:hover .navbar-hover-highlight,
+.navbar-nav.nav-has-active .navbar-hover-highlight {
+    opacity: 1;
+}
+
+/* 禁用中段导航链接自身的背景/hover 背景（交给滑动高亮胶囊） */
+.navbar-nav .dropdown-container > a,
+.navbar-nav .dropdown-container > button,
+.navbar-nav .dropdown-container > a::before,
+.navbar-nav .dropdown-container > button::before {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+.navbar-nav .dropdown-container > a:hover,
+.navbar-nav .dropdown-container > button:hover,
+.navbar-nav .dropdown-container > a:hover::before,
+.navbar-nav .dropdown-container > button:hover::before {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+.navbar-nav .dropdown-container > a:active,
+.navbar-nav .dropdown-container > button:active,
+.navbar-nav .dropdown-container > a:active::before,
+.navbar-nav .dropdown-container > button:active::before {
+    background-color: transparent !important;
+    background: transparent !important;
+}
+
+/* 禁用中段导航链接的下划线 hover 效果（原 DropdownMenu 的 ::after 下划线仅在非胶囊处生效） */
+.navbar-seg--center .navbar-link-item .navbar-link-text::after {
+    display: none !important;
+}
+
+/* 中段链接文字颜色跟随主题（保持可读） */
+.navbar-seg--center .navbar-link-item .navbar-link-text {
+    color: var(--deep-text);
+}
+
+.navbar-seg--center .navbar-link-item:hover .navbar-link-text,
+.navbar-seg--center .navbar-link-item .navlink-active,
+.navbar-seg--center .dropdown-trigger-link.navlink-active {
+    color: var(--primary);
+}
+
+/* ============================================
+ * navbar-wrapper：滚动后背景变透明（与整条横条时代一致）
+ * ============================================ */
+#navbar-wrapper {
+    will-change: background-color;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+}
+
+#navbar.scrolled ~ #navbar-wrapper,
+#navbar-wrapper.navbar-scrolled {
+    background-color: transparent !important;
+}
+
+/* ============================================
+ * 顶栏自动隐藏（下滚隐藏、上滚显现）不改变胶囊自身边框/阴影
+ * ============================================ */
+#navbar-wrapper.navbar-hidden {
+    box-shadow: none;
+}
+
+/* 调整下拉菜单和浮动面板的背景透明度 */
+/* 亮色主题 */
+.dropdown-content,
+.float-panel {
+    background: rgba(255, 255, 255, 0.95) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 暗色主题 */
+:root.dark .dropdown-content,
+:root.dark .float-panel {
+    background: rgba(23, 23, 23, 0.95) !important;
+    box-shadow: var(--shadow-md) !important;
+    border: 1px solid rgba(255, 255, 255, 0.1) !important;
+}
+
+/* ============================================
+ * 小于1280px时隐藏导航栏菜单图标
+ * ============================================ */
+@media (max-width: 1279px) {
+    .navbar-icon {
+        display: none !important;
+    }
+}
