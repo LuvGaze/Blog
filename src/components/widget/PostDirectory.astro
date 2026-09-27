@@ -1,0 +1,21 @@
+---
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import PostDirectoryList from "@/components/widget/PostDirectoryList.astro";
+
+interface Props {
+	currentSlug?: string;
+	class?: string;
+	style?: string;
+}
+
+const { currentSlug = "", class: className, style } = Astro.props;
+---
+
+<WidgetLayout
+	name="全部文章"
+	id="post-directory"
+	class={className}
+	style={style}
+>
+	<PostDirectoryList currentSlug={currentSlug} />
+</WidgetLayout>
