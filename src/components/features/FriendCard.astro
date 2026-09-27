@@ -1,0 +1,90 @@
+---
+export interface Props {
+	title: string;
+	href: string;
+	imgurl: string;
+	desc: string;
+	screenshot?: string;
+	host?: string;
+}
+
+const { title, href, imgurl, desc, screenshot, host = "" } = Astro.props;
+
+// 头像加载失败 / 骨架占位使用的首字
+const initial = title.trim().slice(0, 1);
+---
+
+<div
+  class={"friend-card" + (screenshot ? "" : " friend-card--no-shot")}
+  role="link"
+  tabindex="0"
+  data-href={href}
+  data-siteurl={href}
+  data-title={title}
+  data-screenshot={screenshot || undefined}
+  title={desc}
+>
+  {/* 鼠标跟随光晕 */}
+  <div class="friend-card-glow" aria-hidden="true"></div>
+
+  {/* 整卡背景：站点截图，下缘白色渐变遮罩渐隐（无截图时不渲染此层）。
+      加载失败/图片不存在时隐藏该层并退回纯头像卡（--no-shot 布局） */}
+  {screenshot && (
+    <div class="friend-siteshot" aria-hidden="true" data-friend-siteshot>
+      <img
+        src={screenshot}
+        alt=""
+        loading="lazy"
+        on:error={(e) => {
+          const img = e.currentTarget;
+          const card = img.closest(".friend-card") as HTMLElement | null;
+          const layer = img.closest("[data-friend-siteshot]") as HTMLElement | null;
+          if (card) {
+            card.classList.add("friend-card--no-shot");
+            card.removeAttribute("data-screenshot");
+          }
+          if (layer) layer.remove();
+        }}
+      />
+    </div>
+  )}
+
+  <div class="friend-body">
+    {/* 头像 + 名字 + 域名：叠在截图渐隐区（无截图时移到顶部） */}
+    <div class="friend-main">
+      {/* 头像（沿用 data-src 懒加载 + 涂鸦 fallback 机制） */}
+      <div class="friend-avatar-wrap">
+        <div class="friend-card-avatar" data-initial={initial}>
+          <span class="friend-card-avatar__face" aria-hidden="true"></span>
+          <img
+            alt={title}
+            class="friend-card-avatar__img"
+            data-src={imgurl}
+          />
+        </div>
+        <a
+          class="friend-avatar-overlay"
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          aria-label={title}
+        >
+          <span class="friend-avatar-overlay__icon" aria-hidden="true">↗</span>
+        </a>
+      </div>
+      <div class="friend-name-wrap">
+        <span class="friend-name">{title}</span>
+        {host && <span class="friend-host">{host}</span>}
+      </div>
+    </div>
+
+    {/* 描述：底部黑字，无框（参考站同款） */}
+    <p class="friend-desc">{desc}</p>
+
+    {/* 访问状态徽标：页面 JS 注入，无数据时隐藏 */}
+    <span class="friend-status-tag" data-siteurl={href} hidden>
+      <span class="friend-status-dot" aria-hidden="true"></span>
+      <span class="friend-status-text"></span>
+    </span>
+  </div>
+</div>
