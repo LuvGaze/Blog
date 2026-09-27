@@ -1,0 +1,100 @@
+---
+import { getCollection, render } from "astro:content";
+import { Icon } from "astro-icon/components";
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
+import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import Markdown from "@/components/common/Markdown.astro";
+
+export async function getStaticPaths() {
+	const entries = await getCollection("travel", ({ id }) => 
+		!id.toLowerCase().includes("readme")
+	);
+	return entries.map((entry) => ({
+		params: { slug: entry.id.replace(/\.md$/, "") },
+		props: { entry },
+	}));
+}
+
+const { entry } = Astro.props;
+const { Content } = await render(entry);
+
+const dateStr = entry.data.date instanceof Date 
+	? entry.data.date.toISOString().split("T")[0] 
+	: typeof entry.data.date === "string" 
+		? entry.data.date 
+		: "";
+---
+
+<MainGridLayout
+	title={`${entry.data.province || "未知"}${entry.data.city ? " · " + entry.data.city : ""}`}
+	description={entry.data.city || entry.data.province || ""}
+>
+	<div class="flex w-full rounded-(--radius-large) overflow-hidden relative mb-4">
+		<div data-pagefind-body class="card-base z-10 px-6 pt-8 pb-8 relative w-full">
+			<div class="onload-animation">
+				<div class="flex items-center gap-3 mb-4">
+					<div class="w-10 h-10 rounded-xl bg-(--primary) flex items-center justify-center">
+						<Icon name="material-symbols:location-city" class="text-white text-lg" />
+					</div>
+					<div>
+						<h1 data-pagefind-meta="title" data-pagefind-weight="10" class="text-2xl font-bold text-(--deep-text)">
+							{entry.data.province || "未知省份"}
+						</h1>
+						{entry.data.city && (
+							<p class="text-sm text-(--content-meta)">{entry.data.city}{entry.data.district ? " · " + entry.data.district : ""}</p>
+						)}
+					</div>
+				</div>
+
+				<div class="flex flex-wrap gap-3 mb-6">
+					<div class="stat-pill">
+						<Icon name="material-symbols:pin-drop" class="text-sm" />
+						<span class="font-semibold text-(--deep-text)">{entry.data.visitCount || 1}</span>
+						<span class="text-(--content-meta)">到访次数</span>
+					</div>
+					{dateStr && (
+						<div class="stat-pill">
+							<Icon name="material-symbols:calendar-today" class="text-sm" />
+							<span class="text-(--content-meta)">{dateStr}</span>
+						</div>
+					)}
+				</div>
+
+				{entry.body && (
+					<Markdown class="mb-6">
+						<Content />
+					</Markdown>
+				)}
+
+				<div class="mt-6 flex items-center gap-4">
+					<a
+						href="/travel/"
+						class="flex items-center gap-2 text-sm text-(--content-meta) hover:text-(--primary) transition-colors"
+					>
+						<Icon name="material-symbols:arrow-back" class="w-4 h-4" />
+						返回足迹
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</MainGridLayout>
+
+<style>
+	.stat-pill {
+		display: inline-flex;
+		align-items: center;
+		gap: 6px;
+		padding: 6px 14px;
+		border: 1px solid var(--line-divider);
+		border-radius: 50px;
+		font-size: 13px;
+		color: var(--deep-text);
+		background: var(--card-bg);
+	}
+
+	.stat-pill :global(svg) {
+		color: var(--primary);
+	}
+</style>
