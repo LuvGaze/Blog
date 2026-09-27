@@ -36,5 +36,5 @@ pnpm-debug.log*
 /.idea/
 *.iml
 .DS_Store
-/list.txt
-/1.py
+/.github/list.txt
+/.github/一键提交git.py
