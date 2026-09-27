@@ -36,3 +36,5 @@ pnpm-debug.log*
 /.idea/
 *.iml
 .DS_Store
+/list.txt
+/1.py
