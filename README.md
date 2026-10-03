@@ -62,13 +62,6 @@ flowchart LR
     admin["🖥️ admin 后台 · Express"] -. "可视化读写" .-> L1
 ```
 
-<div align="center">
-
-![博客架构 · 一只喵⁹ / LuvGaze](https://mermaid.ink/img/Zmxvd2NoYXJ0IExSCiAgICBoZHJbIvCfkL4g5LiA5Y-q5Za14oG5IMK3IEx1dkdhemUiXSAtLS0gTDEKICAgIHN1YmdyYXBoIEwxWyLwn5OEIOWGheWuueWxgiDCtyBNYXJrZG93biAvIFlBTUwiXQogICAgICAgIGRpcmVjdGlvbiBUQgogICAgICAgIHBvc3RzWyLwn5OdIOaWh-eroCJdIC0tLSBib29rc1si8J-TmiDkuabmnrYiXSAtLS0gbW92aWVzWyLwn46sIOW9seinhiAvIOeVque7hCAvIOmfs-S5kCJdCiAgICAgICAgZ2FtZXNbIvCfjq4g5ri45oiPIl0gLS0tIGdhbGxlcnlbIvCflrzvuI8g55u45YaMIl0gLS0tIHRyYXZlbFsi8J-nrSDotrPov7kiXQogICAgICAgIGJpbGxzWyLwn5KwIOi0puWNlSJdIC0tLSBub3RlYm9va3NbIvCfk5Mg56yU6K6w5pysIl0gLS0tIGZyaWVuZHNbIvCfpJ0g5Y-L6ZO-IC8g5pyL5Y-L5ZyIIl0KICAgIGVuZAogICAgc3ViZ3JhcGggTDJbIuKame-4jyDmuLLmn5PlsYIgwrcgQXN0cm8gNyArIFN2ZWx0ZSA1Il0KICAgICAgICBjb25maWdbInNyYy9jb25maWcg56uZ54K56YWN572uIl0gLS0-IHBhZ2VzWyLpobXpnaLot6_nlLEgKyDnu4Tku7YiXQogICAgICAgIG1kWyJyZW1hcmsgLyByZWh5cGUg5o-S5Lu2Il0gLS0-IHBhZ2VzCiAgICBlbmQKICAgIHN1YmdyYXBoIEwzWyLwn5qAIOS6pOS7mOWxgiJdCiAgICAgICAgZGlzdFsiZGlzdC8g6Z2Z5oCB56uZ54K5Il0gLS0-IHNlcnZlclsiTmdpbngg5pyN5Yqh5ZmoIl0KICAgIGVuZAogICAgTDEgLS0-IEwyIC0tPiBMMwogICAgYWRtaW5bIvCflqXvuI8gYWRtaW4g5ZCO5Y-wIMK3IEV4cHJlc3MiXSAtLiAi5Y-v6KeG5YyW6K-75YaZIiAuLT4gTDE=)
-
-</div>
-
-
 ### 🎨 视觉与交互
 
 - **单主色主题体系** —— 只需在 `siteConfig.themeColor.color` 填一个 16 进制主色，全套色族由色相自动推导（OKLCH）。
@@ -323,14 +316,6 @@ sequenceDiagram
     SRV-->>Dev: ✅ 新版上线
 ```
 
-<div align="center">
-
-![CI 部署流程](https://mermaid.ink/img/c2VxdWVuY2VEaWFncmFtCiAgICBhdXRvbnVtYmVyCiAgICBwYXJ0aWNpcGFudCBEZXYgYXMg5byA5Y-R6ICFCiAgICBwYXJ0aWNpcGFudCBHQSBhcyBHaXRIdWIgQWN0aW9ucwogICAgcGFydGljaXBhbnQgU1JWIGFzIOacjeWKoeWZqAogICAgRGV2LT4-R0E6IGdpdCBwdXNo77yIbWFzdGVy77yJCiAgICBHQS0-PkdBOiBwbnBtIGluc3RhbGwgJiYgcG5wbSBidWlsZAogICAgR0EtPj5TUlY6IHJzeW5jIGRpc3QvIOKGkiBCbG9nX1RtcAogICAgU1JWLT4-U1JWOiDmoKHpqowgQmxvZ19UbXAg6Z2e56m6CiAgICBTUlYtPj5TUlY6IOWOn-WtkOabv-aNoiBCbG9nLyDnm67lvZUKICAgIFNSVi0tPj5EZXY6IOKchSDmlrDniYjkuIrnur8=)
-
-</div>
-
-
-
 在 **Settings → Secrets and variables → Actions** 中配置以下 Secrets：
 
 | Secret                                                    | 用途                  |
@@ -395,7 +380,8 @@ sequenceDiagram
 
 - 🔥 [Firefly](https://github.com/CuteLeaf/Firefly) —— 上游主题（二次开发基础）
 - 🎨 [saicaca / Fuwari](https://github.com/saicaca/fuwari) —— 更早的灵感来源
-- 📜 [Astro](https://astro.build) · [Svelte](https://svelte.dev) · [Tailwind CSS](https://tailwindcss.com) · [Pagefind](https://pagefind.app)
+-
+📜 [Astro](https://astro.build) · [Svelte](https://svelte.dev) · [Tailwind CSS](https://tailwindcss.com) · [Pagefind](https://pagefind.app)
 
 ---
 
