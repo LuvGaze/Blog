@@ -7,6 +7,9 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
     // 且同时维护多种壁纸模式过于复杂（已经屎山代码），在切换时有时候可能会出现一些奇怪的过渡效果或者bug
     // 推荐只选择自己喜欢的模式并关闭切换功能
     switchable: false,
+    // 非首页（文章/列表等）的壁纸模式："banner" 横幅壁纸 | "fullscreen" 全屏壁纸 | "overlay" 全屏透明 | "none" 纯色背景无壁纸
+    // 不填则与首页的 mode 保持一致
+    subpageMode: "overlay",
     // 是否启用背景视频播放，配置后将在导航栏显示视频播放按钮
     playerEnable: false,
     /**
@@ -242,7 +245,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
             // 是否启用壁纸轮播；关闭时保持每次刷新随机显示一张
             enable: true,
             // 轮播切换间隔（毫秒）
-            interval: 5000,
+            interval: 10000,
             // 过渡效果: 'fade' 渐变 | 'zoom' 缩放 | 'slide' 滑动 | 'kenburns' 旋转木马
             transitionEffect: "fade",
             // 是否允许用户通过控制面板切换壁纸轮播
@@ -258,6 +261,10 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
     },
     // 全屏透明覆盖模式特有配置
     overlay: {
+        // 磨砂效果（半透明 + 模糊 + 卡片透明）的生效范围，可叠加在任意形态之上：
+        // "all" 全部页面 | "home" 仅首页 | "subpage" 仅非首页 | "none" 关闭
+        // 例：mode="fullscreen" + subpageMode="banner" + pages="all" = 首页全屏大图、非首页横幅，且都带磨砂效果
+        pages: "all",
         // 是否允许用户通过控制面板调整全屏透明模式参数
         switchable: {
             opacity: true,
