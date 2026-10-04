@@ -766,6 +766,36 @@ html[data-wallpaper-mode="fullscreen"] body:not(.sticky-navbar) #top-row {
     display: none !important;
 }
 
+/* ============================================
+ * 磨砂叠加层 (#wallpaper-frost)
+ * 与 banner / fullscreen 形态「同时存在」的独立 overlay 背景层：
+ * 固定在视口、半透明、模糊，位于内容之下；上方形态层保持清晰不透明。
+ * 生效范围由 backgroundWallpaper.overlay.pages 控制。
+ * ============================================ */
+#wallpaper-frost {
+    position: fixed !important;
+    inset: 0 !important;
+    width: 100% !important;
+    height: 100vh !important;
+    height: 100lvh !important;
+    z-index: var(--overlay-z-index, -1) !important;
+    opacity: var(--overlay-opacity, 0.8) !important;
+    pointer-events: none !important;
+    overflow: hidden !important;
+}
+
+#wallpaper-frost img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: cover !important;
+    object-position: center !important;
+    /* 该层不需要像素渐显，直接显示 */
+    opacity: 1 !important;
+    filter: blur(var(--overlay-blur, 0px));
+    /* 放大图片，让模糊后的暗角被容器 overflow:hidden 裁掉 */
+    transform: scale(1.05);
+}
+
 /* Fullscreen 模式下 waves 显示在底部 */
 #wallpaper-wrapper.wallpaper-fullscreen .waves {
     position: absolute !important;
