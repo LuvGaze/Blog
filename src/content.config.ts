@@ -145,13 +145,18 @@ const travelCollection = defineCollection({
 });
 
 const websiteCollection = defineCollection({
-    loader: glob({pattern: "**/*.md", base: "./src/content/website"}),
+    loader: glob({
+        pattern: "**/*.{md,json}",
+        base: "./src/content/website",
+        // 保留原始文件相对路径（去扩展名）作为 id，便于用「分类/_index」识别分类元数据
+        generateId: ({entry}) => entry.replace(/\\/g, "/").replace(/\.(md|json)$/i, ""),
+    }),
     schema: z.object({
         name: z.string(),
-        url: z.string(),
+        url: z.string().optional().default(""),
         icon: z.string().optional().default(""),
         description: z.string().optional().default(""),
-        category: z.string().default("未分类"),
+        category: z.string().optional().default(""),
         tags: z.array(z.string()).optional().default([]),
         color: z.string().optional().default(""),
         image: z.string().optional().default(""),
