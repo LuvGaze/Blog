@@ -84,7 +84,7 @@ export const siteConfig: SiteConfig = {
     pages: {
         friends: true,      // 友链页面
         moments: false,      // 朋友圈页面
-        circle: true,       // 推文页面
+        circle: false,       // 推文页面
         sponsor: true,      // 打赏页面
         guestbook: false,    // 留言板页面
         bangumi: false,     // 番组计划页面
