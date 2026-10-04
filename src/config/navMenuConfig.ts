@@ -87,7 +87,7 @@ export const navMenuConfig = {
                     name: "朋友圈",
                     url: "/moments/",
                     icon: "material-symbols:chat-bubble-outline",
-                    enabled: false,
+                    enabled: true,
                     pageKey: "moments",
                 },
                 {
