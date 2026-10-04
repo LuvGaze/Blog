@@ -30,7 +30,7 @@ import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import { formatDateToYYYYMMDD } from "@/utils/date-utils";
 import { getImageQuality } from "@/utils/image-utils";
-import { getBackgroundImages, isHomePage } from "@/utils/layout-utils";
+import { getBackgroundImages, isHomePage, resolveOverlayEffect, resolveWallpaperMode } from "@/utils/layout-utils";
 import {
 	generateGridClasses,
 	generateMainContentClasses,
@@ -78,12 +78,33 @@ const {
 	bannerPostMeta,
 } = Astro.props;
 
+// 检查是否为首页（下方壁纸模式与内容定位都要用，先计算）
+const isHomePageCheck = isHomePage(Astro.url.pathname);
+
 // 检查背景壁纸模式和是否允许切换
-const isBannerMode = backgroundWallpaper.mode === "banner";
-const isFullscreenMode = backgroundWallpaper.mode === "fullscreen";
-const isOverlayMode = backgroundWallpaper.mode === "overlay";
-const isBackgroundEnabled = backgroundWallpaper.mode !== "none";
+// 首页用 mode，非首页用 subpageMode（未配置则与首页一致）
+const wallpaperMode = resolveWallpaperMode(Astro.url.pathname);
+const isBannerMode = wallpaperMode === "banner";
+const isFullscreenMode = wallpaperMode === "fullscreen";
+const isOverlayMode = wallpaperMode === "overlay";
+const isBackgroundEnabled = wallpaperMode !== "none";
 const isWallpaperSwitchable = backgroundWallpaper.switchable ?? true;
+// 是否叠加磨砂效果（半透明 + 模糊 + 卡片透明）
+const isOverlayEffect = resolveOverlayEffect(Astro.url.pathname);
+// 磨砂效果参数（所有形态共用）
+const overlayVars = `--overlay-opacity: ${backgroundWallpaper.overlay?.opacity ?? 0.8}; --overlay-z-index: ${backgroundWallpaper.overlay?.zIndex ?? -1}; --overlay-blur: ${backgroundWallpaper.overlay?.blur ?? 0}px;`;
+// 壁纸容器渲染条件：任一种模式可能用到壁纸时都保留 DOM，便于 Swup 切页时恢复
+const renderWallpaperWrapper =
+	isWallpaperSwitchable ||
+	backgroundWallpaper.mode !== "none" ||
+	(backgroundWallpaper.subpageMode ?? "none") !== "none";
+// 是否渲染独立的磨砂叠加层：与 banner/fullscreen 形态「同时存在」的 overlay 背景层
+// overlay 形态自身即磨砂层、none 形态无壁纸，均不需要额外叠加层
+const showFrostLayer =
+	isOverlayEffect &&
+	!isOverlayMode &&
+	isBackgroundEnabled &&
+	renderWallpaperWrapper;
 
 // 封面底部内容区域背景图（全局统一一张）
 const contentBgEnabled = backgroundWallpaper.content?.enable && !!backgroundWallpaper.content?.src;
@@ -118,9 +139,6 @@ const gradientHeight = backgroundWallpaper.common?.gradient?.height ?? "30vh";
 // 是否需要渲染渐变元素（任一设备启用 或 允许用户切换）
 const shouldRenderGradient =
 	gradientEnabledOnDesktop || gradientEnabledOnMobile || gradientSwitchable;
-
-// 检查是否为首页
-const isHomePageCheck = isHomePage(Astro.url.pathname);
 
 const shouldRenderCategoryBar = !!siteConfig.categoryBar;
 
@@ -340,19 +358,18 @@ const hasMultipleImages =
 </div>
 
 <!-- Wallpaper - 如果允许切换则始终渲染，否则只渲染当前模式 -->
-{(isWallpaperSwitchable || isBannerMode || isFullscreenMode || isOverlayMode) && (
+{renderWallpaperWrapper && (
 <div id="wallpaper-wrapper" class:list={[
 	`absolute z-10 w-full transition duration-700 overflow-hidden ${mobileNonHomeBannerClass}`,
 	(isOverlayMode && !isWallpaperSwitchable) ? 'wallpaper-overlay' : '',
 	(isFullscreenMode && !isWallpaperSwitchable) ? 'wallpaper-fullscreen' : '',
+	!isBackgroundEnabled ? 'hidden opacity-0' : '',
 ]} style={
 	isWallpaperSwitchable
-		? `top: -${BANNER_HEIGHT_EXTEND}vh; display: none; --overlay-opacity: ${backgroundWallpaper.overlay?.opacity ?? 0.8}; --overlay-z-index: ${backgroundWallpaper.overlay?.zIndex ?? -1}; --overlay-blur: ${backgroundWallpaper.overlay?.blur ?? 0}px;`
-		: isOverlayMode
-			? `--overlay-opacity: ${backgroundWallpaper.overlay?.opacity ?? 0.8}; --overlay-z-index: ${backgroundWallpaper.overlay?.zIndex ?? -1}; --overlay-blur: ${backgroundWallpaper.overlay?.blur ?? 0}px;`
-			: isFullscreenMode
-				? ``
-				: `top: -${BANNER_HEIGHT_EXTEND}vh`
+		? `top: -${BANNER_HEIGHT_EXTEND}vh; display: none; ${overlayVars}`
+		: (isOverlayMode || isFullscreenMode)
+			? overlayVars
+			: `top: -${BANNER_HEIGHT_EXTEND}vh; ${overlayVars}`
 }>
     <!-- 背景图片显示 -->
     {hasMultipleImages ? (
@@ -501,6 +518,25 @@ const hasMultipleImages =
                 return 0;
             }
 
+            // 同步磨砂叠加层的图片与当前轮播图一致
+            function syncFrostImage(slides, nextIndex) {
+                var frost = document.getElementById('wallpaper-frost');
+                if (!frost || frost.classList.contains('hidden')) return;
+                var activeSlide = slides[nextIndex];
+                if (!activeSlide) return;
+                var activeImg = activeSlide.querySelector('img');
+                if (!activeImg) return;
+                var src = activeImg.currentSrc || activeImg.src;
+                if (!src) return;
+                var frostImgs = frost.querySelectorAll('img');
+                for (var i = 0; i < frostImgs.length; i++) {
+                    var fi = frostImgs[i];
+                    fi.removeAttribute('srcset');
+                    fi.src = src;
+                    fi.style.objectPosition = activeImg.style.objectPosition || 'center';
+                }
+            }
+
             function applySlideChange(slides, nextIndex) {
                 // Slide 效果需要 prev-waiting 辅助类
                 if (effect === 'slide') {
@@ -513,6 +549,7 @@ const hasMultipleImages =
                     if (j === nextIndex) slides[j].classList.add('active');
                     else slides[j].classList.remove('active');
                 }
+                syncFrostImage(slides, nextIndex);
             }
 
             function changeToSlide(targetIndex, resetProgress) {
@@ -612,6 +649,7 @@ const hasMultipleImages =
             // 事件监听
             window.addEventListener('bannerCarouselChange', function(e) {
                 e.detail && e.detail.enabled ? startAutoPlay() : stopAutoPlay();
+                syncFrostNow();
             });
             window.addEventListener('wallpaperModeChange', function(e) {
                 if (e.detail && (e.detail.mode === 'banner' || e.detail.mode === 'fullscreen')) {
@@ -619,6 +657,7 @@ const hasMultipleImages =
                 } else {
                     stopAutoPlay();
                 }
+                syncFrostNow();
             });
 
             // 随机首张
@@ -630,6 +669,19 @@ const hasMultipleImages =
                     else slides[k].classList.remove('active');
                 }
             }
+
+            // 同步磨砂层图片，保证与封面当前图片完全一致
+            // 磨砂层在本脚本之后才被解析，首次同步需等 DOM 就绪
+            function syncFrostNow() {
+                var s = getVisibleSlides();
+                syncFrostImage(s, getCurrentIndex(s));
+            }
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', syncFrostNow);
+            } else {
+                syncFrostNow();
+            }
+            window.addEventListener('load', syncFrostNow);
 
             // 启动
             if (isCarouselEnabled() && isBannerWallpaperMode()) {
@@ -822,6 +874,45 @@ const hasMultipleImages =
         style={`height: ${gradientHeight}; background: linear-gradient(to bottom, transparent, var(--page-bg));`}>
     </div>
     ) : null}
+</div>
+)}
+
+<!-- 磨砂叠加层：与 banner/fullscreen 形态「同时存在」的独立 overlay 背景层（不在形态层内部） -->
+{renderWallpaperWrapper && isBackgroundEnabled && (
+<div
+    id="wallpaper-frost"
+    class:list={["wallpaper-frost", showFrostLayer ? "" : "hidden"]}
+    style={overlayVars}
+    aria-hidden="true"
+>
+    {backgroundImages.mobile.length > 0 && (
+        <div class="absolute inset-0 block lg:hidden">
+            <ImageWrapper
+                alt=""
+                class="object-cover h-full w-full"
+                src={backgroundImages.mobile[0]}
+                position="center"
+                widths={[640, 750, 1080]}
+                sizes="100vw"
+                loading="lazy"
+                usePicture={false}
+            />
+        </div>
+    )}
+    {backgroundImages.desktop.length > 0 && (
+        <div class="absolute inset-0 hidden lg:block">
+            <ImageWrapper
+                alt=""
+                class="object-cover h-full"
+                src={backgroundImages.desktop[0]}
+                position="center"
+                widths={[1280, 1920, 2560]}
+                sizes="100vw"
+                loading="lazy"
+                usePicture={false}
+            />
+        </div>
+    )}
 </div>
 )}
 
