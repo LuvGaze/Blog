@@ -84,7 +84,7 @@ export const siteConfig: SiteConfig = {
     pages: {
         friends: true,      // 友链页面
         moments: true,      // 朋友圈页面（/moments/）
-        circle: false,       // 推文页面（/circle/ 友链动态聚合）
+        circle: true,       // 推文页面（/circle/ 友链动态聚合）
         sponsor: true,      // 打赏页面
         guestbook: false,    // 留言板页面
         bangumi: false,     // 番组计划页面
@@ -101,8 +101,8 @@ export const siteConfig: SiteConfig = {
         bills: false,        // 账单页面
     },
 
-    // 是否在主页显示分类栏（文章顶部的分类标签条）
-    categoryBar: true,
+    // 是否显示分类栏（正文上方的「归档 + 各分类」标签条）
+    categoryBar: false,
 
     // 朋友圈页封面配置（微信朋友圈风格）
     momentsCover: {
