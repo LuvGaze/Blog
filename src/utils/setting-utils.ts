@@ -362,6 +362,9 @@ export function applyWallpaperModeToDocument(
         // 更新导航栏透明模式
         updateNavbarTransparency(mode);
 
+        // 叠加/移除磨砂效果层
+        applyOverlayEffect();
+
         // 在下一帧移除过渡保护类
         requestAnimationFrame(() => {
             document.documentElement.classList.remove("is-wallpaper-transitioning");
@@ -403,6 +406,9 @@ function ensureWallpaperState(mode: WALLPAPER_MODE) {
 
     // 更新导航栏透明模式
     updateNavbarTransparency(mode);
+
+    // 叠加/移除磨砂效果层
+    applyOverlayEffect();
 }
 
 function showBannerMode(animate = false) {
@@ -872,8 +878,88 @@ export function setWallpaperMode(mode: WALLPAPER_MODE): void {
 export function initWallpaperMode(): void {
     // 初始化透明模式参数（透明度/模糊度/卡片透明度）
     applyStoredOverlaySettingsToDocument();
-    const storedMode = getStoredWallpaperMode();
-    applyWallpaperModeToDocument(storedMode, false);
+    const mode = getEffectiveWallpaperMode();
+    applyWallpaperModeToDocument(mode, false);
+}
+
+// 依据当前路径计算生效的壁纸模式：首页用配置的 mode（允许切换时优先用户选择），非首页用 subpageMode
+export function getEffectiveWallpaperMode(): WALLPAPER_MODE {
+    const isSwitchable = backgroundWallpaper.switchable ?? true;
+    const homeMode = isSwitchable
+        ? getStoredWallpaperMode()
+        : backgroundWallpaper.mode;
+    if (checkIsHomePage(window.location.pathname)) {
+        return homeMode;
+    }
+    return backgroundWallpaper.subpageMode ?? homeMode;
+}
+
+// 依据当前路径与配置判断是否叠加磨砂效果（半透明 + 模糊 + 卡片透明）
+// overlay 形态自带磨砂；其余形态由 overlay.pages 决定生效范围
+export function isOverlayEffectEnabled(): boolean {
+    if (getEffectiveWallpaperMode() === WALLPAPER_OVERLAY) {
+        return true;
+    }
+    const pages = backgroundWallpaper.overlay?.pages ?? "none";
+    if (pages === "all") return true;
+    if (pages === "none") return false;
+    return pages === "home"
+        ? checkIsHomePage(window.location.pathname)
+        : !checkIsHomePage(window.location.pathname);
+}
+
+// 应用/移除磨砂叠加层（独立于形态层，可与 banner/fullscreen 同时存在）
+export function applyOverlayEffect(): void {
+    const enabled = isOverlayEffectEnabled();
+    const mode = getEffectiveWallpaperMode();
+    // overlay 形态自身即磨砂层、none 形态无壁纸，均无需额外叠加层
+    const showFrost =
+        enabled && mode !== WALLPAPER_OVERLAY && mode !== WALLPAPER_NONE;
+    document.documentElement.setAttribute(
+        "data-overlay-effect",
+        enabled ? "true" : "false",
+    );
+    const frostLayer = document.getElementById("wallpaper-frost");
+    if (frostLayer) {
+        frostLayer.classList.toggle("hidden", !showFrost);
+    }
+    adjustMainContentTransparency(enabled);
+}
+
+// 按当前路径重新应用壁纸模式（用于 Swup 无刷新切页，保证首页与非首页模式不同时能正确切换）
+export function syncWallpaperModeWithPath(): void {
+    const mode = getEffectiveWallpaperMode();
+    document.documentElement.setAttribute("data-wallpaper-mode", mode);
+    document.body.classList.remove(
+        "enable-banner",
+        "wallpaper-transparent",
+        "no-banner-layout",
+    );
+
+    switch (mode) {
+        case WALLPAPER_BANNER:
+            document.body.classList.add("enable-banner");
+            showBannerMode(false);
+            break;
+        case WALLPAPER_FULLSCREEN:
+            document.body.classList.add("no-banner-layout");
+            showFullscreenMode(false);
+            break;
+        case WALLPAPER_OVERLAY:
+            document.body.classList.add("wallpaper-transparent");
+            document.body.classList.add("no-banner-layout");
+            showOverlayMode();
+            break;
+        default:
+            document.body.classList.add("no-banner-layout");
+            hideAllWallpapers();
+            break;
+    }
+
+    updateNavbarTransparency(mode);
+
+    // 叠加/移除磨砂效果层
+    applyOverlayEffect();
 }
 
 export function getStoredWallpaperMode(): WALLPAPER_MODE {
@@ -973,12 +1059,9 @@ export function applyOverlayOpacityToDocument(opacity: number): void {
         return;
     }
     const safeOpacity = clampNumber(opacity, 0, 1);
-    const wallpaperWrapper = document.getElementById("wallpaper-wrapper");
-    if (wallpaperWrapper) {
-        wallpaperWrapper.style.setProperty(
-            "--overlay-opacity",
-            String(safeOpacity),
-        );
+    for (const id of ["wallpaper-wrapper", "wallpaper-frost"]) {
+        const el = document.getElementById(id);
+        if (el) el.style.setProperty("--overlay-opacity", String(safeOpacity));
     }
 }
 
@@ -987,9 +1070,9 @@ export function applyOverlayBlurToDocument(blur: number): void {
         return;
     }
     const safeBlur = clampNumber(blur, 0, 20);
-    const wallpaperWrapper = document.getElementById("wallpaper-wrapper");
-    if (wallpaperWrapper) {
-        wallpaperWrapper.style.setProperty("--overlay-blur", `${safeBlur}px`);
+    for (const id of ["wallpaper-wrapper", "wallpaper-frost"]) {
+        const el = document.getElementById(id);
+        if (el) el.style.setProperty("--overlay-blur", `${safeBlur}px`);
     }
 }
 
