@@ -1,11 +1,15 @@
 ---
 import { backgroundWallpaper, THEME_HUE } from "@/config";
+import { resolveWallpaperMode } from "@/utils/layout-utils";
+
+// 首页用 mode，非首页用 subpageMode，配置载体同步生效值
+const wallpaperMode = resolveWallpaperMode(Astro.url.pathname);
 ---
 
 <!-- 全局配置载体 -->
 <div
   id="config-carrier"
   data-hue={THEME_HUE}
-  data-wallpaper-mode={backgroundWallpaper.mode}
+  data-wallpaper-mode={wallpaperMode}
 >
 </div>
