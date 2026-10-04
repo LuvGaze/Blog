@@ -7,61 +7,72 @@ import MainGridLayout from "@/layouts/MainGridLayout.astro";
 
 const allEntries = await getCollection("website");
 
-const categoryMap = new Map<string, typeof allEntries>();
-const allCategories: string[] = [];
+const normalizeId = (id: string) => id.replace(/\\/g, "/");
+// 分类元数据文件：分类文件夹下的 `_index`（如 src/content/website/自建网站/_index.json）
+const indexIdPattern = /^([^/]+)\/_index$/;
 
-allEntries.forEach((entry) => {
-	const cat = entry.data.category || "未分类";
-	if (!categoryMap.has(cat)) {
-		categoryMap.set(cat, []);
-		allCategories.push(cat);
+const categoryMeta = new Map<string, { name: string; icon: string; order: number }>();
+
+for (const entry of allEntries) {
+	const match = normalizeId(entry.id).match(indexIdPattern);
+	if (!match) continue;
+	categoryMeta.set(match[1], {
+		name: entry.data.name.trim() || match[1],
+		icon: entry.data.icon || "material-symbols:link",
+		order: entry.data.order ?? 0,
+	});
+}
+
+type WebsiteEntry = (typeof allEntries)[number];
+interface SiteCategory {
+	name: string;
+	icon: string;
+	order: number;
+	items: WebsiteEntry[];
+}
+
+const categories = new Map<string, SiteCategory>();
+
+for (const entry of allEntries) {
+	const id = normalizeId(entry.id);
+	if (indexIdPattern.test(id)) continue;
+	// 分类取自「分类文件夹名」；根目录下的旧文件则回退到 frontmatter.category
+	const folder = id.includes("/") ? id.split("/")[0] : "";
+	const key = folder || (entry.data.category || "").trim() || "未分类";
+	let category = categories.get(key);
+	if (!category) {
+		const meta = categoryMeta.get(key);
+		category = {
+			name: meta?.name ?? key,
+			icon: meta?.icon ?? "material-symbols:link",
+			order: meta?.order ?? 0,
+			items: [],
+		};
+		categories.set(key, category);
 	}
-	categoryMap.get(cat)!.push(entry);
-});
+	category.items.push(entry);
+}
 
-const categoryOrder: Record<string, number> = {
-	我的网站: 0,
-	常用网站: 1,
-	资源网站: 2,
-	工具网站: 3,
-	大佬博客: 4,
-	学习网站: 5,
-	文档: 6,
-	其他网站: 7,
-};
-
-const sortedCategories = [...allCategories].sort((a, b) => {
-	return (categoryOrder[a] ?? 99) - (categoryOrder[b] ?? 99);
-});
-
-const sortedData = new Map(
-	[...categoryMap.entries()]
-		.sort(([a], [b]) => {
-			return (categoryOrder[a] ?? 99) - (categoryOrder[b] ?? 99);
-		})
-		.map(([cat, items]) => [
-			cat,
-			[...items].sort((a, b) => {
-				const orderA = a.data.order ?? 99;
-				const orderB = b.data.order ?? 99;
-				return orderA - orderB;
-			}),
-		]),
+// 分类排序：order 越大越靠前（与笔记本一致），相同则按名称
+const sortedCategoryList = [...categories.values()].sort(
+	(a, b) => b.order - a.order || a.name.localeCompare(b.name, "zh-CN"),
 );
 
-const categoryIcons: Record<string, string> = {
-	我的网站: "material-symbols:person",
-	常用网站: "material-symbols:star",
-	资源网站: "material-symbols:folder",
-	工具网站: "material-symbols:handyman",
-	大佬博客: "material-symbols:menu-book",
-	学习网站: "material-symbols:school",
-	文档: "material-symbols:description",
-	其他网站: "material-symbols:link",
-};
+const sortedCategories = sortedCategoryList.map((c) => c.name);
+const sortedData = new Map(
+	sortedCategoryList.map((c) => [
+		c.name,
+		[...c.items].sort((a, b) => (a.data.order ?? 99) - (b.data.order ?? 99)),
+	]),
+);
+
+const categoryIconMap: Record<string, string> = {};
+for (const category of sortedCategoryList) {
+	categoryIconMap[category.name] = category.icon;
+}
 
 const getCategoryIcon = (cat: string) => {
-	return categoryIcons[cat] || "material-symbols:link";
+	return categoryIconMap[cat] || "material-symbols:link";
 };
 
 const categoryCounts: Record<string, number> = {};
