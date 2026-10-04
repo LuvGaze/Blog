@@ -1,4 +1,5 @@
 import {backgroundWallpaper} from "../config";
+import type {WALLPAPER_MODE} from "../types/config";
 
 // 将单个值或数组统一为数组
 const toArray = (src: string | string[] | undefined): string[] => {
@@ -71,6 +72,22 @@ export const isHomePage = (pathname: string): boolean => {
     if (pathname === "/") return true;
 
     return false;
+};
+
+// 计算指定路径下生效的壁纸模式：首页用 mode，非首页用 subpageMode（未配置则与首页一致）
+export const resolveWallpaperMode = (pathname: string): WALLPAPER_MODE => {
+    if (isHomePage(pathname)) return backgroundWallpaper.mode;
+    return backgroundWallpaper.subpageMode ?? backgroundWallpaper.mode;
+};
+
+// 计算指定路径下是否叠加磨砂效果（半透明+模糊+卡片透明）
+// overlay 形态自带磨砂；其余形态由 overlay.pages 决定生效范围
+export const resolveOverlayEffect = (pathname: string): boolean => {
+    if (resolveWallpaperMode(pathname) === "overlay") return true;
+    const pages = backgroundWallpaper.overlay?.pages ?? "none";
+    if (pages === "all") return true;
+    if (pages === "none") return false;
+    return pages === "home" ? isHomePage(pathname) : !isHomePage(pathname);
 };
 
 // 获取横幅偏移量
