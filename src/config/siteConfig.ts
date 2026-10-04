@@ -83,8 +83,8 @@ export const siteConfig: SiteConfig = {
     // 将对应的项设为 true 显示该页面，设为 false 隐藏该页面
     pages: {
         friends: true,      // 友链页面
-        moments: true,      // 朋友圈页面（/moments/）
-        circle: true,       // 推文页面（/circle/ 友链动态聚合）
+        moments: false,      // 朋友圈页面
+        circle: true,       // 推文页面
         sponsor: true,      // 打赏页面
         guestbook: false,    // 留言板页面
         bangumi: false,     // 番组计划页面
