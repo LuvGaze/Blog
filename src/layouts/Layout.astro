@@ -25,7 +25,7 @@ import {
 } from "@/constants/constants";
 import { defaultFavicons } from "@/constants/icon";
 import type { Favicon } from "@/types/config";
-import { isHomePage } from "@/utils/layout-utils";
+import { isHomePage, resolveOverlayEffect, resolveWallpaperMode } from "@/utils/layout-utils";
 import { url } from "@/utils/url-utils";
 import { hexToOklch, isHexColor } from "@/utils/color";
 
@@ -72,7 +72,13 @@ const navbarTransparentMode =
 const shouldShowTopHighlight =
 	navbarTransparentMode === "full" || navbarTransparentMode === "semifull";
 
-const enableBanner = backgroundWallpaper.mode === "banner";
+// 首页用 mode，非首页用 subpageMode（未配置则与首页一致）
+const wallpaperMode = resolveWallpaperMode(Astro.url.pathname);
+
+// 是否叠加磨砂效果（半透明 + 模糊 + 卡片透明），可叠加在任意形态之上
+const isOverlayEffect = resolveOverlayEffect(Astro.url.pathname);
+
+const enableBanner = wallpaperMode === "banner";
 
 let pageTitle: string;
 if (title) {
@@ -114,7 +120,7 @@ const siteLang = lang.replace("_", "-");
 ---
 
 <!doctype html>
-<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]" data-wallpaper-mode={backgroundWallpaper.mode}>
+<html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]" data-wallpaper-mode={wallpaperMode} data-overlay-effect={String(isOverlayEffect)}>
   <head>
     <meta charset="UTF-8" />
     {analyticsConfig?.googleAnalyticsId && (
@@ -274,7 +280,8 @@ const siteLang = lang.replace("_", "-");
         configPrimaryLight,
         configPrimaryChroma,
         defaultMode: siteConfig.themeColor.defaultMode ?? "light",
-        defaultWallpaperMode: backgroundWallpaper.mode,
+        defaultWallpaperMode: wallpaperMode,
+        overlayPages: backgroundWallpaper.overlay?.pages ?? "none",
         isWallpaperSwitchable:
           backgroundWallpaper.switchable ?? true,
         darkTheme: expressiveCodeConfig.darkTheme,
@@ -436,13 +443,29 @@ const siteLang = lang.replace("_", "-");
             }
           }
 
-          // 全屏透明模式
-          if (wallpaperMode === WALLPAPER_OVERLAY) {
-            if (document.body) {
+          // 检查当前是否为首页
+          const isHomePage =
+            window.location.pathname === baseUrl ||
+            (baseUrl !== '/' && window.location.pathname === baseUrl.replace(/\/$/, '')) ||
+            window.location.pathname === "/";
+
+          // 是否叠加磨砂效果（半透明 + 模糊 + 卡片透明）
+          // overlay 形态自带磨砂；其余形态由 overlay.pages 决定生效范围
+          const isOverlayEffectEnabled =
+            wallpaperMode === WALLPAPER_OVERLAY ||
+            overlayPages === "all" ||
+            (overlayPages !== "none" &&
+              (overlayPages === "home" ? isHomePage : !isHomePage));
+
+          // 写入磨砂效果标志并同步 body 透明类
+          document.documentElement.setAttribute(
+            "data-overlay-effect",
+            isOverlayEffectEnabled ? "true" : "false"
+          );
+          if (document.body) {
+            if (isOverlayEffectEnabled) {
               document.body.classList.add("wallpaper-transparent");
-            }
-          } else {
-            if (document.body) {
+            } else {
               document.body.classList.remove("wallpaper-transparent");
             }
           }
@@ -450,11 +473,15 @@ const siteLang = lang.replace("_", "-");
           // 处理wallpaper-wrapper的显示
           const wallpaperWrapper = document.getElementById("wallpaper-wrapper");
 
-          // 检查当前是否为首页
-          const isHomePage =
-            window.location.pathname === baseUrl ||
-            (baseUrl !== '/' && window.location.pathname === baseUrl.replace(/\/$/, '')) ||
-            window.location.pathname === "/";
+          // 叠加/移除磨砂叠加层（独立于形态层，二者可同时存在）
+          const frostLayer = document.getElementById("wallpaper-frost");
+          if (frostLayer) {
+            const showFrost =
+              isOverlayEffectEnabled &&
+              wallpaperMode !== WALLPAPER_OVERLAY &&
+              wallpaperMode !== WALLPAPER_NONE;
+            frostLayer.classList.toggle("hidden", !showFrost);
+          }
 
           if (wallpaperMode === WALLPAPER_OVERLAY) {
             // 全屏壁纸透明模式：切换为 overlay 显示
@@ -544,6 +571,12 @@ const siteLang = lang.replace("_", "-");
               mainContentWrapper.style.position = "";
               mainContentWrapper.style.zIndex = "";
               mainContentWrapper.style.setProperty("margin-top", "0", "important");
+            }
+            // 叠加/移除磨砂效果（卡片透明）
+            if (isOverlayEffectEnabled) {
+              mainContentWrapper.classList.add("wallpaper-transparent");
+            } else {
+              mainContentWrapper.classList.remove("wallpaper-transparent");
             }
             // 定位完成后显示主内容（初始CSS规则会隐藏，防止壁纸初始化前闪烁）
             mainContentWrapper.style.visibility = "visible";
@@ -1020,6 +1053,8 @@ function disableAnimation() {
       }
     });
     window.swup.hooks.on("content:replace", () => {
+      // homeOnly：Swup 切页后按新路径重新应用壁纸模式
+      syncWallpaperModeWithPath();
       const isHome = pathsEqual(window.location.pathname, url("/"));
       const currentMode = document.documentElement.getAttribute("data-wallpaper-mode");
       const isMobileForBanner = window.innerWidth < 1024;
@@ -1137,7 +1172,8 @@ function disableAnimation() {
       if (currentWallpaperMode !== "banner") {
         bodyElement!.classList.remove("enable-banner");
         bodyElement!.classList.add("no-banner-layout");
-        if (currentWallpaperMode === "overlay") {
+        // 磨砂效果层（半透明 + 卡片透明）由 data-overlay-effect 决定，可叠加在任意形态之上
+        if (document.documentElement.getAttribute("data-overlay-effect") === "true") {
           bodyElement!.classList.add("wallpaper-transparent");
         } else {
           bodyElement!.classList.remove("wallpaper-transparent");
@@ -1272,6 +1308,8 @@ function disableAnimation() {
       }
     });
     window.swup.hooks.on("page:view", () => {
+      // homeOnly：Swup 切页后按新路径重新应用壁纸模式
+      syncWallpaperModeWithPath();
       // 恢复 #main-grid 的过渡动画（visit:start 中禁用了）
       const mainGrid = document.getElementById("main-grid");
       if (mainGrid) {
@@ -1728,7 +1766,7 @@ function disableAnimation() {
   }
 
   // Initialize wallpaper mode
-  import { initWallpaperMode, initThemeListener } from "@/utils/setting-utils";
+  import { initWallpaperMode, initThemeListener, syncWallpaperModeWithPath } from "@/utils/setting-utils";
   import { initIconLoader } from "@/utils/icon-loader";
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", () => {
