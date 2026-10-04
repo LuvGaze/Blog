@@ -1,6 +1,7 @@
 export type BackgroundWallpaperConfig = {
     mode: "banner" | "fullscreen" | "overlay" | "none"; // 壁纸模式：banner横幅模式、fullscreen全屏壁纸、overlay全屏透明覆盖模式或none纯色背景
     switchable?: boolean; // 是否允许用户通过导航栏切换壁纸模式，默认true
+    subpageMode?: "banner" | "fullscreen" | "overlay" | "none"; // 非首页（文章/列表等）的壁纸模式；不填则与首页 mode 一致
     playerEnable?: boolean; // 是否启用背景视频播放，默认false
     src:
         | string
@@ -87,6 +88,7 @@ export type BackgroundWallpaperConfig = {
     };
     // 全屏透明覆盖模式特有配置
     overlay?: {
+        pages?: "all" | "home" | "subpage" | "none"; // 磨砂效果（半透明+模糊+卡片透明）生效范围，可叠加在任意形态上，默认"none"
         switchable?:
             | boolean
             | {
