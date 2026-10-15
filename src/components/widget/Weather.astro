@@ -1,56 +1,40 @@
 ---
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import type { WidgetComponentConfig } from "@/types/config";
+
 interface Props {
 	class?: string;
 	style?: string;
+	widgetConfig?: WidgetComponentConfig;
 }
-const { class: className, style } = Astro.props;
+const { class: className, style, widgetConfig } = Astro.props;
+const showTitle = widgetConfig?.showTitle !== false;
 ---
 
-<div class:list={["weather-widget", className]} style={style}>
-  <div class="weather-card" id="weather-main">
-    <div class="weather-loading">
-      <div class="weather-loading-icon">☁️</div>
-      <span class="weather-loading-text">获取天气中...</span>
-    </div>
-  </div>
-  <div class="weather-error" id="weather-error" style="display:none">
-    <span class="weather-error-text" id="weather-error-text">天气加载失败</span>
-  </div>
-</div>
+<WidgetLayout
+	name="天气预报"
+	showTitle={showTitle}
+	id="weather-widget"
+	class={className}
+	style={style}
+>
+	<div class="weather-card" id="weather-main">
+		<div class="weather-loading">
+			<div class="weather-loading-icon">☁️</div>
+			<span class="weather-loading-text">获取天气中...</span>
+		</div>
+	</div>
+	<div class="weather-error" id="weather-error" style="display:none">
+		<span class="weather-error-text" id="weather-error-text">天气加载失败</span>
+	</div>
+</WidgetLayout>
 
 <style is:global>
-  .weather-widget {
-    width: 100%;
-    border: 1px solid var(--line-divider);
-    border-radius: var(--radius-lg);
-    background: var(--card-bg);
-    box-shadow: var(--shadow-md);
-    padding: 0.75rem 1rem;
-    transition: box-shadow 0.3s ease, border-color 0.3s ease;
-  }
-
-  .weather-widget:hover {
-    border-color: var(--line-color);
-    box-shadow: var(--shadow-lg);
-  }
-
+  /* 天气组件内部布局（卡片外壳/标题由 WidgetLayout 统一提供，与其他侧栏组件保持一致） */
   .weather-card {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-  }
-
-  .weather-header {
-    display: flex;
-    align-items: center;
-    gap: 0.375rem;
-  }
-
-  .weather-header-title {
-    font-size: 1.125rem;
-    font-weight: 700;
-    color: var(--deep-text);
-    letter-spacing: 0.01em;
   }
 
   .weather-body {
@@ -254,10 +238,6 @@ const { class: className, style } = Astro.props;
       : (aqiCategory || "--");
 
     var html = "";
-    html += '<div class="weather-header">';
-    html += '  <span style="font-size:1.25rem;line-height:1;">⛅</span>';
-    html += '  <span class="weather-header-title">天气预报</span>';
-    html += '</div>';
 
     html += '<div class="weather-body">';
     html += '  <div class="weather-left">';
