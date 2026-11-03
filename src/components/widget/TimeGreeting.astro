@@ -1,0 +1,270 @@
+---
+import { Icon } from "astro-icon/components";
+import WidgetLayout from "@/components/common/WidgetLayout.astro";
+import type { WidgetComponentConfig } from "@/types/config";
+
+interface Props {
+	class?: string;
+	style?: string;
+	widgetConfig?: WidgetComponentConfig;
+}
+const { class: className, style } = Astro.props;
+---
+
+<WidgetLayout
+	id="time-greeting-widget"
+	showTitle={false}
+	contentPadding={false}
+	class:list={["tg-widget", className]}
+	style={style}
+>
+	<div class="tg-card" data-tg-card>
+		<div class="tg-head" data-tg="head" data-icon="day">
+			<div class="tg-info">
+				<span class="tg-greeting" data-tg="greeting">你好</span>
+				<div class="tg-clock">
+					<span class="tg-time" data-tg="time">--:--</span>
+					<div class="tg-date">
+						<span class="tg-week" data-tg="week">---</span>
+						<span class="tg-day" data-tg="day">--</span>
+						<span class="tg-month" data-tg="month">/--</span>
+					</div>
+				</div>
+			</div>
+			<div class="tg-icons">
+				<div class="tg-icon tg-icon--night">
+					<Icon is:inline name="material-symbols:bedtime" class="text-[1.5rem]" />
+				</div>
+				<div class="tg-icon tg-icon--morning">
+					<Icon is:inline name="material-symbols:wb-twilight" class="text-[1.5rem]" />
+				</div>
+				<div class="tg-icon tg-icon--noon">
+					<Icon is:inline name="material-symbols:wb-sunny" class="text-[1.5rem]" />
+				</div>
+				<div class="tg-icon tg-icon--evening">
+					<Icon is:inline name="material-symbols:nightlight-rounded" class="text-[1.5rem]" />
+				</div>
+			</div>
+		</div>
+		<div class="tg-image-wrap">
+			<div class="tg-image" data-tg="image"></div>
+			<div class="tg-image-fade"></div>
+		</div>
+	</div>
+</WidgetLayout>
+
+<style is:global>
+	/* 时间问候卡片：问候语 + 时间 + 日期 + 随机风景图（复刻 jerrynis.com） */
+	.tg-card {
+		overflow: hidden;
+	}
+
+	.tg-head {
+		display: flex;
+		align-items: flex-start;
+		justify-content: space-between;
+		gap: 0.75rem;
+		padding: 0.9rem 1rem 0.55rem;
+	}
+
+	.tg-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.1rem;
+		min-width: 0;
+	}
+
+	.tg-greeting {
+		font-size: 0.8125rem;
+		font-weight: 600;
+		color: var(--deep-text);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+
+	.tg-clock {
+		display: flex;
+		align-items: flex-end;
+		gap: 0.55rem;
+	}
+
+	.tg-time {
+		font-size: 2.1rem;
+		line-height: 1.05;
+		font-weight: 700;
+		letter-spacing: -0.04em;
+		color: var(--deep-text);
+		font-variant-numeric: tabular-nums;
+	}
+
+	.tg-date {
+		display: flex;
+		flex-direction: column;
+		align-items: flex-start;
+		justify-content: flex-end;
+		gap: 1px;
+		padding-bottom: 0.1rem;
+		font-size: 0.6875rem;
+		color: var(--content-meta);
+		line-height: 1.25;
+	}
+
+	.tg-week {
+		text-transform: uppercase;
+		letter-spacing: 0.02em;
+	}
+
+	.tg-day {
+		font-weight: 600;
+		color: var(--deep-text);
+	}
+
+	.tg-icons {
+		position: relative;
+		width: 1.75rem;
+		height: 1.75rem;
+		flex-shrink: 0;
+		margin-top: 0.1rem;
+	}
+
+	.tg-icon {
+		position: absolute;
+		inset: 0;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		color: var(--primary);
+		opacity: 0;
+		transform: scale(0.9);
+		transition: opacity 0.35s ease, transform 0.35s ease;
+	}
+
+	.tg-head[data-icon="night"] .tg-icon--night,
+	.tg-head[data-icon="morning"] .tg-icon--morning,
+	.tg-head[data-icon="noon"] .tg-icon--noon,
+	.tg-head[data-icon="evening"] .tg-icon--evening {
+		opacity: 1;
+		transform: scale(1);
+	}
+
+	.tg-image-wrap {
+		position: relative;
+		height: 8.5rem;
+		margin-top: 0.25rem;
+	}
+
+	.tg-image {
+		position: absolute;
+		inset: 0;
+		background: linear-gradient(135deg, color-mix(in oklch, var(--primary) 22%, transparent), transparent 65%);
+		background-size: cover;
+		background-position: center;
+		transition: opacity 0.4s ease;
+	}
+
+	.tg-image.is-loaded {
+		opacity: 1;
+	}
+
+	.tg-image-fade {
+		position: absolute;
+		inset: 0;
+		pointer-events: none;
+		background: linear-gradient(to top, color-mix(in oklch, var(--card-bg) 92%, transparent), transparent 62%);
+	}
+</style>
+
+<script is:inline>
+(function() {
+  var WEEK = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
+  var IMG_URL = 'https://t.alcy.cc/fj?t=';
+
+  // 每个时间段都有独立问候语
+  var GREETINGS = [
+    { until: 5,  text: '夜深了，愿你有个好梦', icon: 'night' },
+    { until: 7,  text: '天将破晓，早安',       icon: 'morning' },
+    { until: 9,  text: '清晨好，新的一天开始啦', icon: 'morning' },
+    { until: 11, text: '上午好，元气满满',     icon: 'noon' },
+    { until: 13, text: '中午好，记得好好吃饭', icon: 'noon' },
+    { until: 15, text: '午后好，来杯茶歇一歇', icon: 'noon' },
+    { until: 17, text: '下午好，继续加油',     icon: 'noon' },
+    { until: 19, text: '傍晚好，晚霞正温柔',   icon: 'evening' },
+    { until: 21, text: '晚上好，放松一下吧',   icon: 'evening' },
+    { until: 24, text: '夜色渐深，早些休息',   icon: 'night' }
+  ];
+
+  function greetingOf(hour) {
+    for (var i = 0; i < GREETINGS.length; i++) {
+      if (hour < GREETINGS[i].until) return GREETINGS[i];
+    }
+    return GREETINGS[GREETINGS.length - 1];
+  }
+
+  function pad(n) { return n < 10 ? '0' + n : '' + n; }
+
+  function each(selector) {
+    return Array.prototype.slice.call(document.querySelectorAll(selector));
+  }
+
+  function applyImage(src) {
+    each('[data-tg-card] [data-tg="image"]').forEach(function(img) {
+      if (!src) return;
+      var probe = new Image();
+      probe.onload = function() {
+        img.style.backgroundImage = 'url("' + src + '")';
+        img.classList.add('is-loaded');
+      };
+      probe.src = src;
+    });
+  }
+
+  function updateImage() {
+    var src;
+    try {
+      var cached = sessionStorage.getItem('__tgImage');
+      var cachedAt = Number(sessionStorage.getItem('__tgImageAt') || 0);
+      if (cached && Date.now() - cachedAt < 10 * 60 * 1000) {
+        applyImage(cached);
+        return;
+      }
+      src = IMG_URL + Date.now();
+      sessionStorage.setItem('__tgImage', src);
+      sessionStorage.setItem('__tgImageAt', String(Date.now()));
+    } catch (e) {
+      src = IMG_URL + Date.now();
+    }
+    applyImage(src);
+  }
+
+  function update() {
+    var cards = each('[data-tg-card]');
+    if (!cards.length) return;
+
+    var now = new Date();
+    var info = greetingOf(now.getHours());
+
+    cards.forEach(function(card) {
+      var head = card.querySelector('[data-tg="head"]');
+      if (head) head.setAttribute('data-icon', info.icon);
+      var q = function(name) { return card.querySelector('[data-tg="' + name + '"]'); };
+      if (q('greeting')) q('greeting').textContent = info.text;
+      if (q('time')) q('time').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
+      if (q('week')) q('week').textContent = WEEK[now.getDay()];
+      if (q('day')) q('day').textContent = pad(now.getDate());
+      if (q('month')) q('month').textContent = '/' + pad(now.getMonth() + 1);
+    });
+  }
+
+  function init() {
+    update();
+    if (window.__tgTick) clearInterval(window.__tgTick);
+    window.__tgTick = setInterval(update, 1000);
+    updateImage();
+  }
+
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);
+  else init();
+  document.addEventListener('swup:contentReplaced', function() { setTimeout(init, 50); });
+})();
+</script>
