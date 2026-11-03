@@ -1,5 +1,0 @@
----
-name: 常用网站
-icon: material-symbols:star
-order: 20
----
