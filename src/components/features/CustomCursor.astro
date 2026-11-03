@@ -1,0 +1,184 @@
+---
+/**
+ * 博客自定义鼠标光标
+ * - 小圆点（即时跟随）+ 外圈光环（缓动跟随）
+ * - 悬停链接 / 按钮时外圈放大并显示主题色
+ * - 仅对精确指针（鼠标 / 触控板）生效，触屏与「减少动态效果」时自动关闭
+ */
+---
+
+<div id="blog-custom-cursor" aria-hidden="true">
+	<div class="cursor-dot"></div>
+	<div class="cursor-ring"></div>
+</div>
+
+<style is:global>
+	#blog-custom-cursor {
+		display: none;
+	}
+
+	@media (pointer: fine) {
+		html.has-custom-cursor,
+		html.has-custom-cursor body {
+			cursor: none;
+		}
+
+		/* 输入框保留原生光标，保证可编辑性 */
+		html.has-custom-cursor input,
+		html.has-custom-cursor textarea,
+		html.has-custom-cursor select,
+		html.has-custom-cursor [contenteditable="true"] {
+			cursor: auto;
+		}
+
+		html.has-custom-cursor #blog-custom-cursor {
+			display: block;
+		}
+	}
+
+	#blog-custom-cursor .cursor-dot,
+	#blog-custom-cursor .cursor-ring {
+		position: fixed;
+		top: 0;
+		left: 0;
+		pointer-events: none;
+		z-index: 99999;
+		will-change: transform;
+		opacity: 0;
+		transition: opacity 0.2s ease;
+	}
+
+	#blog-custom-cursor .cursor-dot {
+		width: 6px;
+		height: 6px;
+		margin: -3px 0 0 -3px;
+		border-radius: 50%;
+		background: var(--primary);
+		box-shadow: 0 0 10px color-mix(in oklch, var(--primary) 60%, transparent);
+	}
+
+	#blog-custom-cursor .cursor-ring {
+		width: 28px;
+		height: 28px;
+		margin: -14px 0 0 -14px;
+		border-radius: 50%;
+		border: 1.5px solid color-mix(in oklch, var(--primary) 55%, transparent);
+		background: color-mix(in oklch, var(--primary) 6%, transparent);
+		transition: opacity 0.2s ease, width 0.2s ease, height 0.2s ease, margin 0.2s ease,
+			border-color 0.2s ease, background-color 0.2s ease;
+	}
+
+	#blog-custom-cursor.is-visible .cursor-dot,
+	#blog-custom-cursor.is-visible .cursor-ring {
+		opacity: 1;
+	}
+
+	#blog-custom-cursor.is-hovering .cursor-ring {
+		width: 44px;
+		height: 44px;
+		margin: -22px 0 0 -22px;
+		border-color: var(--primary);
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+
+	#blog-custom-cursor.is-hovering .cursor-dot {
+		opacity: 0.55;
+	}
+
+	#blog-custom-cursor.is-pressed .cursor-ring {
+		width: 20px;
+		height: 20px;
+		margin: -10px 0 0 -10px;
+		background: color-mix(in oklch, var(--primary) 22%, transparent);
+	}
+
+	#blog-custom-cursor.is-text .cursor-ring {
+		width: 4px;
+		height: 30px;
+		margin: -15px 0 0 -2px;
+		border-radius: 2px;
+		border-color: color-mix(in oklch, var(--primary) 70%, transparent);
+		background: color-mix(in oklch, var(--primary) 70%, transparent);
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		html.has-custom-cursor,
+		html.has-custom-cursor body {
+			cursor: auto;
+		}
+		html.has-custom-cursor #blog-custom-cursor {
+			display: none;
+		}
+	}
+</style>
+
+<script is:inline>
+(function () {
+  if (!window.matchMedia || !window.matchMedia("(pointer: fine)").matches) return;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
+
+  var root = document.getElementById("blog-custom-cursor");
+  if (!root || root.dataset.cursorReady === "true") return;
+  root.dataset.cursorReady = "true";
+
+  var dot = root.querySelector(".cursor-dot");
+  var ring = root.querySelector(".cursor-ring");
+  var html = document.documentElement;
+
+  html.classList.add("has-custom-cursor");
+
+  var mx = window.innerWidth / 2;
+  var my = window.innerHeight / 2;
+  var rx = mx;
+  var ry = my;
+  var raf = null;
+
+  var HOVER_SELECTOR = "a, button, [role='button'], .btn-plain, input[type='submit'], label, summary, .navbar-seg, .dropdown-item, .nav-expand-item";
+  var TEXT_SELECTOR = "input, textarea, select, [contenteditable='true']";
+
+  function render() {
+    rx += (mx - rx) * 0.18;
+    ry += (my - ry) * 0.18;
+    dot.style.transform = "translate3d(" + mx + "px," + my + "px,0)";
+    ring.style.transform = "translate3d(" + rx + "px," + ry + "px,0)";
+    if (Math.abs(mx - rx) < 0.1 && Math.abs(my - ry) < 0.1) {
+      raf = null;
+      return;
+    }
+    raf = requestAnimationFrame(render);
+  }
+
+  function schedule() {
+    if (!raf) raf = requestAnimationFrame(render);
+  }
+
+  document.addEventListener("pointermove", function (e) {
+    if (e.pointerType && e.pointerType !== "mouse" && e.pointerType !== "pen") return;
+    mx = e.clientX;
+    my = e.clientY;
+    root.classList.add("is-visible");
+    var target = e.target;
+    if (target && target.closest) {
+      root.classList.toggle("is-hovering", !!target.closest(HOVER_SELECTOR));
+      root.classList.toggle("is-text", !!target.closest(TEXT_SELECTOR));
+    }
+    schedule();
+  }, { passive: true });
+
+  document.addEventListener("pointerdown", function () {
+    root.classList.add("is-pressed");
+  }, { passive: true });
+
+  document.addEventListener("pointerup", function () {
+    root.classList.remove("is-pressed");
+  }, { passive: true });
+
+  document.addEventListener("mouseleave", function () {
+    root.classList.remove("is-visible");
+  });
+
+  window.addEventListener("blur", function () {
+    root.classList.remove("is-visible");
+  });
+})();
+</script>
