@@ -75,8 +75,10 @@ const { class: className, style } = Astro.props;
 	}
 
 	.tg-greeting {
-		font-size: 0.8125rem;
+		font-size: 0.9375rem;
+		line-height: 1.35;
 		font-weight: 600;
+		letter-spacing: 0.01em;
 		color: var(--deep-text);
 		white-space: nowrap;
 		overflow: hidden;
@@ -182,16 +184,16 @@ const { class: className, style } = Astro.props;
 
   // 每个时间段都有独立问候语
   var GREETINGS = [
-    { until: 5,  text: '夜深了，愿你有个好梦', icon: 'night' },
-    { until: 7,  text: '天将破晓，早安',       icon: 'morning' },
-    { until: 9,  text: '清晨好，新的一天开始啦', icon: 'morning' },
-    { until: 11, text: '上午好，元气满满',     icon: 'noon' },
-    { until: 13, text: '中午好，记得好好吃饭', icon: 'noon' },
-    { until: 15, text: '午后好，来杯茶歇一歇', icon: 'noon' },
-    { until: 17, text: '下午好，继续加油',     icon: 'noon' },
-    { until: 19, text: '傍晚好，晚霞正温柔',   icon: 'evening' },
-    { until: 21, text: '晚上好，放松一下吧',   icon: 'evening' },
-    { until: 24, text: '夜色渐深，早些休息',   icon: 'night' }
+    { until: 5,  text: '夜深人静，愿你安睡好梦', icon: 'night' },
+    { until: 7,  text: '天将破晓，晨光已在路上', icon: 'morning' },
+    { until: 9,  text: '清晨好，从一杯温水开始',   icon: 'morning' },
+    { until: 11, text: '上午好，先完成最要紧的事', icon: 'noon' },
+    { until: 13, text: '中午好，记得好好吃饭',     icon: 'noon' },
+    { until: 15, text: '午后好，泡杯茶歇一歇',     icon: 'noon' },
+    { until: 17, text: '下午好，再坚持一会儿',     icon: 'noon' },
+    { until: 19, text: '傍晚好，抬头看看晚霞',     icon: 'evening' },
+    { until: 21, text: '晚上好，忙完就放松一下',   icon: 'evening' },
+    { until: 24, text: '夜色渐深，早点休息',       icon: 'night' }
   ];
 
   function greetingOf(hour) {
