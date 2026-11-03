@@ -126,6 +126,15 @@ const showTitle = widgetConfig?.showTitle !== false;
 				</div>
 			</div>
 
+			<!-- 生活提示 -->
+			<div class="w-advice hidden" data-advice>
+				<div class="w-advice-head">
+					<Icon is:inline name="material-symbols:lightbulb-outline-rounded" class="w-advice-icon" />
+					<span>今日提示</span>
+				</div>
+				<ul class="w-advice-list" data-advice-list></ul>
+			</div>
+
 			<!-- 日出日落 -->
 			<div class="w-sun-row">
 				<div class="w-sun-item">
@@ -517,6 +526,59 @@ const showTitle = widgetConfig?.showTitle !== false;
 		white-space: nowrap;
 	}
 
+	/* 生活提示 */
+	.w-advice {
+		display: flex;
+		flex-direction: column;
+		gap: 0.3rem;
+		padding: 0.55rem 0.65rem 0.6rem;
+		border-radius: 0.55rem;
+		border: 1px solid color-mix(in oklch, var(--primary) 18%, transparent);
+		background: color-mix(in oklch, var(--primary) 8%, transparent);
+	}
+
+	.w-advice-head {
+		display: flex;
+		align-items: center;
+		gap: 0.3rem;
+		font-size: 0.72rem;
+		font-weight: 600;
+		color: var(--primary);
+	}
+
+	.w-advice-icon {
+		font-size: 0.9rem;
+	}
+
+	.w-advice-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.22rem;
+		margin: 0;
+		padding: 0;
+		list-style: none;
+	}
+
+	.w-advice-list li {
+		position: relative;
+		padding-left: 0.72rem;
+		font-size: 0.73rem;
+		line-height: 1.45;
+		color: var(--deep-text);
+	}
+
+	.w-advice-list li::before {
+		content: "";
+		position: absolute;
+		left: 0;
+		top: 0.5em;
+		width: 4px;
+		height: 4px;
+		border-radius: 9999px;
+		background: var(--primary);
+		opacity: 0.75;
+	}
+
 	.w-sun-row {
 		display: flex;
 		align-items: center;
@@ -634,6 +696,41 @@ const showTitle = widgetConfig?.showTitle !== false;
     if (uv < 8) return uv.toFixed(1) + " 高";
     if (uv < 11) return uv.toFixed(1) + " 甚高";
     return uv.toFixed(1) + " 极高";
+  }
+
+  function maxWindLevel(str) {
+    var nums = String(str || "").match(/\d+/g);
+    if (!nums) return 0;
+    return Math.max.apply(null, nums.map(Number));
+  }
+
+  // 根据当前实况与今日预报，给出最多 3 条生活提示
+  function advicesOf(cur, today) {
+    var tips = [];
+    var text = String(cur.weather || "") + " " + String((today && today.weather_day) || "");
+    var hi = cur.temp_max != null ? cur.temp_max : (today ? today.temp_max : null);
+    var lo = cur.temp_min != null ? cur.temp_min : (today ? today.temp_min : null);
+    var humidity = cur.humidity;
+    var wind = maxWindLevel(cur.wind_power);
+    var visibility = cur.visibility;
+    var uv = cur.uv;
+
+    if (/雷/.test(text)) tips.push("有雷电，尽量避开空旷地带与大树");
+    if (/雨|雪|冰雹|霰/.test(text)) tips.push("有降水，出门记得带伞");
+    if (/雾|霾|沙尘/.test(text)) tips.push("能见度不佳，敏感人群建议戴口罩");
+    if (hi != null && hi >= 35) tips.push("高温天气，减少正午户外活动，注意防暑");
+    else if (hi != null && hi >= 30) tips.push("气温偏高，注意防晒并及时补水");
+    if (lo != null && lo <= 0) tips.push("气温接近冰点，注意防寒防冻");
+    else if (lo != null && lo <= 5) tips.push("气温偏低，外出记得添衣");
+    if (hi != null && lo != null && hi - lo >= 12) tips.push("昼夜温差较大，随身备件外套");
+    if (humidity != null && humidity >= 85) tips.push("湿度偏高，体感闷湿，注意通风");
+    else if (humidity != null && humidity <= 30) tips.push("空气干燥，记得多喝水");
+    if (wind >= 6) tips.push("风力较大，注意高空坠物，骑行小心");
+    if (visibility != null && visibility < 1) tips.push("能见度很低，驾车请减速并开灯");
+    else if (visibility != null && visibility < 5) tips.push("能见度偏低，出行注意安全");
+    if (uv != null && uv >= 7) tips.push("紫外线较强，外出做好防晒");
+    if (!tips.length) tips.push("天气舒适，适合安排户外活动");
+    return tips.slice(0, 3);
   }
 
   function dayName(dateStr, index) {
@@ -761,6 +858,18 @@ const showTitle = widgetConfig?.showTitle !== false;
       cur.pressure != null ? Math.round(cur.pressure) : "--";
     container.querySelector("[data-cloud]").textContent =
       cur.cloud != null ? cur.cloud + "%" : "--%";
+
+    var adviceBox = container.querySelector("[data-advice]");
+    var adviceList = container.querySelector("[data-advice-list]");
+    if (adviceBox && adviceList && (cur.weather || cur.temperature != null)) {
+      adviceList.innerHTML = "";
+      advicesOf(cur, daily[0]).forEach(function (text) {
+        var li = document.createElement("li");
+        li.textContent = text;
+        adviceList.appendChild(li);
+      });
+      adviceBox.classList.remove("hidden");
+    }
 
     if (daily[0]) {
       container.querySelector("[data-sunrise]").textContent = formatTime(daily[0].sunrise);
