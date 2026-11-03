@@ -83,6 +83,15 @@ const showTitle = widgetConfig?.showTitle !== false;
 				<div class="w-hourly-scroll" data-hourly-scroll></div>
 			</div>
 
+			<!-- 生活提示 -->
+			<div class="w-advice hidden" data-advice>
+				<div class="w-advice-head">
+					<Icon is:inline name="material-symbols:lightbulb-outline-rounded" class="w-advice-icon" />
+					<span>今日提示</span>
+				</div>
+				<ul class="w-advice-list" data-advice-list></ul>
+			</div>
+
 			<!-- 每日预报 -->
 			<div class="w-section">
 				<div class="w-section-title">
@@ -124,15 +133,6 @@ const showTitle = widgetConfig?.showTitle !== false;
 					<span class="w-detail-label">云量</span>
 					<span class="w-detail-value" data-cloud>--%</span>
 				</div>
-			</div>
-
-			<!-- 生活提示 -->
-			<div class="w-advice hidden" data-advice>
-				<div class="w-advice-head">
-					<Icon is:inline name="material-symbols:lightbulb-outline-rounded" class="w-advice-icon" />
-					<span>今日提示</span>
-				</div>
-				<ul class="w-advice-list" data-advice-list></ul>
 			</div>
 
 			<!-- 日出日落 -->
