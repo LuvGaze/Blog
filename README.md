@@ -30,7 +30,7 @@
 
 > [!NOTE]
 > **LuvGaze Blog** 是一个基于 [Firefly](https://github.com/CuteLeaf/Firefly) 深度二次开发的现代化个人博客。
-> 文章、书架、影视、番组、游戏、音乐、相册、足迹、账单、更新日志、笔记本……**全部内容用 Markdown / YAML 托管**，
+> 文章、书架、影视、番组、游戏、音乐、相册、足迹、更新日志、笔记本……**全部内容用 Markdown / YAML 托管**，
 > 并配备 **Express + TypeScript 可视化后台** 与 **脚本化构建流水线**，改内容不用碰一行代码。
 
 ---
@@ -45,7 +45,7 @@ flowchart LR
         direction TB
         posts["📝 文章"] --- books["📚 书架"] --- movies["🎬 影视 / 番组 / 音乐"]
         games["🎮 游戏"] --- gallery["🖼️ 相册"] --- travel["🧭 足迹"]
-        bills["💰 账单"] --- notebooks["📓 笔记本"] --- friends["🤝 友链 / 朋友圈"]
+        notebooks["📓 笔记本"] --- friends["🤝 友链 / 朋友圈"]
     end
 
     subgraph L2["⚙️ 渲染层 · Astro 7 + Svelte 5"]
@@ -81,7 +81,6 @@ flowchart LR
 | 🎬 影视 · 游戏 | 分类筛选与评分，按状态 / 类型排序                |
 | 🖼️ 相册     | 瀑布流 + PhotoSwipe 查看器              |
 | 🧭 足迹地图    | 高德地图，省 / 市界随缩放显示，悬浮高亮与点亮插件        |
-| 💰 账单      | 收支流水、月度统计、分类排行仪表盘                 |
 | 🕘 更新日志    | 日期 + 版本号排序，链路图谱视图                 |
 | 🤝 友链      | 参考风格截图卡片（7:5），支持自定义分组             |
 
@@ -90,7 +89,7 @@ flowchart LR
 - **双层响应式侧边栏**：左右栏组件化，可配置归属、排序、粘性定位与文章页显隐。
 - **侧栏小组件**：天气（三列整组轮换 · AQI 分色 · 气压）、恋爱计时器、音乐播放器、日历、公告。
 - **构建期自动化**：图标按需内联、LQIP 占位图、字体子集化、Pagefind 全文搜索索引。
-- **全站访问口令**：受保护页面（含账单）共用一套口令，由环境变量注入。
+- **全站访问口令**：受保护页面共用一套口令，由环境变量注入。
 - **内容 schema 校验**：`src/content.config.ts` 统一约束所有集合字段。
 
 ---
@@ -110,7 +109,6 @@ flowchart LR
 | 🖼️ 相册  | `src/content/gallery/`                    | `images` 数组或扫描本地目录                        |
 | 🧭 足迹   | `src/content/travel/`                     | 高德足迹地图，`province` / `city` / `visitCount` |
 | 📋 规划   | `src/content/plans/`                      | 待办规划，`updated` 记录修改时间                     |
-| 💰 账单   | `src/content/bills/`                      | 收支流水，受全站口令保护                              |
 | 🕘 更新日志 | `src/content/changelog/`                  | 版本记录，同日按版本号排序                             |
 | 📓 笔记本  | `src/content/notebooks/`                  | 多级目录 + 单篇笔记，带封面                           |
 | 🤝 友链   | `src/content/friends/` + `friend-groups/` | 截图卡片，支持自定义分组                              |
@@ -133,7 +131,7 @@ flowchart LR
 
 `admin/` 目录内置一套 **独立运行的可视化后台**，直接读写博客的 `src/content/` 与 `src/config/`：
 
-- **14 个内容模块**：文章 / 相册 / 笔记 / 书架 / 游戏 / 影视 / 友链 / 朋友圈 / 规划 / 旅行 / 账单 / 网站导航 / 更新日志 /
+- **13 个内容模块**：文章 / 相册 / 笔记 / 书架 / 游戏 / 影视 / 友链 / 朋友圈 / 规划 / 旅行 / 网站导航 / 更新日志 /
   关于我。
 - **表单化编辑**：按字段定义自动渲染控件，YAML 引号与换行风格原样保留写回。
 - **配置在线编辑**：站点、侧边栏、评论、音乐、页脚等 TS 配置结构化改写，保留注释与格式。
@@ -342,7 +340,7 @@ sequenceDiagram
 </details>
 
 <details>
-<summary><b>足迹地图 / 账单页白屏或无法访问？</b></summary>
+<summary><b>足迹地图白屏或无法访问？</b></summary>
 
 <br/>
 
