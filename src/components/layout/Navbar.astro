@@ -1,4 +1,4 @@
----
+﻿---
 import { Picture } from "astro:assets";
 import * as path from "node:path";
 import type { ImageMetadata } from "astro";
@@ -83,21 +83,21 @@ if (isLocalSrcLogo) {
 }
 ---
 
-<div id="navbar" class={`z-50 ${className ?? ""}`} style="margin: 0 auto; margin-top: 10px;" data-is-home={isHomePageCheck} data-full-width={navbarWidthFull}>
+<div id="navbar" class={`z-50 ${className ?? ""}`} style="margin: 0 auto; margin-top: 0.5rem;" data-is-home={isHomePageCheck} data-full-width={navbarWidthFull}>
 	<div class="navbar-segments">
-		<!-- 左段：logo + 标题（滚动收缩成球） -->
+		<!-- 左段：logo + 标题 -->
 		<div class="navbar-seg navbar-seg--left">
-			<a href={url("/")} class="navbar-logo scale-animation flex items-center text-(--deep-text)">
+			<a href={url("/")} class="navbar-logo btn-plain scale-animation rounded-full h-10 px-3 md:px-5 font-bold flex items-center text-(--deep-text)">
 				{siteConfig.navbar.logo?.type === "icon" ? (
-					<Icon is:inline name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} class="text-[1.35rem] flex-shrink-0" />
+					<Icon is:inline name={siteConfig.navbar.logo.value || "material-symbols:home-pin-outline"} class="navbar-logo-img text-[1.35rem] flex-shrink-0" />
 				) : siteConfig.navbar.logo?.type === "image" && logoImg ? (
 					logoImg.format === "svg" ? (
-						<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+						<img src={logoImg.src} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="navbar-logo-img h-7 w-7 object-contain flex-shrink-0" fetchpriority="high" />
 					) : (
 						<Picture
 							src={logoImg}
 							alt={siteConfig.navbar.logo.alt || siteConfig.title}
-							class="h-6 w-6 object-contain flex-shrink-0"
+							class="navbar-logo-img h-7 w-7 object-contain flex-shrink-0"
 							formats={getImageFormats()}
 							fallbackFormat={getFallbackFormat()}
 							widths={[24, 48]}
@@ -106,35 +106,34 @@ if (isLocalSrcLogo) {
 						/>
 					)
 				) : siteConfig.navbar.logo?.type === "image" ? (
-					<img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+					<img src={url(siteConfig.navbar.logo.value)} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="navbar-logo-img h-7 w-7 object-contain flex-shrink-0" fetchpriority="high" />
 				) : siteConfig.navbar.logo?.type === "url" ? (
-					<img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="h-6 w-6 object-contain flex-shrink-0" fetchpriority="high" />
+					<img src={siteConfig.navbar.logo.value} alt={siteConfig.navbar.logo.alt || siteConfig.title} class="navbar-logo-img h-7 w-7 object-contain flex-shrink-0" fetchpriority="high" />
 				) : (
 					<Icon is:inline name="material-symbols:home-pin-outline" class="text-[1.35rem] flex-shrink-0" />
 				)}
-				<span class="navbar-logo-text font-mono uppercase tracking-[0.12em] text-xs font-semibold ml-2">{navbarTitle}</span>
+				<span class="navbar-logo-text truncate text-sm md:text-base font-bold ml-2">{navbarTitle}</span>
 			</a>
 		</div>
 
-		<!-- 中段：紧凑导航椭圆（滚动不变，带滑动高亮胶囊） -->
-		<div class="navbar-seg navbar-seg--center" data-navbar-nav>
-			<div class="navbar-nav hidden lg:flex items-center gap-0.5 relative">
-				<div class="navbar-hover-highlight" data-hover-border></div>
+		<!-- 中段：紧凑导航椭圆（与 jerrynis 一致，≥1280px 显示） -->
+		<div class="navbar-seg navbar-seg--center">
+			<div class="navbar-nav hidden xl:flex items-center">
 				{links.map((l) => <DropdownMenu link={l} />)}
 			</div>
 		</div>
 
-		<!-- 右段：操作按钮（音乐/背景播放/显示设置/深浅色/移动端菜单），滚动收缩贴近中段 -->
+		<!-- 右段：操作按钮（音乐/背景播放/显示设置/深浅色/移动端菜单） -->
 		<div class="navbar-seg navbar-seg--right">
 			{musicPlayerConfig.showInNavbar && (
-				<button aria-label={i18n(I18nKey.music)} class="btn-plain scale-animation rounded-lg h-9 w-9 active:scale-90" id="music-player-switch">
+				<button aria-label={i18n(I18nKey.music)} class="btn-plain scale-animation rounded-full h-10 w-10 active:scale-90" id="music-player-switch">
 					<Icon is:inline name="material-symbols:music-note-rounded" class="text-[1.2rem]"></Icon>
 				</button>
 			)}
 			{backgroundWallpaper.playerEnable && backgroundWallpaper.mode !== "none" && (
 				<button
 					aria-label={i18n(I18nKey.videoPlay)}
-					class="btn-plain scale-animation rounded-lg h-9 w-9 active:scale-90"
+					class="btn-plain scale-animation rounded-full h-10 w-10 active:scale-90"
 					id="bg-player-toggle"
 					data-i18n-play={i18n(I18nKey.videoPlay)}
 					data-i18n-pause={i18n(I18nKey.videoPause)}
@@ -143,13 +142,13 @@ if (isLocalSrcLogo) {
 				</button>
 			)}
 			{hasDisplaySettings && (
-				<button aria-label="Display Settings" class="btn-plain scale-animation rounded-lg h-9 w-9 active:scale-90" id="display-settings-switch">
+				<button aria-label="Display Settings" class="btn-plain scale-animation rounded-full h-10 w-10 active:scale-90" id="display-settings-switch">
 					<Icon is:inline name="material-symbols:palette-outline" class="text-[1.2rem]"></Icon>
 				</button>
 			)}
 			{/* @ts-ignore */}
 			<LightDarkSwitch client:load></LightDarkSwitch>
-			<button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-lg w-9 h-9 active:scale-90 lg:hidden!" id="nav-menu-switch">
+			<button aria-label="Menu" name="Nav Menu" class="btn-plain scale-animation rounded-full w-10 h-10 active:scale-90 xl:hidden!" id="nav-menu-switch">
 				<Icon is:inline name="material-symbols:menu-rounded" class="text-[1.2rem]"></Icon>
 			</button>
 		</div>
@@ -349,197 +348,6 @@ function loadButtonScript() {
 loadButtonScript();
 </script>
 
-<script is:inline>
-// 参考模板：导航栏 hover 滑动高亮胶囊 + 滚动收缩动画
-(function () {
-	var _hoverSliderAbortController = null;
-	var _hoverSliderMouseEnterHandlers = [];
-
-	function cleanupHoverSlider() {
-		if (_hoverSliderAbortController) {
-			_hoverSliderAbortController.abort();
-			_hoverSliderAbortController = null;
-		}
-		_hoverSliderMouseEnterHandlers.forEach(function (entry) {
-			entry[0].removeEventListener('mouseenter', entry[1]);
-		});
-		_hoverSliderMouseEnterHandlers = [];
-	}
-
-	function normalizePath(p) {
-		return p.replace(/\/$/, '') || '/';
-	}
-
-	function pathMatches(currentPath, href) {
-		var cp = normalizePath(currentPath);
-		var hp = normalizePath(href);
-		if (hp === '/') return cp === '/';
-		return cp === hp || cp.startsWith(hp + '/');
-	}
-
-	function moveHighlight(navContainer, hoverBorder, item) {
-		if (!item) {
-			hoverBorder.style.opacity = '0';
-			return;
-		}
-		var rect = item.getBoundingClientRect();
-		var containerRect = navContainer.getBoundingClientRect();
-		hoverBorder.style.width = rect.width + 'px';
-		hoverBorder.style.height = rect.height + 'px';
-		hoverBorder.style.left = (rect.left - containerRect.left) + 'px';
-		hoverBorder.style.top = (rect.top - containerRect.top) + 'px';
-	}
-
-	function initHoverSlider() {
-		cleanupHoverSlider();
-
-		var navContainer = document.querySelector('[data-navbar-nav] .navbar-nav');
-		var hoverBorder = document.querySelector('[data-hover-border]');
-		if (!navContainer || !hoverBorder) return;
-
-		_hoverSliderAbortController = new AbortController();
-		var navItems = Array.from(navContainer.querySelectorAll(':scope > .dropdown-container'));
-
-		function detectActiveItem() {
-			var currentPath = window.location.pathname;
-			var activeItem = null;
-
-			navItems.forEach(function (item) {
-				item.classList.remove('nav-item-active');
-				var hrefs = [];
-				var selfLink = item.querySelector(':scope > a');
-				if (selfLink) {
-					var href = selfLink.getAttribute('href');
-					if (href) hrefs.push(href);
-				}
-				item.querySelectorAll('.dropdown-item[href]').forEach(function (el) {
-					var href = el.getAttribute('href');
-					if (href) hrefs.push(href);
-				});
-
-				var matched = hrefs.some(function (href) { return pathMatches(currentPath, href); });
-				if (matched) {
-					item.classList.add('nav-item-active');
-					if (!activeItem) activeItem = item;
-				}
-			});
-
-			if (activeItem) {
-				navContainer.classList.add('nav-has-active');
-				requestAnimationFrame(function () {
-					moveHighlight(navContainer, hoverBorder, activeItem);
-				});
-			} else {
-				navContainer.classList.remove('nav-has-active');
-				hoverBorder.style.opacity = '0';
-			}
-		}
-
-		navItems.forEach(function (item) {
-			var handler = function () { moveHighlight(navContainer, hoverBorder, item); };
-			item.addEventListener('mouseenter', handler);
-			_hoverSliderMouseEnterHandlers.push([item, handler]);
-		});
-
-		navContainer.addEventListener('mouseleave', function () {
-			var activeItem = navContainer.querySelector('.nav-item-active');
-			moveHighlight(navContainer, hoverBorder, activeItem);
-		}, { signal: _hoverSliderAbortController.signal });
-
-		navContainer.addEventListener('mouseenter', function () {
-			hoverBorder.style.opacity = '1';
-		}, { signal: _hoverSliderAbortController.signal });
-
-		detectActiveItem();
-		document.addEventListener('astro:page-load', detectActiveItem, { signal: _hoverSliderAbortController.signal });
-	}
-
-	initHoverSlider();
-
-	// 滚动收缩：左段 logo 收球、左/右段平移贴近中段
-	(function () {
-		var navbar = document.getElementById('navbar');
-
-		var SCROLL_IN = 80;
-		var SCROLL_OUT = 40;
-		var COMPACT_GAP = 8;
-		var ticking = false;
-		var resizeTicking = false;
-
-		// 右段含多个功能按钮（保持展开），滚动时仅左段 logo 收球并滑向中段左侧
-		function updateCompactLayout() {
-			var segments = document.querySelector('.navbar-segments');
-			var center = document.querySelector('.navbar-seg--center');
-			var left = document.querySelector('.navbar-seg--left');
-			var right = document.querySelector('.navbar-seg--right');
-			if (!navbar || !segments || !center || !left || !right) return;
-
-			var isScrolled = navbar.classList.contains('scrolled');
-			var isMobile = window.matchMedia('(max-width: 1023px)').matches;
-
-			if (isMobile) {
-				left.style.left = '';
-				left.style.transform = '';
-				right.style.left = '';
-				right.style.right = '';
-				right.style.transform = '';
-				return;
-			}
-
-			var segmentsRect = segments.getBoundingClientRect();
-			var centerRect = center.getBoundingClientRect();
-			var leftRect = left.getBoundingClientRect();
-
-			if (isScrolled) {
-				left.style.left = (centerRect.left - segmentsRect.left - COMPACT_GAP - leftRect.width) + 'px';
-				left.style.transform = 'translateY(-50%)';
-			} else {
-				left.style.left = '0px';
-				left.style.transform = 'translateY(-50%)';
-			}
-			// 右段始终贴右缘（CSS right:0），无需在此重定位
-		}
-
-		function handleScroll() {
-			var y = window.scrollY;
-			var wasScrolled = navbar.classList.contains('scrolled');
-
-			if (y > SCROLL_IN) {
-				navbar.classList.add('scrolled');
-			} else if (y < SCROLL_OUT) {
-				navbar.classList.remove('scrolled');
-			}
-
-			var isScrolled = navbar.classList.contains('scrolled');
-			if (wasScrolled !== isScrolled || isScrolled) {
-				requestAnimationFrame(updateCompactLayout);
-			}
-			ticking = false;
-		}
-
-		window.addEventListener('scroll', function () {
-			if (!ticking) {
-				requestAnimationFrame(handleScroll);
-				ticking = true;
-			}
-		}, { passive: true });
-
-		window.addEventListener('resize', function () {
-			if (!resizeTicking) {
-				requestAnimationFrame(function () {
-					updateCompactLayout();
-					resizeTicking = false;
-				});
-				resizeTicking = true;
-			}
-		}, { passive: true });
-
-		handleScroll();
-		requestAnimationFrame(updateCompactLayout);
-	})();
-})();
-</script>
-
 {
 	import.meta.env.PROD && (
 		<script is:inline data-swup-ignore-script define:vars={{ scriptUrl: url('/pagefind/pagefind.js') }}>
@@ -565,7 +373,10 @@ loadButtonScript();
 				}
 			}
 
-			if (document.readyState === 'loading') {
+			// 只在搜索页加载 Pagefind 索引，避免每个页面都请求搜索资源
+			if (!location.pathname.includes('/search')) {
+				// skip on non-search pages
+			} else if (document.readyState === 'loading') {
 				document.addEventListener('DOMContentLoaded', loadPagefind);
 			} else {
 				loadPagefind();
