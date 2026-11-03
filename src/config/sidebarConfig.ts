@@ -140,12 +140,20 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
     // 右侧边栏组件配置列表
     rightComponents: [
         {
-            // 组件类型：恋爱计时器组件（置顶展示）
+            // 组件类型：时间问候（时间 + 日期 + 随机风景图），固定在右侧边栏最上方
+            type: "timeGreeting",
+            enable: true,
+            order: 0,
+            position: "top",
+            showOnPostPage: false,
+        },
+        {
+            // 组件类型：恋爱计时器组件
             type: "relationship",
             // 是否启用该组件
             enable: false,
             // 同侧上下排序（最小即最靠前，置于最上方）
-            order: 0,
+            order: 1,
             // 组件位置
             position: "top",
             // 是否在文章详情页显示
@@ -157,7 +165,7 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
             // 是否启用该组件
             enable: true,
             // 同侧上下排序
-            order: 1,
+            order: 2,
             // 组件位置
             position: "top",
             // 是否在文章详情页显示
@@ -314,6 +322,14 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
             showOnPostPage: true,
         },
         {
+            // 组件类型：时间问候组件（天气上方）
+            type: "timeGreeting",
+            // 是否启用该组件
+            enable: true,
+            // 是否在文章详情页显示
+            showOnPostPage: true,
+        },
+        {
             // 组件类型：天气组件
             type: "weather",
             // 是否启用该组件
@@ -322,18 +338,18 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
             showOnPostPage: true,
         },
         {
-            // 组件类型：恋爱计时器组件
+            // 组件类型：恋爱计时器组件（桌面端未启用，移动端保持一致）
             type: "relationship",
             // 是否启用该组件
-            enable: true,
+            enable: false,
             // 是否在文章详情页显示
             showOnPostPage: true,
         },
         {
-            // 组件类型：音乐播放器
+            // 组件类型：音乐播放器（导航栏已有入口，移动端底部不再重复展示）
             type: "music",
             // 是否启用该组件
-            enable: true,
+            enable: false,
             // 是否在文章详情页显示
             showOnPostPage: true,
         },
@@ -389,10 +405,10 @@ export const sidebarLayoutConfig: SidebarLayoutConfig = {
             },
         },
         {
-            // 组件类型：站点信息组件
+            // 组件类型：站点信息组件（移动端信息密度过高，默认关闭）
             type: "siteInfo",
             // 是否启用该组件
-            enable: true,
+            enable: false,
             // 是否在文章详情页显示
             showOnPostPage: true,
             // 组件专属配置
