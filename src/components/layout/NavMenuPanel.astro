@@ -9,7 +9,7 @@ interface Props {
 
 const processedLinks = Astro.props.links;
 ---
-<div id="nav-menu-panel" class:list={["float-panel float-panel-closed transition-all fixed right-4 px-2 py-2 max-h-[80vh] overflow-y-auto"]}>
+<div id="nav-menu-panel" class:list={["float-panel float-panel-closed transition-all fixed right-3 sm:right-4 px-2 py-2 w-[calc(100vw-1.5rem)] max-w-80 max-h-[75vh] overflow-y-auto overscroll-contain"]}>
     {processedLinks.map((link) => (
         <div class="mobile-menu-item">
             {link.children && link.children.length > 0 ? (
