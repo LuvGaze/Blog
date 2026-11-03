@@ -753,7 +753,9 @@ const siteLang = lang.replace("_", "-");
     }
 
     .navbar-hidden {
-      @apply opacity-0 -translate-y-16;
+      opacity: 0 !important;
+      transform: translateY(-130%) !important;
+      pointer-events: none;
     }
 
     body.sticky-navbar #top-row {
@@ -772,8 +774,9 @@ const siteLang = lang.replace("_", "-");
     }
 
     body.sticky-navbar #navbar-wrapper.navbar-hidden {
-      opacity: 1 !important;
-      transform: none !important;
+      opacity: 0 !important;
+      transform: translateY(-130%) !important;
+      pointer-events: none;
     }
 
     html[data-wallpaper-mode="none"] body.sticky-navbar #sidebar-sticky,
