@@ -1,5 +1,0 @@
----
-name: 学习网站
-icon: material-symbols:school
-order: 10
----
