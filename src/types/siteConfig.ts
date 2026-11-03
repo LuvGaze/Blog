@@ -94,12 +94,10 @@ export type SiteConfig = {
         books: boolean; // 书架页面开关
         movies: boolean; // 影视页面开关
         games: boolean; // 游戏页面开关
-        musicPage: boolean; // 音乐页面开关
         changelog: boolean; // 更新日志页面开关
         routines: boolean; // 规划页面开关
         places: boolean; // 足迹页面开关
         notebooks: boolean; // 笔记本页面开关
-        bills: boolean; // 账单页面开关
     };
 
     // 分类导航栏开关
