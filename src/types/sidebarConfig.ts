@@ -12,6 +12,7 @@ export type WidgetComponentType =
     | "siteInfo"
     | "umamiStats"
     | "weather"
+    | "timeGreeting"
     | "relationship"
     | "recentUpdates"
     | "changelog";
