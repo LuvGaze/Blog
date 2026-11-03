@@ -210,27 +210,6 @@ const friendGroupsCollection = defineCollection({
     }),
 });
 
-const billsCollection = defineCollection({
-    loader: glob({pattern: "**/*.{md,mdx}", base: "./src/content/bills"}),
-    schema: z.object({
-        title: z.string().optional().default(""),
-        amount: z.number(),
-        type: z.enum(["income", "expense"]).default("expense"),
-        category: z.string().default("其他"),
-        account: z.string().default("其他"),
-        date: z.coerce.date(),
-        time: z
-            .string()
-            .regex(/^\d{2}:\d{2}$/)
-            .or(z.literal(""))
-            .optional()
-            .default(""),
-        description: z.string().optional().default(""),
-        tags: z.array(z.string()).optional().default([]),
-        order: z.number().optional().default(0),
-    }),
-});
-
 const galleryCollection = defineCollection({
     loader: glob({pattern: "**/*.md", base: "./src/content/gallery"}),
     schema: z.object({
@@ -260,5 +239,4 @@ export const collections = {
     friends: friendsCollection,
     friendGroups: friendGroupsCollection,
     gallery: galleryCollection,
-    bills: billsCollection,
 };
