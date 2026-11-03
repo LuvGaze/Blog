@@ -11,6 +11,8 @@
     align-items: center;
     justify-content: center;
     width: 100%;
+    /* 限制整条导航的最大宽度：左右两岛会向中间靠拢，不再贴着屏幕两端 */
+    max-width: var(--navbar-max-width, 72rem);
     min-height: 4.5rem;
     padding-inline: 1rem;
     margin-inline: auto;
@@ -219,8 +221,17 @@
  * navbar-wrapper：滚动后背景变透明
  * ============================================ */
 #navbar-wrapper {
-    will-change: background-color;
-    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.15s;
+    will-change: background-color, opacity, transform;
+    transition: background-color 0.3s cubic-bezier(0.4, 0, 0.2, 1) 0.15s,
+        opacity 0.34s cubic-bezier(0.22, 1, 0.36, 1),
+        transform 0.34s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* 顶栏隐藏：整体移出视口，避免只露出一条边 */
+#navbar-wrapper.navbar-hidden {
+    opacity: 0 !important;
+    transform: translateY(-130%) !important;
+    pointer-events: none;
 }
 
 #navbar.scrolled ~ #navbar-wrapper,
