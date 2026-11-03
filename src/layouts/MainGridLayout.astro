@@ -1,7 +1,4 @@
 ---
-import Live2DWidget from "@components/features/Live2DWidget.astro";
-
-import SpineModel from "@components/features/SpineModel.astro";
 import Footer from "@components/layout/Footer.astro";
 import Navbar from "@components/layout/Navbar.astro";
 import WelcomeToast from "@components/widget/WelcomeToast.astro";
@@ -17,7 +14,6 @@ import CategoryBar from "@/components/layout/CategoryBar.astro";
 import {
 	accessConfig,
 	backgroundWallpaper,
-	live2dWidgetConfig,
 	sidebarLayoutConfig,
 	siteConfig,
 } from "@/config";
@@ -45,6 +41,9 @@ import { isRouteProtected, slugifyPath } from "@/utils/access-utils";
 
 import "@/styles/markdown.css";
 import "@/styles/expressive-code.css";
+
+// 看板娘默认关闭（Live2D / Spine）。
+// 未来需要恢复时，直接在模板中重新引入对应组件，并确保只在其启用时渲染。
 
 interface Props {
 	title?: string;
@@ -1071,8 +1070,7 @@ const hasMultipleImages =
             </div>
         </div>
 
-        <SpineModel></SpineModel>
-        {live2dWidgetConfig.enable && <Live2DWidget config={live2dWidgetConfig} />}
+        {/* 看板娘默认关闭，相关组件不参与构建 */}
     </div>
 </div>
 
