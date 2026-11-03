@@ -1,5 +1,0 @@
----
-name: 自建网站
-icon: material-symbols:person
-order: 30
----
