@@ -1,4 +1,5 @@
 ---
+import { Icon } from "astro-icon/components";
 import WidgetLayout from "@/components/common/WidgetLayout.astro";
 import type { WidgetComponentConfig } from "@/types/config";
 
@@ -15,341 +16,812 @@ const showTitle = widgetConfig?.showTitle !== false;
 	name="天气预报"
 	showTitle={showTitle}
 	id="weather-widget"
+	isCollapsed={true}
+	collapsedHeight="8.5rem"
 	class={className}
 	style={style}
 >
-	<div class="weather-card" id="weather-main">
-		<div class="weather-loading">
-			<div class="weather-loading-icon">☁️</div>
-			<span class="weather-loading-text">获取天气中...</span>
+	<div data-weather-init class="weather-root">
+		<!-- 加载状态 -->
+		<div class="w-loading" data-weather-loading>
+			<Icon is:inline name="material-symbols:cloud-outline" class="w-loading-icon" />
+			<span class="w-loading-text">获取天气中...</span>
 		</div>
-	</div>
-	<div class="weather-error" id="weather-error" style="display:none">
-		<span class="weather-error-text" id="weather-error-text">天气加载失败</span>
+
+		<!-- 错误状态 -->
+		<div class="w-error hidden" data-weather-error>
+			<Icon is:inline name="material-symbols:cloud-off-outline-rounded" class="w-error-icon" />
+			<span class="w-error-text" data-error-message>加载失败</span>
+			<button class="w-retry-btn" data-retry-btn type="button">点击重试</button>
+		</div>
+
+		<!-- 天气内容 -->
+		<div class="w-content hidden" data-weather-content>
+			<!-- 当前天气主区域 -->
+			<div class="w-current">
+				<div class="w-current-info">
+					<div class="w-location">
+						<Icon is:inline name="material-symbols:location-on-rounded" class="w-location-icon" />
+						<span class="w-location-text" data-city>--</span>
+					</div>
+					<div class="w-temp-row">
+						<span class="w-temp" data-temperature>--</span>
+						<span class="w-temp-unit">°C</span>
+					</div>
+					<span class="w-desc" data-weather-desc>--</span>
+				</div>
+				<div class="w-current-right">
+					<span class="w-weather-icon" data-weather-icon>☀</span>
+					<span class="w-feels"><span class="w-feels-label">体感</span> <span data-feels-like>--</span>°</span>
+				</div>
+			</div>
+
+			<!-- 高低温 + 更新时间 -->
+			<div class="w-meta-row">
+				<div class="w-temp-range">
+					<span class="w-high">
+						<Icon is:inline name="material-symbols:arrow-upward-rounded" class="w-arrow-icon" />
+						<span data-temp-max>--</span>°
+					</span>
+					<span class="w-low">
+						<Icon is:inline name="material-symbols:arrow-downward-rounded" class="w-arrow-icon" />
+						<span data-temp-min>--</span>°
+					</span>
+				</div>
+				<span class="w-update-time" data-observed-time></span>
+			</div>
+
+			<!-- 分割线 -->
+			<div class="w-divider"></div>
+
+			<!-- 逐时预报 -->
+			<div class="w-section">
+				<div class="w-section-title">
+					<Icon is:inline name="material-symbols:schedule-outline-rounded" class="w-section-icon" />
+					<span>逐时预报</span>
+				</div>
+				<div class="w-hourly-scroll" data-hourly-scroll></div>
+			</div>
+
+			<!-- 每日预报 -->
+			<div class="w-section">
+				<div class="w-section-title">
+					<Icon is:inline name="material-symbols:calendar-month-outline-rounded" class="w-section-icon" />
+					<span>未来天气</span>
+				</div>
+				<div class="w-daily-list" data-daily-list></div>
+			</div>
+
+			<!-- 详情网格 -->
+			<div class="w-detail-grid">
+				<div class="w-detail-item">
+					<Icon is:inline name="material-symbols:humidity-percentage-outline-rounded" class="w-detail-icon" />
+					<span class="w-detail-label">湿度</span>
+					<span class="w-detail-value" data-humidity>--%</span>
+				</div>
+				<div class="w-detail-item">
+					<Icon is:inline name="material-symbols:air-rounded" class="w-detail-icon" />
+					<span class="w-detail-label">风速</span>
+					<span class="w-detail-value" data-wind>--</span>
+				</div>
+				<div class="w-detail-item">
+					<Icon is:inline name="material-symbols:visibility-outline-rounded" class="w-detail-icon" />
+					<span class="w-detail-label">能见度</span>
+					<span class="w-detail-value" data-visibility>--</span>
+				</div>
+				<div class="w-detail-item">
+					<Icon is:inline name="material-symbols:light-mode-outline-rounded" class="w-detail-icon" />
+					<span class="w-detail-label">紫外线</span>
+					<span class="w-detail-value" data-uv>--</span>
+				</div>
+				<div class="w-detail-item">
+					<Icon is:inline name="material-symbols:compress-rounded" class="w-detail-icon" />
+					<span class="w-detail-label">气压</span>
+					<span class="w-detail-value" data-pressure>--</span>
+				</div>
+				<div class="w-detail-item">
+					<Icon is:inline name="material-symbols:cloud-outline" class="w-detail-icon" />
+					<span class="w-detail-label">云量</span>
+					<span class="w-detail-value" data-cloud>--%</span>
+				</div>
+			</div>
+
+			<!-- 日出日落 -->
+			<div class="w-sun-row">
+				<div class="w-sun-item">
+					<Icon is:inline name="material-symbols:wb-sunny-outline-rounded" class="w-sun-icon w-sunrise-icon" />
+					<div class="w-sun-info">
+						<span class="w-sun-label">日出</span>
+						<span class="w-sun-time" data-sunrise>--:--</span>
+					</div>
+				</div>
+				<div class="w-sun-line"></div>
+				<div class="w-sun-item">
+					<div class="w-sun-info w-sun-info-right">
+						<span class="w-sun-label">日落</span>
+						<span class="w-sun-time" data-sunset>--:--</span>
+					</div>
+					<Icon is:inline name="material-symbols:nightlight-outline-rounded" class="w-sun-icon w-sunset-icon" />
+				</div>
+			</div>
+		</div>
 	</div>
 </WidgetLayout>
 
 <style is:global>
-  /* 天气组件内部布局（卡片外壳/标题由 WidgetLayout 统一提供，与其他侧栏组件保持一致） */
-  .weather-card {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-  }
+	/* 天气组件 —— 完全复刻 jerrynis.com（Weather.eDhtqyIv.css） */
+	.weather-root {
+		width: 100%;
+	}
 
-  .weather-body {
-    display: flex;
-    align-items: flex-end;
-    justify-content: space-between;
-    gap: 1rem;
-  }
+	.weather-root .hidden {
+		display: none !important;
+	}
 
-  .weather-left {
-    display: flex;
-    flex-direction: column;
-    gap: 0.125rem;
-  }
+	:root.dark .w-temp,
+	:root.dark .w-desc,
+	:root.dark .w-daily-day,
+	:root.dark .w-hourly-temp,
+	:root.dark .w-detail-value,
+	:root.dark .w-sun-time {
+		color: #ffffffe6;
+	}
 
-  .weather-temp {
-    font-size: 2.25rem;
-    font-weight: 400;
-    color: var(--deep-text);
-    line-height: 1;
-    letter-spacing: -0.03em;
-  }
+	.w-loading {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 2rem 0;
+	}
 
-  .weather-location {
-    font-size: 0.8125rem;
-    color: var(--content-meta);
-    font-weight: 400;
-  }
+	.w-loading-icon {
+		font-size: 1.75rem;
+		color: var(--primary);
+		opacity: 0.6;
+		animation: w-pulse 1.5s ease-in-out infinite;
+	}
 
-  .weather-right {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 0.1875rem;
-    min-width: 0;
-    flex-shrink: 0;
-  }
+	.w-loading-text {
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
 
-  .weather-highlow {
-    font-size: 0.75rem;
-    color: var(--content-meta);
-    font-weight: 400;
-    white-space: nowrap;
-    text-align: right;
-  }
+	@keyframes w-pulse {
+		0%,
+		100% {
+			opacity: 0.4;
+		}
+		50% {
+			opacity: 0.8;
+		}
+	}
 
-  .weather-aqi {
-    font-size: 0.75rem;
-    white-space: nowrap;
-    text-align: right;
-    font-weight: 400;
-    color: var(--content-meta);
-  }
+	.w-error {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 1.5rem 0;
+	}
 
-  /* 附加信息区：多组三列指标，整组轮换 */
-  .weather-extra {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-top: 1px solid var(--line-divider);
-    padding-top: 0.55rem;
-    min-height: 3.1rem;
-  }
-  .weather-group {
-    display: none;
-    flex: 1;
-    min-width: 0;
-    align-items: stretch;
-  }
-  .weather-group.is-active {
-    display: flex;
-  }
-  .weather-stat {
-    flex: 1;
-    min-width: 0;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 0.125rem;
-    text-align: center;
-  }
-  .weather-stat + .weather-stat {
-    border-left: 1px solid var(--line-divider);
-  }
-  .weather-stat-label {
-    font-size: 0.6875rem;
-    color: var(--content-meta);
-    white-space: nowrap;
-  }
-  .weather-stat-value {
-    font-size: 0.8125rem;
-    font-weight: 600;
-    color: var(--deep-text);
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-  .weather-dots {
-    display: flex;
-    gap: 4px;
-    margin-left: 10px;
-    flex-shrink: 0;
-  }
-  .weather-dots i {
-    width: 5px;
-    height: 5px;
-    border-radius: 9999px;
-    background: var(--line-color);
-    transition: background 0.3s;
-  }
-  .weather-dots i.on {
-    background: var(--deep-text);
-  }
+	.w-error-icon {
+		font-size: 1.5rem;
+		color: var(--content-meta);
+	}
 
-  /* 加载状态 */
-  .weather-loading {
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    padding: 0.5rem 0;
-  }
-  .weather-loading-icon {
-    font-size: 1.25rem;
-    opacity: 0.5;
-    animation: weatherPulse 2s ease-in-out infinite;
-  }
-  .weather-loading-text {
-    font-size: 0.8125rem;
-    color: var(--content-meta);
-  }
-  @keyframes weatherPulse {
-    0%, 100% { opacity: 0.5; }
-    50% { opacity: 0.2; }
-  }
+	.w-error-text {
+		font-size: 0.75rem;
+		color: var(--content-meta);
+	}
 
-  .weather-error {
-    padding: 0.5rem 0;
-  }
-  .weather-error-text {
-    font-size: 0.75rem;
-    color: var(--content-meta);
-  }
+	.w-retry-btn {
+		font-size: 0.75rem;
+		color: var(--primary);
+		background: none;
+		border: none;
+		cursor: pointer;
+		transition: opacity 0.2s ease;
+	}
+
+	.w-retry-btn:hover {
+		opacity: 0.7;
+		text-decoration: underline;
+	}
+
+	.w-content {
+		display: flex;
+		flex-direction: column;
+		gap: 0.75rem;
+	}
+
+	.w-current {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+	}
+
+	.w-current-info {
+		display: flex;
+		flex-direction: column;
+		gap: 0.125rem;
+		min-width: 0;
+	}
+
+	.w-location {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		color: var(--content-meta);
+	}
+
+	.w-location-icon {
+		font-size: 0.875rem;
+	}
+
+	.w-location-text {
+		font-size: 0.75rem;
+		font-weight: 500;
+	}
+
+	.w-temp-row {
+		display: flex;
+		align-items: baseline;
+		gap: 0.25rem;
+	}
+
+	.w-temp {
+		font-size: 2.25rem;
+		font-weight: 700;
+		color: var(--deep-text);
+		line-height: 1.1;
+	}
+
+	.w-temp-unit {
+		font-size: 1rem;
+		color: var(--content-meta);
+	}
+
+	.w-desc {
+		font-size: 0.8rem;
+		font-weight: 500;
+		color: var(--deep-text);
+	}
+
+	.w-current-right {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.25rem;
+		flex-shrink: 0;
+	}
+
+	.w-weather-icon {
+		font-size: 2rem;
+		font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+		line-height: 1;
+	}
+
+	.w-feels {
+		font-size: 0.7rem;
+		color: var(--content-meta);
+		white-space: nowrap;
+	}
+
+	.w-meta-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		font-size: 0.7rem;
+	}
+
+	.w-temp-range {
+		display: flex;
+		gap: 0.6rem;
+	}
+
+	.w-high {
+		display: flex;
+		align-items: center;
+		gap: 0.125rem;
+		color: #ef4444;
+		font-weight: 500;
+	}
+
+	.w-low {
+		display: flex;
+		align-items: center;
+		gap: 0.125rem;
+		color: #3b82f6;
+		font-weight: 500;
+	}
+
+	.w-arrow-icon {
+		font-size: 0.875rem;
+	}
+
+	.w-update-time {
+		color: var(--content-meta);
+	}
+
+	.w-divider {
+		height: 1px;
+		background: var(--line-divider);
+	}
+
+	.w-section {
+		display: flex;
+		flex-direction: column;
+		gap: 0.4rem;
+	}
+
+	.w-section-title {
+		display: flex;
+		align-items: center;
+		gap: 0.25rem;
+		color: var(--content-meta);
+		font-size: 0.7rem;
+		font-weight: 500;
+	}
+
+	.w-section-icon {
+		font-size: 0.875rem;
+	}
+
+	.w-hourly-scroll {
+		display: flex;
+		gap: 0.25rem;
+		overflow-x: auto;
+		padding-bottom: 0.25rem;
+		scroll-behavior: smooth;
+		scrollbar-width: thin;
+	}
+
+	.w-hourly-scroll::-webkit-scrollbar {
+		height: 3px;
+	}
+
+	.w-hourly-scroll::-webkit-scrollbar-thumb {
+		background: var(--line-divider);
+		border-radius: 2px;
+	}
+
+	.w-hourly-item {
+		flex-shrink: 0;
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.15rem;
+		padding: 0.3rem 0.4rem;
+		border-radius: 0.5rem;
+		min-width: 2.5rem;
+		transition: background 0.2s ease;
+	}
+
+	.w-hourly-item:hover {
+		background: var(--btn-plain-bg-hover);
+	}
+
+	.w-hourly-item.active {
+		background: color-mix(in oklch, var(--primary) 12%, transparent);
+	}
+
+	.w-hourly-time {
+		font-size: 0.65rem;
+		color: var(--content-meta);
+	}
+
+	.w-hourly-icon {
+		font-size: 1.1rem;
+		font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+		line-height: 1;
+	}
+
+	.w-hourly-temp {
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--deep-text);
+	}
+
+	.w-daily-list {
+		display: flex;
+		flex-direction: column;
+		gap: 0.25rem;
+	}
+
+	.w-daily-row {
+		display: flex;
+		align-items: center;
+		gap: 0.5rem;
+		padding: 0.3rem 0.4rem;
+		border-radius: 0.5rem;
+		transition: background 0.2s ease;
+	}
+
+	.w-daily-row:hover {
+		background: var(--btn-plain-bg-hover);
+	}
+
+	.w-daily-day {
+		font-size: 0.75rem;
+		font-weight: 500;
+		color: var(--deep-text);
+		min-width: 2.5rem;
+	}
+
+	.w-daily-icon {
+		font-size: 1.1rem;
+		font-family: "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif;
+		line-height: 1;
+	}
+
+	.w-daily-desc {
+		font-size: 0.65rem;
+		color: var(--content-meta);
+		flex: 1;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.w-daily-high {
+		font-size: 0.7rem;
+		font-weight: 500;
+		color: #ef4444;
+	}
+
+	.w-daily-low {
+		font-size: 0.7rem;
+		font-weight: 500;
+		color: #3b82f6;
+	}
+
+	.w-detail-grid {
+		display: grid;
+		grid-template-columns: repeat(3, 1fr);
+		gap: 0.4rem;
+	}
+
+	.w-detail-item {
+		display: flex;
+		flex-direction: column;
+		align-items: center;
+		gap: 0.15rem;
+		padding: 0.5rem 0.25rem;
+		border-radius: 0.5rem;
+		background: var(--btn-plain-bg-hover);
+		transition: background 0.2s ease;
+	}
+
+	.w-detail-item:hover {
+		background: var(--muted);
+	}
+
+	.w-detail-icon {
+		font-size: 1rem;
+		color: var(--primary);
+	}
+
+	.w-detail-label {
+		font-size: 0.65rem;
+		color: var(--content-meta);
+	}
+
+	.w-detail-value {
+		font-size: 0.7rem;
+		font-weight: 600;
+		color: var(--deep-text);
+		max-width: 100%;
+		overflow: hidden;
+		text-overflow: ellipsis;
+		white-space: nowrap;
+	}
+
+	.w-sun-row {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		padding: 0.5rem 0.75rem;
+		border-radius: 0.5rem;
+		background: var(--btn-plain-bg-hover);
+		margin-bottom: 0.5rem;
+	}
+
+	.w-sun-item {
+		display: flex;
+		align-items: center;
+		gap: 0.4rem;
+	}
+
+	.w-sun-info {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.w-sun-info-right {
+		align-items: flex-end;
+	}
+
+	.w-sun-icon {
+		font-size: 1rem;
+	}
+
+	.w-sunrise-icon {
+		color: #f59e0b;
+	}
+
+	.w-sunset-icon {
+		color: #6366f1;
+	}
+
+	.w-sun-label {
+		font-size: 0.65rem;
+		color: var(--content-meta);
+	}
+
+	.w-sun-time {
+		font-size: 0.75rem;
+		font-weight: 600;
+		color: var(--deep-text);
+	}
+
+	.w-sun-line {
+		flex: 1;
+		height: 1px;
+		background: var(--line-divider);
+		margin: 0 0.75rem;
+	}
 </style>
 
 <script is:inline>
-(function() {
-  var WEATHER_API = "https://uapis.cn/api/v1/misc/weather";
-  var CACHE_KEY = "__weatherCache_v5";
-  var WEATHER_TTL = 30 * 60 * 1000;
+(function () {
+  var API_BASE = "https://uapis.cn/api/v1/misc/weather";
+  var CACHE_KEY = "__weatherCache_v7";
+  var TTL = 30 * 60 * 1000;
+  var inFlight = null;
 
-  function getCached(key, ttl) {
+  var SYMBOLS = [
+    [/雷|闪电|storm|thunder/i, "⛈️"],
+    [/暴雨|大雨|heavy/i, "🌧️"],
+    [/雨夹雪|sleet/i, "🌨️"],
+    [/小雪|中雪|大雪|雪|snow/i, "❄️"],
+    [/雾|fog|mist/i, "🌫️"],
+    [/霾|haze|smog/i, "😷"],
+    [/沙|尘|sand/i, "💨"],
+    [/风|wind/i, "💨"],
+    [/雨|rain|shower/i, "🌦️"],
+    [/阴|overcast/i, "☁️"],
+    [/多云|partly/i, "⛅"],
+    [/晴|clear|sun/i, "☀️"]
+  ];
+
+  var WEEK = ["周日", "周一", "周二", "周三", "周四", "周五", "周六"];
+
+  function iconOf(desc) {
+    var text = String(desc || "");
+    for (var i = 0; i < SYMBOLS.length; i++) {
+      if (SYMBOLS[i][0].test(text)) return SYMBOLS[i][1];
+    }
+    return "🌤️";
+  }
+
+  function pad(n) { return n < 10 ? "0" + n : "" + n; }
+
+  function formatTime(value) {
+    if (!value) return "--:--";
+    if (/^\d{2}:\d{2}$/.test(String(value))) return value;
+    var d = new Date(value);
+    if (isNaN(d.getTime())) return "--:--";
+    return pad(d.getHours()) + ":" + pad(d.getMinutes());
+  }
+
+  function formatHour(value) {
+    if (!value) return "";
+    var d = new Date(String(value).replace(/-/g, "/"));
+    if (isNaN(d.getTime())) return "";
+    return pad(d.getHours()) + ":00";
+  }
+
+  function formatVisibility(value) {
+    if (value == null) return "--";
+    return value + "km";
+  }
+
+  function uvLevel(uv) {
+    if (uv == null) return "--";
+    if (uv < 3) return uv.toFixed(1) + " 低";
+    if (uv < 6) return uv.toFixed(1) + " 中";
+    if (uv < 8) return uv.toFixed(1) + " 高";
+    if (uv < 11) return uv.toFixed(1) + " 甚高";
+    return uv.toFixed(1) + " 极高";
+  }
+
+  function dayName(dateStr, index) {
+    if (index === 0) return "今天";
+    if (index === 1) return "明天";
+    if (index === 2) return "后天";
+    var d = new Date(String(dateStr).replace(/-/g, "/"));
+    if (isNaN(d.getTime())) return "--";
+    return WEEK[d.getDay()];
+  }
+
+  function readCache() {
     try {
-      var raw = localStorage.getItem(key);
+      var raw = localStorage.getItem(CACHE_KEY);
       if (!raw) return null;
-      var data = JSON.parse(raw);
-      if (data.time > Date.now() - ttl) return data.value;
-    } catch(e) {}
+      var parsed = JSON.parse(raw);
+      if (Date.now() - parsed.timestamp < TTL) return parsed.data;
+    } catch (e) {}
     return null;
   }
 
-  function setCache(key, value) {
+  function writeCache(data) {
     try {
-      localStorage.setItem(key, JSON.stringify({ value: value, time: Date.now() }));
-    } catch(e) {}
-  }
-
-  function showError(msg) {
-    var main = document.getElementById("weather-main");
-    var err = document.getElementById("weather-error");
-    var errText = document.getElementById("weather-error-text");
-    if (main) main.style.display = "none";
-    if (err) err.style.display = "";
-    if (errText) errText.textContent = msg || "天气加载失败";
-  }
-
-  function esc(t) {
-    var d = document.createElement("div");
-    d.textContent = t;
-    return d.innerHTML;
-  }
-
-  function renderWeather(data) {
-    var main = document.getElementById("weather-main");
-    if (!main || !data) return;
-
-    var temp = data.temperature != null ? Math.round(data.temperature) : "--";
-    var desc = data.weather || "未知";
-    var city = data.city || data.district || data.province || "未知";
-    var tempMax = data.temp_max != null ? Math.round(data.temp_max) : "--";
-    var tempMin = data.temp_min != null ? Math.round(data.temp_min) : "--";
-    var aqi = data.aqi;
-    var aqiCategory = data.aqi_category || "";
-    var humidity = data.humidity;
-    var wind = (data.wind_direction || "") + (data.wind_power || "");
-    if (!wind) wind = "--";
-
-    // AQI：样式与右侧「高/低温」保持一致（统一配色，不做污染等级变色）
-    var aqiText = aqi != null
-      ? "AQI " + aqi + (aqiCategory ? " (" + aqiCategory + ")" : "")
-      : (aqiCategory || "--");
-
-    var html = "";
-
-    html += '<div class="weather-body">';
-    html += '  <div class="weather-left">';
-    html += '    <span class="weather-temp">' + temp + '°</span>';
-    html += '    <span class="weather-location">' + esc(city) + '，' + esc(desc) + '</span>';
-    html += '  </div>';
-    html += '  <div class="weather-right">';
-    html += '    <span class="weather-highlow">高 ' + tempMax + '° 低 ' + tempMin + '°</span>';
-    html += '    <span class="weather-aqi">' + esc(aqiText) + '</span>';
-    html += '  </div>';
-    html += '</div>';
-
-    // 收集指标（去掉能见度），每 3 个一组，整组轮换展示（每组固定 3 项）
-    var metrics = [];
-    var push = function(lbl, val) {
-      if (val != null && String(val).trim() !== "" && val !== "--") {
-        metrics.push({ lbl: lbl, val: String(val) });
-      }
-    };
-    push("湿度", humidity != null ? humidity + "%" : null);
-    push("风力", wind);
-    push(
-      "空气质量",
-      aqiCategory ? aqiCategory + (aqi != null ? " " + aqi : "") : (aqi != null ? "AQI " + aqi : null)
-    );
-    push("体感温度", data.feels_like != null ? Math.round(data.feels_like) + "°" : null);
-    push("气压", data.pressure != null ? (data.pressure / 10).toFixed(1) + " kPa" : null);
-    push("紫外线", data.uv != null ? data.uv : null);
-    push("降水", data.precipitation > 0 ? data.precipitation + " mm" : null);
-    push("云量", data.cloud != null ? data.cloud + "%" : null);
-    push("风向", data.wind_direction || null);
-
-    var groups = [];
-    for (var i = 0; i < metrics.length; i += 3) {
-      groups.push(metrics.slice(i, i + 3));
-    }
-
-    var extraHtml = '<div class="weather-extra">';
-    if (groups.length) {
-      for (var g = 0; g < groups.length; g++) {
-        extraHtml += '<div class="weather-group' + (g === 0 ? ' is-active' : '') + '">';
-        for (var m = 0; m < groups[g].length; m++) {
-          extraHtml += '<div class="weather-stat">'
-            + '<span class="weather-stat-label">' + esc(groups[g][m].lbl) + '</span>'
-            + '<span class="weather-stat-value">' + esc(groups[g][m].val) + '</span>'
-            + '</div>';
-        }
-        extraHtml += '</div>';
-      }
-      if (groups.length > 1) {
-        extraHtml += '<div class="weather-dots" data-weather-dots>';
-        for (var di = 0; di < groups.length; di++) {
-          extraHtml += '<i' + (di === 0 ? ' class="on"' : '') + '></i>';
-        }
-        extraHtml += '</div>';
-      }
-    }
-    extraHtml += '</div>';
-
-    html += extraHtml;
-    main.innerHTML = html;
-
-    if (groups.length > 1) {
-      var groupEls = main.querySelectorAll('.weather-group');
-      var dotEls = main.querySelectorAll('.weather-dots i');
-      var gIdx = 0;
-      if (window.__weatherGroupInterval) clearInterval(window.__weatherGroupInterval);
-      window.__weatherGroupInterval = setInterval(function() {
-        groupEls[gIdx].classList.remove('is-active');
-        if (dotEls[gIdx]) dotEls[gIdx].classList.remove('on');
-        gIdx = (gIdx + 1) % groupEls.length;
-        groupEls[gIdx].classList.add('is-active');
-        if (dotEls[gIdx]) dotEls[gIdx].classList.add('on');
-      }, 4000);
-    }
+      localStorage.setItem(CACHE_KEY, JSON.stringify({ data: data, timestamp: Date.now() }));
+    } catch (e) {}
   }
 
   function fetchWeather() {
-    if (!document.getElementById("weather-main")) return;
-    var cached = getCached(CACHE_KEY, WEATHER_TTL);
-    if (cached) {
-      renderWeather(cached);
-      return;
-    }
-
-    fetch(WEATHER_API + "?extended=true&forecast=true&hourly=false&minutely=false&indices=false&lang=zh")
-      .then(function(r) { return r.json(); })
-      .then(function(res) {
-        if (res && res.weather) {
-          renderWeather(res);
-          setCache(CACHE_KEY, res);
-        } else if (res && res.message) {
-          showError(res.message);
-        } else {
-          showError("天气数据获取失败");
-        }
+    var cached = readCache();
+    if (cached) return Promise.resolve(cached);
+    if (inFlight) return inFlight;
+    var url = API_BASE + "?extended=true&forecast=true&hourly=true&minutely=false&lang=zh";
+    inFlight = fetch(url)
+      .then(function (res) {
+        if (!res.ok) throw new Error("请求失败: " + res.status);
+        return res.json();
       })
-      .catch(function() {
-        showError("网络请求失败");
+      .then(function (data) {
+        if (!data || !data.weather) throw new Error("天气数据获取失败");
+        data._fetchedAt = Date.now();
+        writeCache(data);
+        return data;
+      })
+      .catch(function (err) {
+        throw err;
+      })
+      .finally(function () {
+        inFlight = null;
       });
+    return inFlight;
   }
 
-  function init() {
-    if (!document.getElementById("weather-main")) return;
-    fetchWeather();
-    if (!window.__weatherRefresh) {
-      window.__weatherRefresh = setInterval(fetchWeather, 30 * 60 * 1000);
+  function updateUI(container, data) {
+    var loading = container.querySelector("[data-weather-loading]");
+    var errorEl = container.querySelector("[data-weather-error]");
+    var content = container.querySelector("[data-weather-content]");
+    if (!loading || !errorEl || !content) return;
+    loading.classList.add("hidden");
+    errorEl.classList.add("hidden");
+
+    var cur = data || {};
+    var daily = cur.forecast || [];
+    var hourly = cur.hourly_forecast || [];
+
+    container.querySelector("[data-city]").textContent =
+      cur.city || cur.district || cur.province || "--";
+    container.querySelector("[data-temperature]").textContent =
+      cur.temperature != null ? Math.round(cur.temperature) : "--";
+    container.querySelector("[data-feels-like]").textContent =
+      cur.feels_like != null ? Math.round(cur.feels_like) : "--";
+    container.querySelector("[data-weather-desc]").textContent = cur.weather || "--";
+    container.querySelector("[data-weather-icon]").textContent = iconOf(cur.weather);
+
+    var observedEl = container.querySelector("[data-observed-time]");
+    observedEl.textContent = cur._fetchedAt
+      ? formatTime(cur._fetchedAt) + " 更新"
+      : (cur.report_time || "");
+
+    var maxEl = container.querySelector("[data-temp-max]");
+    var minEl = container.querySelector("[data-temp-min]");
+    maxEl.textContent = cur.temp_max != null ? Math.round(cur.temp_max) : (daily[0] ? Math.round(daily[0].temp_max) : "--");
+    minEl.textContent = cur.temp_min != null ? Math.round(cur.temp_min) : (daily[0] ? Math.round(daily[0].temp_min) : "--");
+
+    // 逐时预报：从当前时间起取 12 小时
+    var hourlyScroll = container.querySelector("[data-hourly-scroll]");
+    hourlyScroll.innerHTML = "";
+    var now = new Date();
+    var upcoming = hourly.filter(function (h) {
+      var t = new Date(String(h.time || "").replace(/-/g, "/"));
+      return !isNaN(t.getTime()) && t >= now;
+    });
+    if (!upcoming.length) upcoming = hourly.slice(0, 12);
+    upcoming.slice(0, 12).forEach(function (h, i) {
+      var el = document.createElement("div");
+      el.className = "w-hourly-item" + (i === 0 ? " active" : "");
+      el.innerHTML =
+        '<span class="w-hourly-time">' + (i === 0 ? "现在" : formatHour(h.time)) + "</span>" +
+        '<span class="w-hourly-icon">' + iconOf(h.weather) + "</span>" +
+        '<span class="w-hourly-temp">' + (h.temperature != null ? Math.round(h.temperature) : "--") + "°</span>";
+      hourlyScroll.appendChild(el);
+    });
+
+    // 未来天气：3 天
+    var dailyList = container.querySelector("[data-daily-list]");
+    dailyList.innerHTML = "";
+    daily.slice(0, 3).forEach(function (d, i) {
+      var el = document.createElement("div");
+      el.className = "w-daily-row";
+      el.innerHTML =
+        '<span class="w-daily-day">' + dayName(d.date, i) + "</span>" +
+        '<span class="w-daily-icon">' + iconOf(d.weather_day) + "</span>" +
+        '<span class="w-daily-desc">' + (d.weather_day || "--") + "</span>" +
+        '<span class="w-daily-high">' + Math.round(d.temp_max) + "°</span>" +
+        '<span class="w-daily-low">' + Math.round(d.temp_min) + "°</span>";
+      dailyList.appendChild(el);
+    });
+
+    container.querySelector("[data-humidity]").textContent =
+      cur.humidity != null ? cur.humidity + "%" : "--%";
+    container.querySelector("[data-wind]").textContent =
+      [cur.wind_direction, cur.wind_power].filter(Boolean).join(" ") || "--";
+    container.querySelector("[data-visibility]").textContent = formatVisibility(cur.visibility);
+    container.querySelector("[data-uv]").textContent = uvLevel(cur.uv);
+    container.querySelector("[data-pressure]").textContent =
+      cur.pressure != null ? Math.round(cur.pressure) : "--";
+    container.querySelector("[data-cloud]").textContent =
+      cur.cloud != null ? cur.cloud + "%" : "--%";
+
+    if (daily[0]) {
+      container.querySelector("[data-sunrise]").textContent = formatTime(daily[0].sunrise);
+      container.querySelector("[data-sunset]").textContent = formatTime(daily[0].sunset);
     }
+
+    content.classList.remove("hidden");
   }
 
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
-  else init();
-  document.addEventListener("swup:contentReplaced", function() { setTimeout(init, 50); });
+  function showError(container, msg) {
+    var loading = container.querySelector("[data-weather-loading]");
+    var errorEl = container.querySelector("[data-weather-error]");
+    var errorMsg = container.querySelector("[data-error-message]");
+    loading.classList.add("hidden");
+    errorEl.classList.remove("hidden");
+    if (errorMsg) errorMsg.textContent = msg || "获取天气失败";
+  }
+
+  function initWidget(container) {
+    if (container.dataset.weatherReady === "true") return;
+    container.dataset.weatherReady = "true";
+
+    var retryBtn = container.querySelector("[data-retry-btn]");
+
+    function load() {
+      var loading = container.querySelector("[data-weather-loading]");
+      var errorEl = container.querySelector("[data-weather-error]");
+      var content = container.querySelector("[data-weather-content]");
+      loading.classList.remove("hidden");
+      errorEl.classList.add("hidden");
+      content.classList.add("hidden");
+      fetchWeather()
+        .then(function (data) {
+          container.__weatherData = data;
+          updateUI(container, data);
+        })
+        .catch(function (err) {
+          showError(container, err && err.message);
+        });
+    }
+
+    if (retryBtn) {
+      retryBtn.addEventListener("click", function () {
+        try {
+          Object.keys(localStorage).forEach(function (key) {
+            if (key.indexOf(CACHE_KEY) === 0) localStorage.removeItem(key);
+          });
+        } catch (e) {}
+        load();
+      });
+    }
+
+    load();
+  }
+
+  function initAll() {
+    document.querySelectorAll("[data-weather-init]").forEach(initWidget);
+  }
+
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", initAll);
+  else initAll();
+  document.addEventListener("swup:contentReplaced", function () { setTimeout(initAll, 50); });
 })();
 </script>
