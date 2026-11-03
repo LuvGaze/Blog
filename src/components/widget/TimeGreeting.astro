@@ -75,14 +75,22 @@ const { class: className, style } = Astro.props;
 	}
 
 	.tg-greeting {
+		display: block;
 		font-size: 0.9375rem;
-		line-height: 1.35;
+		line-height: 1.45;
 		font-weight: 600;
 		letter-spacing: 0.01em;
 		color: var(--deep-text);
-		white-space: nowrap;
+		/* 用最大高度截断两行，保留正常行内排版，文字表情才能整体换行而不被拆开 */
+		max-height: 2.9em;
 		overflow: hidden;
-		text-overflow: ellipsis;
+		overflow-wrap: break-word;
+	}
+
+	/* 文字表情整体不换行，避免被拆成两行 */
+	.tg-kao {
+		display: inline-block;
+		white-space: nowrap;
 	}
 
 	.tg-clock {
@@ -182,18 +190,18 @@ const { class: className, style } = Astro.props;
   var WEEK = ['星期日', '星期一', '星期二', '星期三', '星期四', '星期五', '星期六'];
   var IMG_URL = 'https://t.alcy.cc/fj?t=';
 
-  // 每个时间段都有独立问候语
+  // 每个时间段都有独立问候语：text 为文字，face 为文字表情（整体不换行）
   var GREETINGS = [
-    { until: 5,  text: '夜深人静，愿你安睡好梦', icon: 'night' },
-    { until: 7,  text: '天将破晓，晨光已在路上', icon: 'morning' },
-    { until: 9,  text: '清晨好，从一杯温水开始',   icon: 'morning' },
-    { until: 11, text: '上午好，先完成最要紧的事', icon: 'noon' },
-    { until: 13, text: '中午好，记得好好吃饭',     icon: 'noon' },
-    { until: 15, text: '午后好，泡杯茶歇一歇',     icon: 'noon' },
-    { until: 17, text: '下午好，再坚持一会儿',     icon: 'noon' },
-    { until: 19, text: '傍晚好，抬头看看晚霞',     icon: 'evening' },
-    { until: 21, text: '晚上好，忙完就放松一下',   icon: 'evening' },
-    { until: 24, text: '夜色渐深，早点休息',       icon: 'night' }
+    { until: 5,  text: '夜深人静，愿你安睡好梦', face: '( ˘ω˘ )', icon: 'night' },
+    { until: 7,  text: '天将破晓，晨光已在路上', face: '(っ˘ω˘ς)', icon: 'morning' },
+    { until: 9,  text: '清晨好，从一杯温水开始', face: '( ˶ˆᵕˆ˶ )', icon: 'morning' },
+    { until: 11, text: '上午好，先完成最要紧的事', face: '(๑•̀ㅂ•́)و✧', icon: 'noon' },
+    { until: 13, text: '中午好，记得好好吃饭', face: '(๑´ڡ`๑)', icon: 'noon' },
+    { until: 15, text: '午后好，泡杯茶歇一歇', face: '( ˘▽˘)っ', icon: 'noon' },
+    { until: 17, text: '下午好，再坚持一会儿', face: 'ᕦ(ò_óˇ)ᕤ', icon: 'noon' },
+    { until: 19, text: '傍晚好，抬头看看晚霞', face: '( ¨̮ )/', icon: 'evening' },
+    { until: 21, text: '晚上好，忙完就放松一下', face: '(◕‿◕)', icon: 'evening' },
+    { until: 24, text: '夜色渐深，早点休息', face: '( ˘ω˘ )zZ', icon: 'night' }
   ];
 
   function greetingOf(hour) {
@@ -250,7 +258,14 @@ const { class: className, style } = Astro.props;
       var head = card.querySelector('[data-tg="head"]');
       if (head) head.setAttribute('data-icon', info.icon);
       var q = function(name) { return card.querySelector('[data-tg="' + name + '"]'); };
-      if (q('greeting')) q('greeting').textContent = info.text;
+      if (q('greeting')) {
+        var greetEl = q('greeting');
+        greetEl.textContent = info.text + ' ';
+        var faceEl = document.createElement('span');
+        faceEl.className = 'tg-kao';
+        faceEl.textContent = info.face;
+        greetEl.appendChild(faceEl);
+      }
       if (q('time')) q('time').textContent = pad(now.getHours()) + ':' + pad(now.getMinutes());
       if (q('week')) q('week').textContent = WEEK[now.getDay()];
       if (q('day')) q('day').textContent = pad(now.getDate());
