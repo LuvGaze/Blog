@@ -1,0 +1,286 @@
+---
+import { siteConfig } from "@/config";
+/**
+ * 博客专属右键菜单
+ * - 替换浏览器默认右键菜单，使用站点主题色 / 毛玻璃风格
+ * - 支持：返回顶部、后退、前进、刷新、复制选中文本、站内搜索、关于本站
+ * - 输入框、文本域、可编辑区域内保留原生菜单，避免影响输入
+ */
+---
+
+<div id="blog-context-menu" class="blog-ctx" role="menu" aria-label="博客右键菜单" aria-hidden="true">
+	<div class="blog-ctx__header">
+		<span class="blog-ctx__brand">{siteConfig.title}</span>
+		<span class="blog-ctx__hint">快捷菜单</span>
+	</div>
+	<div class="blog-ctx__list">
+		<button class="blog-ctx__item" data-ctx-action="copy" type="button" role="menuitem">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M16 1H4a2 2 0 0 0-2 2v14h2V3h12V1Zm3 4H8a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2Zm0 16H8V7h11v14Z"/></svg>
+			<span>复制选中内容</span>
+			<kbd>Ctrl C</kbd>
+		</button>
+		<button class="blog-ctx__item" data-ctx-action="top" type="button" role="menuitem">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l-8 8h5v8h6v-8h5l-8-8Z"/></svg>
+			<span>返回顶部</span>
+		</button>
+		<button class="blog-ctx__item" data-ctx-action="back" type="button" role="menuitem">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11H7.8l5.6-5.6L12 4l-8 8 8 8 1.4-1.4L7.8 13H20v-2Z"/></svg>
+			<span>后退</span>
+		</button>
+		<button class="blog-ctx__item" data-ctx-action="forward" type="button" role="menuitem">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 13h12.2l-5.6 5.6L12 20l8-8-8-8-1.4 1.4 5.6 5.6H4v2Z"/></svg>
+			<span>前进</span>
+		</button>
+		<button class="blog-ctx__item" data-ctx-action="reload" type="button" role="menuitem">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M17.65 6.35A8 8 0 1 0 20 12h-2a6 6 0 1 1-1.76-4.24L13 11h7V4l-2.35 2.35Z"/></svg>
+			<span>刷新页面</span>
+		</button>
+		<div class="blog-ctx__sep"></div>
+		<a class="blog-ctx__item" href="/search/" role="menuitem">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15.5 14h-.79l-.28-.27A6.47 6.47 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16a6.47 6.47 0 0 0 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5Zm-6 0A4.5 4.5 0 1 1 14 9.5 4.5 4.5 0 0 1 9.5 14Z"/></svg>
+			<span>站内搜索</span>
+		</a>
+		<a class="blog-ctx__item" href="/about/" role="menuitem">
+			<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm1 15h-2v-6h2v6Zm0-8h-2V7h2v2Z"/></svg>
+			<span>关于本站</span>
+		</a>
+	</div>
+	<div class="blog-ctx__footer">
+		<span data-ctx-page-title>{siteConfig.title}</span>
+	</div>
+</div>
+
+<style is:global>
+	#blog-context-menu.blog-ctx {
+		position: fixed;
+		top: 0;
+		left: 0;
+		z-index: 9999;
+		min-width: 13.5rem;
+		padding: 0.4rem;
+		border-radius: 0.9rem;
+		background: color-mix(in oklch, var(--card-bg) 78%, transparent);
+		-webkit-backdrop-filter: blur(20px) saturate(1.7);
+		backdrop-filter: blur(20px) saturate(1.7);
+		box-shadow: 0 18px 45px rgba(0, 0, 0, 0.18), inset 0 0 0 1px color-mix(in oklch, white 55%, transparent);
+		opacity: 0;
+		visibility: hidden;
+		transform: scale(0.94) translateY(-4px);
+		transform-origin: top left;
+		transition: opacity 0.16s ease, transform 0.16s cubic-bezier(0.2, 0.7, 0.3, 1), visibility 0.16s;
+		font-family: var(--font-sans);
+	}
+
+	:root.dark #blog-context-menu.blog-ctx {
+		background: color-mix(in oklch, var(--card-bg) 72%, transparent);
+		box-shadow: 0 18px 45px rgba(0, 0, 0, 0.5), inset 0 0 0 1px color-mix(in oklch, white 12%, transparent);
+	}
+
+	#blog-context-menu.blog-ctx.is-open {
+		opacity: 1;
+		visibility: visible;
+		transform: scale(1) translateY(0);
+	}
+
+	.blog-ctx__header {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 1rem;
+		padding: 0.35rem 0.6rem 0.45rem;
+		border-bottom: 1px solid var(--line-divider);
+		margin-bottom: 0.25rem;
+	}
+
+	.blog-ctx__brand {
+		font-size: 0.72rem;
+		font-weight: 700;
+		letter-spacing: 0.08em;
+		text-transform: uppercase;
+		background: linear-gradient(120deg, var(--primary), color-mix(in oklch, var(--primary) 55%, white));
+		-webkit-background-clip: text;
+		background-clip: text;
+		color: transparent;
+	}
+
+	.blog-ctx__hint {
+		font-size: 0.65rem;
+		color: var(--content-meta);
+	}
+
+	.blog-ctx__list {
+		display: flex;
+		flex-direction: column;
+	}
+
+	.blog-ctx__item {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		width: 100%;
+		padding: 0.45rem 0.6rem;
+		border-radius: 0.55rem;
+		border: none;
+		background: transparent;
+		color: var(--deep-text);
+		font-size: 0.78rem;
+		font-weight: 500;
+		text-align: left;
+		text-decoration: none;
+		cursor: pointer;
+		transition: background-color 0.15s ease, color 0.15s ease, padding-left 0.15s ease;
+	}
+
+	.blog-ctx__item svg {
+		width: 1rem;
+		height: 1rem;
+		flex-shrink: 0;
+		opacity: 0.7;
+		fill: currentColor;
+		transition: opacity 0.15s ease;
+	}
+
+	.blog-ctx__item span {
+		flex: 1;
+	}
+
+	.blog-ctx__item kbd {
+		font-family: var(--font-mono);
+		font-size: 0.6rem;
+		color: var(--content-meta);
+		background: var(--btn-plain-bg-hover);
+		border-radius: 0.3rem;
+		padding: 0.1rem 0.3rem;
+	}
+
+	.blog-ctx__item:hover {
+		background: color-mix(in oklch, var(--primary) 14%, transparent);
+		color: var(--primary);
+		padding-left: 0.8rem;
+	}
+
+	.blog-ctx__item:hover svg {
+		opacity: 1;
+	}
+
+	.blog-ctx__sep {
+		height: 1px;
+		margin: 0.25rem 0.4rem;
+		background: var(--line-divider);
+	}
+
+	.blog-ctx__footer {
+		margin-top: 0.25rem;
+		padding: 0.35rem 0.6rem 0.2rem;
+		border-top: 1px solid var(--line-divider);
+		font-size: 0.65rem;
+		color: var(--content-meta);
+		white-space: nowrap;
+		overflow: hidden;
+		text-overflow: ellipsis;
+	}
+</style>
+
+<script is:inline>
+(function () {
+  var menu = document.getElementById("blog-context-menu");
+  if (!menu || menu.dataset.ctxReady === "true") return;
+  menu.dataset.ctxReady = "true";
+
+  var pageTitleEl = menu.querySelector("[data-ctx-page-title]");
+  var copyItem = menu.querySelector('[data-ctx-action="copy"]');
+  var isOpen = false;
+
+  function closeMenu() {
+    if (!isOpen) return;
+    isOpen = false;
+    menu.classList.remove("is-open");
+    menu.setAttribute("aria-hidden", "true");
+  }
+
+  function openMenu(x, y) {
+    var rect = menu.getBoundingClientRect();
+    var vw = window.innerWidth;
+    var vh = window.innerHeight;
+    var left = x;
+    var top = y;
+    if (left + rect.width > vw - 8) left = Math.max(8, vw - rect.width - 8);
+    if (top + rect.height > vh - 8) top = Math.max(8, vh - rect.height - 8);
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+    menu.classList.add("is-open");
+    menu.setAttribute("aria-hidden", "false");
+    isOpen = true;
+  }
+
+  function editableTarget(el) {
+    if (!el) return false;
+    var tag = (el.tagName || "").toLowerCase();
+    return tag === "input" || tag === "textarea" || tag === "select" || el.isContentEditable;
+  }
+
+  document.addEventListener("contextmenu", function (e) {
+    if (editableTarget(e.target)) return;
+    if (e.shiftKey) return;
+    e.preventDefault();
+    var selection = String(window.getSelection ? window.getSelection() : "").trim();
+    if (copyItem) copyItem.style.display = selection.length > 0 ? "" : "none";
+    if (pageTitleEl) pageTitleEl.textContent = document.title || "";
+    menu.querySelectorAll("[data-ctx-action]").forEach(function (item) {
+      item.classList.remove("is-active");
+    });
+    openMenu(e.clientX, e.clientY);
+  });
+
+  document.addEventListener("pointerdown", function (e) {
+    if (isOpen && !menu.contains(e.target)) closeMenu();
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Escape") closeMenu();
+  });
+
+  window.addEventListener("scroll", closeMenu, { passive: true });
+  window.addEventListener("resize", closeMenu);
+  document.addEventListener("swup:contentReplaced", closeMenu);
+
+  menu.addEventListener("click", function (e) {
+    var item = e.target.closest("[data-ctx-action], a");
+    if (!item) return;
+    var action = item.getAttribute("data-ctx-action");
+    if (!action) return; // 普通链接交给浏览器
+
+    e.preventDefault();
+    switch (action) {
+      case "copy": {
+        var text = String(window.getSelection ? window.getSelection() : "").trim();
+        if (text) {
+          if (navigator.clipboard && navigator.clipboard.writeText) {
+            navigator.clipboard.writeText(text).catch(function () {});
+          } else {
+            try { document.execCommand("copy"); } catch (err) {}
+          }
+        }
+        break;
+      }
+      case "top":
+        window.scrollTo({ top: 0, behavior: "smooth" });
+        break;
+      case "back":
+        history.back();
+        break;
+      case "forward":
+        history.forward();
+        break;
+      case "reload":
+        if (window.swup && window.swup.navigate) {
+          window.swup.navigate(window.location.href);
+        } else {
+          window.location.reload();
+        }
+        break;
+    }
+    closeMenu();
+  });
+})();
+</script>
