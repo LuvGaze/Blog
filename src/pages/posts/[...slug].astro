@@ -68,7 +68,7 @@ if (processedImage) {
 	);
 	if (isLocal) {
 		const basePath = getFileDirFromPath(entry.filePath || "");
-		const files = import.meta.glob<ImageMetadata>("../../**", {
+		const files = import.meta.glob<ImageMetadata>("../../**/*.{png,jpg,jpeg,webp,avif,gif,svg}", {
 			import: "default",
 		});
 		let normalizedPath = path
@@ -92,7 +92,7 @@ if (posterAvatarUrl) {
 		posterAvatarUrl.startsWith("data:")
 	);
 	if (isLocalAvatar) {
-		const files = import.meta.glob<ImageMetadata>("../../**", {
+		const files = import.meta.glob<ImageMetadata>("../../**/*.{png,jpg,jpeg,webp,avif,gif,svg}", {
 			import: "default",
 		});
 		const normalizedPath = path
