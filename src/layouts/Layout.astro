@@ -3,6 +3,8 @@ import GoogleAnalytics from "@components/analytics/GoogleAnalytics.astro";
 import La51Analytics from "@components/analytics/La51Analytics.astro";
 import MicrosoftClarity from "@components/analytics/MicrosoftClarity.astro";
 import UmamiAnalytics from "@components/analytics/UmamiAnalytics.astro";
+import ContextMenu from "@components/features/ContextMenu.astro";
+import CustomCursor from "@components/features/CustomCursor.astro";
 import FancyboxManager from "@components/features/FancyboxManager.astro";
 import FontSetup from "@components/features/FontSetup.astro";
 import MusicManager from "@components/features/MusicManager.astro";
@@ -98,9 +100,8 @@ const favicons: Favicon[] =
 	siteConfig.favicon.length > 0 ? siteConfig.favicon : defaultFavicons;
 
 // 预加载目标页面（Swup 的 PreloadPlugin 会读取 rel=prefetch 并在后台预取+缓存，切换时秒开）
-// 优先预取会触发较重前端资源的页面（如 3D 音乐可视化页）
+// 优先预取会触发较重前端资源的页面
 const prefetchPages: { enabled: boolean; href: string }[] = [
-	{ enabled: siteConfig.pages.musicPage, href: "/music/" },
 	{ enabled: siteConfig.pages.friends, href: "/friends/" },
 	{ enabled: siteConfig.pages.guestbook, href: "/guestbook/" },
 	{ enabled: siteConfig.pages.sponsor, href: "/sponsor/" },
@@ -677,6 +678,10 @@ const siteLang = lang.replace("_", "-");
 
     <!-- Fancybox Manager -->
     <FancyboxManager />
+
+    <!-- 博客专属右键菜单 & 自定义鼠标光标 -->
+    <ContextMenu />
+    <CustomCursor />
   </body>
 </html>
 
