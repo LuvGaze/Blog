@@ -6,9 +6,11 @@ export interface Props {
 	desc: string;
 	screenshot?: string;
 	host?: string;
+	/** 该友链的站点域名；传入后卡片上会显示「动态」按钮 */
+	feedHost?: string;
 }
 
-const { title, href, imgurl, desc, screenshot, host = "" } = Astro.props;
+const { title, href, imgurl, desc, screenshot, host = "", feedHost } = Astro.props;
 
 // 头像加载失败 / 骨架占位使用的首字
 const initial = title.trim().slice(0, 1);
@@ -76,6 +78,19 @@ const initial = title.trim().slice(0, 1);
         <span class="friend-name">{title}</span>
         {host && <span class="friend-host">{host}</span>}
       </div>
+      {feedHost && (
+        <button
+          class="friend-feed-btn"
+          type="button"
+          data-feed-host={feedHost}
+          data-feed-name={title}
+          data-feed-avatar={imgurl}
+          data-feed-site={href}
+          title={`查看 ${title} 的动态`}
+        >
+          动态
+        </button>
+      )}
     </div>
 
     {/* 描述：底部黑字，无框（参考站同款） */}
