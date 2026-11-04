@@ -185,23 +185,31 @@ const changelogCollection = defineCollection({
 });
 
 const friendsCollection = defineCollection({
-    loader: glob({pattern: "**/*.md", base: "./src/content/friends"}),
+    loader: glob({
+        // 分组即文件夹：friends/<分组>/<站点>.md，分类元数据放在 <分组>/_index.json
+        pattern: "**/*.md",
+        base: "./src/content/friends",
+        generateId: ({entry}) => entry.replace(/\\/g, "/").replace(/\.md$/i, ""),
+    }),
     schema: z.object({
         title: z.string(),
         imgurl: z.string(),
         desc: z.string().optional().default(""),
         siteurl: z.string(),
-        tags: z.array(z.string()).optional().default([]),
         weight: z.number().optional().default(0),
         enabled: z.boolean().optional().default(true),
         added: z.coerce.date().optional(),
-        group: z.string().optional().default("other"),
         screenshot: z.string().optional(),
     }),
 });
 
 const friendGroupsCollection = defineCollection({
-    loader: glob({pattern: "**/*.md", base: "./src/content/friend-groups"}),
+    loader: glob({
+        // 只读取各分组文件夹下的 _index.json
+        pattern: "**/_index.json",
+        base: "./src/content/friends",
+        generateId: ({entry}) => entry.replace(/\\/g, "/").replace(/\.json$/i, ""),
+    }),
     schema: z.object({
         name: z.string(),
         title: z.string().optional(),
