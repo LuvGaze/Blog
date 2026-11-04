@@ -44,9 +44,6 @@ importers:
       '@fancyapps/ui':
         specifier: ^6.1.14
         version: 6.1.14
-      '@fontsource-variable/jetbrains-mono':
-        specifier: ^5.2.6
-        version: 5.2.8
       '@iconify-json/fa7-brands':
         specifier: ^1.2.2
         version: 1.2.2
@@ -222,9 +219,6 @@ importers:
       postcss-nesting:
         specifier: ^14.0.0
         version: 14.0.0(postcss@8.5.15)
-      subset-font:
-        specifier: ^2.5.0
-        version: 2.5.0
       tailwindcss:
         specifier: ^4.3.1
         version: 4.3.1
