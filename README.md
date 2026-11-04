@@ -82,7 +82,7 @@ flowchart LR
 | 🖼️ 相册     | 瀑布流 + PhotoSwipe 查看器              |
 | 🧭 足迹地图    | 高德地图，省 / 市界随缩放显示，悬浮高亮与点亮插件        |
 | 🕘 更新日志    | 日期 + 版本号排序，链路图谱视图                 |
-| 🤝 友链      | 参考风格截图卡片（7:5），支持自定义分组             |
+| 🤝 友链 · 动态   | 截图卡片自适应高度、瀑布流排布；友链与全站推文同页双视图，单友链动态弹层；按文件夹分组 |
 
 ### 🛠️ 工程化
 
@@ -111,7 +111,7 @@ flowchart LR
 | 📋 规划   | `src/content/plans/`                      | 待办规划，`updated` 记录修改时间                     |
 | 🕘 更新日志 | `src/content/changelog/`                  | 版本记录，同日按版本号排序                             |
 | 📓 笔记本  | `src/content/notebooks/`                  | 多级目录 + 单篇笔记，带封面                           |
-| 🤝 友链   | `src/content/friends/` + `friend-groups/` | 截图卡片，支持自定义分组                              |
+| 🤝 友链   | `src/content/friends/<分组>/`            | 文件夹即分组，`_index.json` 存分组标题/描述/排序 |
 | 💬 朋友圈  | `src/content/moments/`                    | 短动态                                       |
 | 🌐 导航   | `src/content/website/`                    | 站点收藏导航                                    |
 | 📄 关于我  | `src/content/spec/`                       | `.mdx` 组件化内容                              |
