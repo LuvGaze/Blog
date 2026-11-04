@@ -124,6 +124,30 @@ const siteLang = lang.replace("_", "-");
 <html lang={siteLang} class="bg-(--page-bg) text-[14px] md:text-[16px]" data-wallpaper-mode={wallpaperMode} data-overlay-effect={String(isOverlayEffect)}>
   <head>
     <meta charset="UTF-8" />
+    <script is:inline>
+      /* 部署后浏览器/预取缓存里的旧 HTML 可能引用已删除的哈希 CSS。
+         单个 /_astro/ 样式加载失败时自动刷新一次获取新版本，避免整页只剩文本。 */
+      (function () {
+        var KEY = "astro-asset-retry";
+        window.addEventListener("error", function (e) {
+          var el = e.target;
+          if (!el || el.tagName !== "LINK" || el.rel !== "stylesheet") return;
+          var url;
+          try {
+            url = new URL(el.href, location.href);
+          } catch (_) {
+            return;
+          }
+          if (url.origin !== location.origin || !url.pathname.startsWith("/_astro/")) return;
+          if (sessionStorage.getItem(KEY)) return;
+          sessionStorage.setItem(KEY, "1");
+          location.reload();
+        }, true);
+        window.addEventListener("load", function () {
+          sessionStorage.removeItem(KEY);
+        });
+      })();
+    </script>
     {analyticsConfig?.googleAnalyticsId && (
             <GoogleAnalytics analyticsId={analyticsConfig.googleAnalyticsId} />
     )}
@@ -1316,6 +1340,24 @@ function disableAnimation() {
       }
     });
     window.swup.hooks.on("page:view", () => {
+      // 兜底：Swup 换页后若 /_astro/ 样式仍未加载成功（资源 404 或加载超时），
+      // 自动整页刷新一次，避免页面停留在无样式状态。sessionStorage 防止循环刷新。
+      setTimeout(() => {
+        const broken = Array.from(
+          document.querySelectorAll<HTMLLinkElement>('link[rel="stylesheet"]')
+        ).some((link) => {
+          try {
+            const u = new URL(link.href, location.href);
+            return u.pathname.startsWith("/_astro/") && !link.sheet;
+          } catch {
+            return false;
+          }
+        });
+        if (!broken || sessionStorage.getItem("astro-asset-retry")) return;
+        sessionStorage.setItem("astro-asset-retry", "1");
+        location.reload();
+      }, 1200);
+
       // homeOnly：Swup 切页后按新路径重新应用壁纸模式
       syncWallpaperModeWithPath();
       // 恢复 #main-grid 的过渡动画（visit:start 中禁用了）
