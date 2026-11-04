@@ -8,6 +8,8 @@ import { Icon } from "astro-icon/components";
 import I18nKey from "@/i18n/i18nKey";
 import { i18n } from "@/i18n/translation";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
+import { circleConfig } from "@/config/circleConfig";
+import "@/styles/features/circle.css";
 
 const friendsPost = await getEntry("spec", "friends");
 
@@ -38,28 +40,39 @@ const latestItems = [...items]
 	)
 	.slice(0, 3);
 
-// 新朋友区块独立展示后，从分组中排除，避免同一站点出现两次
-const latestIds = new Set(latestItems.map((item) => item.id));
+// 友链数量不超过「新朋友」上限时，独立区块会把所有友链掏空、导致分组不可见；
+// 这种情况直接按分组展示全部友链
+const showLatest = items.length > latestItems.length;
 
-// 自定义分组：读取 friend-groups 定义（name 要与友链 group 一致），构建 title/description 与排序
+// 新朋友区块独立展示后，从分组中排除，避免同一站点出现两次
+const latestIds = new Set(showLatest ? latestItems.map((item) => item.id) : []);
+
+ // 内容 id 形如「好盆友/站点名」，第一段即分组文件夹名
+const folderOf = (id: string) => {
+	const normalized = id.replace(/\\/g, "/");
+	return normalized.includes("/") ? normalized.split("/")[0] : "";
+};
+
+ // 自定义分组：读取各分组文件夹的 _index.json（name 即文件夹名），构建 title/description 与排序
 const groupEntries = await getCollection("friendGroups");
 const groupDefs: Record<string, { title: string; description?: string; sort: number }> = {};
 const definedKeys = new Set<string>();
 groupEntries.forEach((entry) => {
 	const def = entry.data;
-	groupDefs[def.name] = {
+	const key = folderOf(entry.id) || def.name;
+	groupDefs[key] = {
 		title: def.title ?? def.name,
 		description: def.description,
 		sort: def.sort ?? 0,
 	};
-	definedKeys.add(def.name);
+	definedKeys.add(key);
 });
 
-// 其余友链按 group（缺省"未分组"）聚成多个小节
+// 其余友链按分组文件夹聚成多个小节（分组信息全部来自文件夹与 _index.json）
 const rest = items.filter((item) => !latestIds.has(item.id));
 const byKey = new Map<string, typeof rest>();
 rest.forEach((item) => {
-	const key = item.data.group ?? "未分组";
+	const key = folderOf(item.id) || "未分组";
 	if (!byKey.has(key)) byKey.set(key, []);
 	byKey.get(key)!.push(item);
 });
@@ -121,9 +134,19 @@ const description = i18n(I18nKey.friendsDescription);
         }
       </div>
 
+      <!-- 视图切换：友链 / 全部动态 -->
+      <div class="friend-tabs" role="tablist" aria-label="友链与动态">
+        <button class="friend-tab is-active" type="button" role="tab" aria-selected="true" data-friends-tab="list">友链</button>
+        <button class="friend-tab" type="button" role="tab" aria-selected="false" data-friends-tab="feed">
+          全部动态
+          <span class="friend-tab-badge" data-feed-count hidden>0</span>
+        </button>
+      </div>
+
+      <div class="friend-list-panel" data-friends-panel="list">
       <!-- 新朋友：最近添加的 3 个 -->
       {
-        latestItems.length > 0 && (
+        showLatest && latestItems.length > 0 && (
           <section class="friend-section">
             <div class="friend-group-head">
               <div>
@@ -144,6 +167,7 @@ const description = i18n(I18nKey.friendsDescription);
                     desc={item.data.desc}
                     screenshot={item.data.screenshot}
                     host={hostOf(item.data.siteurl)}
+                    feedHost={item.data.siteurl}
                   />
                 ))
               }
@@ -179,6 +203,7 @@ const description = i18n(I18nKey.friendsDescription);
                     desc={item.data.desc}
                     screenshot={item.data.screenshot}
                     host={hostOf(item.data.siteurl)}
+                    feedHost={item.data.siteurl}
                   />
                 ))
               }
@@ -190,6 +215,67 @@ const description = i18n(I18nKey.friendsDescription);
       <Markdown class="mt-2">
         <Content />
       </Markdown>
+      </div><!-- /list panel -->
+
+      <!-- 全部动态（推文）：切到该 Tab 时才请求 data.json -->
+      <div class="friend-feed-panel" data-friends-panel="feed" hidden>
+        <div class="friend-feed-bar">
+          <div class="friend-feed-stats">
+            <span class="friend-feed-stat">友链 <strong data-feed-stat-friends>0</strong></span>
+            <span class="friend-feed-dot">·</span>
+            <span class="friend-feed-stat">活跃 <strong data-feed-stat-active>0</strong></span>
+            <span class="friend-feed-dot">·</span>
+            <span class="friend-feed-stat">文章 <strong data-feed-stat-articles>0</strong></span>
+          </div>
+          <div class="friend-feed-sorts">
+            <button class="friend-feed-sort is-active" type="button" data-feed-sort="created">最新发布</button>
+            <button class="friend-feed-sort" type="button" data-feed-sort="updated">最近更新</button>
+          </div>
+        </div>
+
+        <div class="friend-feed-loading" data-feed-loading>
+          <div class="loading-spinner"></div>
+          <p>正在钓鱼中…</p>
+        </div>
+
+        <div class="friend-feed-state" data-feed-error hidden>
+          <p>友链动态暂时没有钓上来</p>
+          <button class="friend-feed-retry" type="button" data-feed-retry>重新加载</button>
+        </div>
+
+        <div class="friend-feed-state" data-feed-empty hidden>
+          <p>还没有抓取到友链的更新</p>
+        </div>
+
+        <div class="friend-feed-grid" data-feed-grid hidden></div>
+
+        <div class="friend-feed-more" data-feed-more hidden>
+          <button class="friend-feed-more-btn" type="button" data-feed-loadmore>加载更多</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 单友链动态弹层 -->
+  <div class="friend-modal" id="friend-feed-modal" hidden>
+    <div class="friend-modal-mask" data-friend-modal-close></div>
+    <div class="friend-modal-panel" role="dialog" aria-modal="true" aria-labelledby="friend-modal-name">
+      <div class="friend-modal-head">
+        <img class="friend-modal-avatar" data-friend-modal-avatar alt="" />
+        <div class="friend-modal-info">
+          <h3 class="friend-modal-name" id="friend-modal-name" data-friend-modal-name></h3>
+          <a class="friend-modal-site" data-friend-modal-site target="_blank" rel="noopener noreferrer"></a>
+        </div>
+        <button class="friend-modal-close" type="button" data-friend-modal-close aria-label="关闭">
+          <Icon name="material-symbols:close-rounded" class="text-lg" />
+        </button>
+      </div>
+      <div class="friend-modal-loading" data-friend-modal-loading hidden>
+        <div class="loading-spinner"></div>
+      </div>
+      <div class="friend-modal-state" data-friend-modal-error hidden>动态加载失败，请稍后再试</div>
+      <div class="friend-modal-state" data-friend-modal-empty hidden>TA 最近还没有更新</div>
+      <div class="friend-feed-grid friend-modal-grid" data-friend-modal-grid></div>
     </div>
   </div>
 
@@ -198,148 +284,19 @@ const description = i18n(I18nKey.friendsDescription);
     <Comment post={friendsPost} customPath="/friends/" />
   </div>
 
-  <!-- 友链悬浮大图预览 — portal 单例，卡旁白边圆角大图（仅桌面 hover） -->
-  <script is:inline>
-    (function() {
-      if (window.__friendPreviewReady) return;
-      window.__friendPreviewReady = true;
-
-      var GAP = 16;
-      var MARGIN = 12;
-      var activeCard = null;
-      var hideTimer = null;
-
-      function canHover() {
-        return window.matchMedia("(hover: hover) and (pointer: fine)").matches;
-      }
-
-      function ensurePreview() {
-        var el = document.getElementById("friend-preview");
-        if (el) return el;
-        el = document.createElement("div");
-        el.id = "friend-preview";
-        el.setAttribute("aria-hidden", "true");
-        el.hidden = true;
-        var img = document.createElement("img");
-        img.alt = "";
-        img.decoding = "async";
-        el.appendChild(img);
-        document.body.appendChild(el);
-        return el;
-      }
-
-      function getPreview() {
-        return document.getElementById("friend-preview");
-      }
-
-      function positionPreview(card) {
-        var el = getPreview();
-        if (!el || !card) return;
-        var rect = card.getBoundingClientRect();
-        var pw = el.offsetWidth || 360;
-        var ph = el.offsetHeight || 225;
-        var vw = window.innerWidth;
-        var vh = window.innerHeight;
-        var left, top;
-
-        if (rect.right + GAP + pw + MARGIN <= vw) {
-          left = rect.right + GAP;
-          top = rect.top + (rect.height - ph) / 2;
-        } else if (rect.left - GAP - pw - MARGIN >= 0) {
-          left = rect.left - pw - GAP;
-          top = rect.top + (rect.height - ph) / 2;
-        } else if (rect.top - ph - GAP >= MARGIN) {
-          left = rect.left + (rect.width - pw) / 2;
-          top = rect.top - ph - GAP;
-        } else if (rect.bottom + ph + GAP <= vh - MARGIN) {
-          left = rect.left + (rect.width - pw) / 2;
-          top = rect.bottom + GAP;
-        } else {
-          left = (vw - pw) / 2;
-          top = (vh - ph) / 2;
-        }
-
-        left = Math.max(MARGIN, Math.min(left, vw - pw - MARGIN));
-        top = Math.max(MARGIN, Math.min(top, vh - ph - MARGIN));
-        el.style.left = left + "px";
-        el.style.top = top + "px";
-      }
-
-      function showPreview(card) {
-        if (!canHover()) return;
-        if (!card || !card.dataset.screenshot) return;
-        if (card.classList.contains("friend-card--no-shot")) return;
-        var el = ensurePreview();
-        var img = el.querySelector("img");
-        var src = card.dataset.screenshot;
-        if (!src) return;
-        if (img.getAttribute("src") !== src) img.src = src;
-        el.hidden = false;
-        void el.offsetWidth;
-        el.classList.add("is-visible");
-        activeCard = card;
-        if (hideTimer) { clearTimeout(hideTimer); hideTimer = null; }
-        requestAnimationFrame(function() { positionPreview(card); });
-      }
-
-      function hidePreview() {
-        var el = getPreview();
-        if (!el) return;
-        el.classList.remove("is-visible");
-        activeCard = null;
-        if (hideTimer) clearTimeout(hideTimer);
-        hideTimer = setTimeout(function() {
-          if (!el.classList.contains("is-visible")) el.hidden = true;
-        }, 220);
-      }
-
-      function bindPreview() {
-        if (!canHover()) return;
-        ensurePreview();
-        document.querySelectorAll("[data-friends-grid]").forEach(function(grid) {
-          if (grid.dataset.previewBound) return;
-          grid.dataset.previewBound = "1";
-          grid.addEventListener("pointerover", function(e) {
-            var card = e.target.closest(".friend-card");
-            if (!card || !grid.contains(card)) return;
-            if (card === activeCard) return;
-            showPreview(card);
-          });
-          grid.addEventListener("pointerout", function(e) {
-            var card = e.target.closest(".friend-card");
-            if (!card) return;
-            var related = e.relatedTarget;
-            if (related && related.closest && related.closest(".friend-card") === card) return;
-            var nextCard = related && related.closest ? related.closest(".friend-card") : null;
-            if (nextCard && nextCard.dataset.screenshot && !nextCard.classList.contains("friend-card--no-shot")) return;
-            hidePreview();
-          });
-          grid.addEventListener("pointerleave", hidePreview);
-        });
-        window.addEventListener("scroll", hidePreview, { passive: true });
-        window.addEventListener("resize", function() {
-          if (activeCard) positionPreview(activeCard);
-        });
-      }
-
-      function initPreview() {
-        bindPreview();
-      }
-
-      initPreview();
-      document.addEventListener("astro:page-load", initPreview);
-      document.addEventListener("swup:content:replaced", initPreview);
-      document.addEventListener("swup:willReplaceContent", hidePreview);
-    })();
-  </script>
-
-  <!-- "添加友链" 按钮滚动到评论区 -->
+  <!-- "添加友链" 按钮：先切回友链视图，再滚动到评论区 -->
   <script slot="head" is:inline>
     document.addEventListener('click', function(e) {
       var btn = e.target.closest('#btn-add-friend');
       if (!btn) return;
-      var comment = document.querySelector('.comment-container, #post-comments, #waline, #tcomment, .giscus');
-      if (comment) { comment.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+      var listTab = document.querySelector('[data-friends-tab="list"]');
+      if (listTab && !listTab.classList.contains('is-active')) listTab.click();
+      requestAnimationFrame(function() {
+        requestAnimationFrame(function() {
+          var comment = document.querySelector('.comment-container, #post-comments, #waline, #tcomment, .giscus');
+          if (comment) { comment.scrollIntoView({ behavior: 'smooth', block: 'start' }); }
+        });
+      });
     });
   </script>
 
@@ -412,14 +369,14 @@ const description = i18n(I18nKey.friendsDescription);
       function bindCardClick() {
         document.addEventListener("click", function(e) {
           var card = e.target.closest(".friend-card");
-          if (!card || e.target.closest("a")) return;
+          if (!card || e.target.closest("a") || e.target.closest("button")) return;
           var href = card.dataset.href;
           if (href) window.open(href, "_blank", "noopener,noreferrer");
         });
         document.addEventListener("keydown", function(e) {
           if (e.key !== "Enter" && e.key !== " ") return;
           var card = e.target.closest(".friend-card");
-          if (!card) return;
+          if (!card || e.target.closest("button")) return;
           var href = card.dataset.href;
           if (href) { e.preventDefault(); window.open(href, "_blank", "noopener,noreferrer"); }
         });
@@ -459,5 +416,767 @@ const description = i18n(I18nKey.friendsDescription);
       document.addEventListener("swup:content:replaced", init);
     })();
   </script>
+
+  <!-- 友链动态：Tab 切换 / 懒加载 data.json / 全部动态 / 单友链弹层 -->
+  <script is:inline define:vars={{ dataUrl: circleConfig.dataUrl, pageSize: circleConfig.pageSize, cacheTime: circleConfig.cacheTime }}>
+    (function() {
+      if (window.__friendFeedReady) return;
+      window.__friendFeedReady = true;
+
+      var CACHE_KEY = "__friendsFeedCache";
+      var feedData = null;
+      var pending = null;
+      var currentSort = "created";
+      var displayed = 0;
+      var modalHost = "";
+      var modalName = "";
+      var prefetchTimer = null;
+
+      function $(sel, root) { return (root || document).querySelector(sel); }
+      function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+      function esc(t) {
+        var d = document.createElement("div");
+        d.textContent = t == null ? "" : String(t);
+        return d.innerHTML;
+      }
+
+      /* 域名归一：小写、去末尾点、去 www.，失败返回空串 */
+      function hostKey(raw) {
+        if (!raw) return "";
+        var s = String(raw).trim();
+        if (!/^[a-z][a-z0-9+.-]*:\/\//i.test(s)) s = "https://" + s;
+        try {
+          return new URL(s).hostname.toLowerCase().replace(/\.$/, "").replace(/^www\./, "");
+        } catch (e) {
+          return "";
+        }
+      }
+
+      function formatDate(v) {
+        return v ? String(v).split(" ")[0] : "";
+      }
+
+      function cardHtml(item) {
+        var title = esc(item.title || "无标题");
+        var author = esc(item.author || "未知");
+        var link = esc(item.link || "#");
+        var avatar = esc(item.avatar || "");
+        var initial = esc((item.author || "?").slice(0, 1));
+        var date = esc(formatDate(item.created));
+
+        return '<a href="' + link + '" target="_blank" rel="noopener noreferrer" class="circle-card">' +
+          '<div class="card-avatar-watermark" data-initial="' + initial + '">' +
+            '<img src="' + avatar + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />' +
+          '</div>' +
+          '<span class="card-date-overlay">' + date + '</span>' +
+          '<h3 class="card-title">' + title + '</h3>' +
+          '<span class="card-author-tag">' + author + '</span>' +
+        '</a>';
+      }
+
+      function sortedArticles() {
+        var list = (feedData && feedData.article_data ? feedData.article_data : []).slice();
+        var key = currentSort === "updated" ? "updated" : "created";
+        list.sort(function(a, b) {
+          var av = a[key] || a.created || "";
+          var bv = b[key] || b.created || "";
+          return bv.localeCompare(av);
+        });
+        return list;
+      }
+
+      function setFeedState(state) {
+        var loading = $("[data-feed-loading]");
+        var error = $("[data-feed-error]");
+        var empty = $("[data-feed-empty]");
+        var grid = $("[data-feed-grid]");
+        var more = $("[data-feed-more]");
+        if (loading) loading.hidden = state !== "loading";
+        if (error) error.hidden = state !== "error";
+        if (empty) empty.hidden = state !== "empty";
+        if (grid) grid.hidden = state !== "grid";
+        if (more) more.hidden = state !== "grid" || displayed >= sortedArticles().length;
+      }
+
+      function renderFeed() {
+        var grid = $("[data-feed-grid]");
+        if (!grid) return;
+        var sorted = sortedArticles();
+        if (!displayed) displayed = pageSize;
+        grid.innerHTML = sorted.slice(0, displayed).map(cardHtml).join("");
+        setFeedState("grid");
+      }
+
+      function renderStats(data) {
+        var s = (data && data.statistical_data) || {};
+        var friends = $("[data-feed-stat-friends]");
+        var active = $("[data-feed-stat-active]");
+        var articles = $("[data-feed-stat-articles]");
+        if (friends) friends.textContent = String(s.friends_num || 0);
+        if (active) active.textContent = String(s.active_num || 0);
+        if (articles) articles.textContent = String(s.article_num || 0);
+
+        var badge = $("[data-feed-count]");
+        var total = data && data.article_data ? data.article_data.length : 0;
+        if (badge) {
+          badge.textContent = String(total);
+          badge.hidden = total === 0;
+        }
+      }
+
+      /* 数据里没有任何文章的友链，不展示「动态」按钮（避免点开只有空状态） */
+      function syncFeedButtons(data) {
+        var hosts = {};
+        var names = {};
+        ((data && data.article_data) || []).forEach(function(item) {
+          var h = hostKey(item.link);
+          if (h) hosts[h] = true;
+          var n = (item.author || "").trim().toLowerCase();
+          if (n) names[n] = true;
+        });
+        $all("[data-feed-host]").forEach(function(btn) {
+          var h = hostKey(btn.getAttribute("data-feed-host"));
+          var n = (btn.getAttribute("data-feed-name") || "").trim().toLowerCase();
+          btn.hidden = !((h && hosts[h]) || (n && names[n]));
+        });
+      }
+
+      /* 友链视图下空闲预取一次，用于判断哪些卡片该显示「动态」按钮 */
+      function schedulePrefetch() {
+        if (feedData) {
+          syncFeedButtons(feedData);
+          return;
+        }
+        if (pending || prefetchTimer) return;
+        prefetchTimer = setTimeout(function() {
+          prefetchTimer = null;
+          if (!$("[data-friends-panel]")) return;
+          ensureFeed(false);
+        }, 1500);
+      }
+
+      function requestFeed(force) {
+        if (!force && window[CACHE_KEY] && Date.now() - window[CACHE_KEY].time < cacheTime) {
+          return Promise.resolve(window[CACHE_KEY].data);
+        }
+        return fetch(dataUrl, { cache: force ? "reload" : "default" })
+          .then(function(res) {
+            if (!res.ok) throw new Error("HTTP " + res.status);
+            return res.json();
+          })
+          .then(function(data) {
+            window[CACHE_KEY] = { data: data, time: Date.now() };
+            return data;
+          });
+      }
+
+      function ensureFeed(force) {
+        if (!force && feedData) {
+          renderStats(feedData);
+          syncFeedButtons(feedData);
+          renderFeed();
+          return Promise.resolve(feedData);
+        }
+        if (pending) return pending;
+        setFeedState("loading");
+        pending = requestFeed(force)
+          .then(function(data) {
+            pending = null;
+            feedData = data;
+            renderStats(data);
+            syncFeedButtons(data);
+            if (!data || !data.article_data || !data.article_data.length) {
+              setFeedState("empty");
+              return null;
+            }
+            renderFeed();
+            return data;
+          })
+          .catch(function() {
+            pending = null;
+            feedData = null;
+            setFeedState("error");
+            return null;
+          });
+        return pending;
+      }
+
+      function activateTab(tab) {
+        $all("[data-friends-tab]").forEach(function(btn) {
+          var on = btn.getAttribute("data-friends-tab") === tab;
+          btn.classList.toggle("is-active", on);
+          btn.setAttribute("aria-selected", on ? "true" : "false");
+        });
+        $all("[data-friends-panel]").forEach(function(panel) {
+          panel.hidden = panel.getAttribute("data-friends-panel") !== tab;
+        });
+        if (tab === "feed") ensureFeed(false);
+        else schedulePrefetch();
+      }
+
+      /* ---------- 单友链动态弹层 ---------- */
+      function setModalState(state) {
+        var loading = $("[data-friend-modal-loading]");
+        var error = $("[data-friend-modal-error]");
+        var empty = $("[data-friend-modal-empty]");
+        var grid = $("[data-friend-modal-grid]");
+        if (loading) loading.hidden = state !== "loading";
+        if (error) error.hidden = state !== "error";
+        if (empty) empty.hidden = state !== "empty";
+        if (grid) grid.hidden = state !== "grid";
+      }
+
+      function matchArticle(item) {
+        var host = hostKey(item.link);
+        if (host && modalHost && host === modalHost) return true;
+        if (modalName && item.author && item.author.trim().toLowerCase() === modalName) return true;
+        return false;
+      }
+
+      function renderModal(data) {
+        var grid = $("[data-friend-modal-grid]");
+        if (!grid) return;
+        var matched = (data && data.article_data ? data.article_data : []).filter(matchArticle);
+        matched.sort(function(a, b) {
+          return (b.created || "").localeCompare(a.created || "");
+        });
+        if (!matched.length) {
+          grid.innerHTML = "";
+          setModalState("empty");
+          return;
+        }
+        grid.innerHTML = matched.map(cardHtml).join("");
+        setModalState("grid");
+      }
+
+      function openModal(btn) {
+        var modal = $("#friend-feed-modal");
+        if (!modal) return;
+        modalHost = hostKey(btn.getAttribute("data-feed-host"));
+        modalName = (btn.getAttribute("data-feed-name") || "").trim().toLowerCase();
+
+        var name = btn.getAttribute("data-feed-name") || "";
+        var avatar = btn.getAttribute("data-feed-avatar") || "";
+        var site = btn.getAttribute("data-feed-site") || "";
+
+        var img = $("[data-friend-modal-avatar]", modal);
+        if (img) img.src = avatar;
+        var nameEl = $("[data-friend-modal-name]", modal);
+        if (nameEl) nameEl.textContent = name;
+        var siteEl = $("[data-friend-modal-site]", modal);
+        if (siteEl) {
+          siteEl.href = site;
+          siteEl.textContent = hostKey(site) || site;
+        }
+
+        modal.hidden = false;
+        document.body.style.overflow = "hidden";
+        setModalState("loading");
+
+        ensureFeed(false).then(function(data) {
+          if (modal.hidden) return;
+          if (!data) {
+            setModalState(feedData ? "empty" : "error");
+            return;
+          }
+          renderModal(data);
+        });
+      }
+
+      function closeModal() {
+        var modal = $("#friend-feed-modal");
+        if (!modal || modal.hidden) return;
+        modal.hidden = true;
+        document.body.style.overflow = "";
+        modalHost = "";
+        modalName = "";
+      }
+
+      /* ---------- 事件委托（一次绑定，兼容 Swup 替换内容） ---------- */
+      function bindEvents() {
+        document.addEventListener("click", function(e) {
+          var feedBtn = e.target.closest("[data-feed-host]");
+          if (feedBtn) {
+            e.preventDefault();
+            openModal(feedBtn);
+            return;
+          }
+
+          var tabBtn = e.target.closest("[data-friends-tab]");
+          if (tabBtn) {
+            activateTab(tabBtn.getAttribute("data-friends-tab"));
+            return;
+          }
+
+          var sortBtn = e.target.closest("[data-feed-sort]");
+          if (sortBtn) {
+            currentSort = sortBtn.getAttribute("data-feed-sort") === "updated" ? "updated" : "created";
+            $all("[data-feed-sort]").forEach(function(b) {
+              b.classList.toggle("is-active", b === sortBtn);
+            });
+            if (feedData) renderFeed();
+            return;
+          }
+
+          if (e.target.closest("[data-feed-loadmore]")) {
+            displayed += pageSize;
+            renderFeed();
+            return;
+          }
+
+          if (e.target.closest("[data-feed-retry]")) {
+            ensureFeed(true);
+            return;
+          }
+
+          if (e.target.closest("[data-friend-modal-close]")) {
+            closeModal();
+          }
+        });
+
+        document.addEventListener("keydown", function(e) {
+          if (e.key === "Escape") closeModal();
+        });
+      }
+
+      /* 把弹层挂到 body：页面容器上的 transform 会让 fixed 相对容器定位，导致弹层偏下 */
+      function relocateModal() {
+        var modals = document.querySelectorAll("#friend-feed-modal");
+        if (!modals.length) return;
+        var current = modals[0];
+        for (var i = 1; i < modals.length; i++) modals[i].remove();
+        if (current.parentElement !== document.body) document.body.appendChild(current);
+      }
+
+      function resetPage() {
+        relocateModal();
+        closeModal();
+        if (!$("[data-friends-panel]")) return;
+
+        currentSort = "created";
+        displayed = pageSize;
+        $all("[data-feed-sort]").forEach(function(b) {
+          b.classList.toggle("is-active", b.getAttribute("data-feed-sort") === "created");
+        });
+
+        var tab = "list";
+        try {
+          if (new URLSearchParams(window.location.search).get("tab") === "feed") tab = "feed";
+        } catch (e) { /* ignore */ }
+        activateTab(tab);
+      }
+
+      bindEvents();
+      resetPage();
+      document.addEventListener("astro:page-load", resetPage);
+      document.addEventListener("swup:willReplaceContent", closeModal);
+      document.addEventListener("swup:content:replaced", resetPage);
+    })();
+  </script>
+
+  <style is:global>
+    /* ============ 视图切换 ============ */
+    .friend-tabs {
+      display: inline-flex;
+      gap: 0.15rem;
+      padding: 0.25rem;
+      margin-bottom: 1.25rem;
+      border-radius: 999px;
+      background: color-mix(in oklch, var(--btn-regular-bg) 70%, transparent);
+      border: 1px solid color-mix(in oklch, var(--line-divider) 40%, transparent);
+    }
+
+    .friend-tab {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.4rem 1rem;
+      border: none;
+      border-radius: 999px;
+      background: transparent;
+      font-family: inherit;
+      font-size: 0.875rem;
+      font-weight: 600;
+      color: color-mix(in oklch, var(--deep-text) 55%, transparent);
+      cursor: pointer;
+      transition: color 200ms ease, background 200ms ease, box-shadow 200ms ease;
+    }
+
+    .friend-tab:hover:not(.is-active) {
+      color: var(--deep-text);
+    }
+
+    .friend-tab.is-active {
+      background: var(--card-bg);
+      color: var(--deep-text);
+      box-shadow: 0 1px 8px color-mix(in oklch, var(--deep-text) 12%, transparent);
+    }
+
+    .friend-tab-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-width: 1.25rem;
+      height: 1.15rem;
+      padding: 0 0.35rem;
+      border-radius: 999px;
+      background: color-mix(in oklch, var(--primary) 14%, transparent);
+      color: var(--primary);
+      font-size: 0.6875rem;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .friend-tab-badge[hidden] {
+      display: none;
+    }
+
+    /* ============ 卡片上的「动态」按钮 ============ */
+    .friend-feed-btn {
+      margin-left: auto;
+      flex-shrink: 0;
+      padding: 0.15rem 0.5rem;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--primary) 30%, transparent);
+      background: color-mix(in oklch, var(--float-panel-bg) 76%, transparent);
+      color: var(--primary);
+      font-family: inherit;
+      font-size: 0.6875rem;
+      font-weight: 600;
+      line-height: 1.5;
+      cursor: pointer;
+      pointer-events: auto;
+      backdrop-filter: blur(6px);
+      transition: background 200ms ease, border-color 200ms ease, transform 200ms ease;
+    }
+
+    .friend-feed-btn:hover {
+      background: color-mix(in oklch, var(--primary) 12%, var(--float-panel-bg));
+      border-color: color-mix(in oklch, var(--primary) 55%, transparent);
+      transform: translateY(-1px);
+    }
+
+    /* ============ 全部动态面板 ============ */
+    [data-friends-panel][hidden],
+    .friend-feed-panel [hidden],
+    .friend-modal [hidden] {
+      display: none !important;
+    }
+
+    .friend-feed-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.75rem;
+      margin-bottom: 0.9rem;
+      padding: 0.55rem 0.85rem;
+      border-radius: 0.85rem;
+      background: color-mix(in oklch, var(--btn-regular-bg) 55%, transparent);
+      border: 1px solid color-mix(in oklch, var(--line-divider) 35%, transparent);
+    }
+
+    .friend-feed-stats {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.8125rem;
+      color: var(--content-meta);
+    }
+
+    .friend-feed-stat strong {
+      margin-left: 0.15rem;
+      font-weight: 700;
+      color: var(--deep-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .friend-feed-dot {
+      opacity: 0.4;
+    }
+
+    .friend-feed-sorts {
+      display: flex;
+      gap: 0.3rem;
+    }
+
+    .friend-feed-sort {
+      padding: 0.2rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--line-divider) 55%, transparent);
+      background: transparent;
+      color: var(--content-meta);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: color 200ms ease, border-color 200ms ease, background 200ms ease;
+    }
+
+    .friend-feed-sort:hover {
+      color: var(--primary);
+      border-color: color-mix(in oklch, var(--primary) 45%, transparent);
+    }
+
+    .friend-feed-sort.is-active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: #fff;
+    }
+
+    .friend-feed-loading,
+    .friend-feed-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 0.75rem;
+      padding: 3.5rem 1rem;
+      text-align: center;
+      font-size: 0.875rem;
+      color: var(--content-meta);
+    }
+
+    .friend-feed-retry {
+      padding: 0.4rem 0.9rem;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--line-divider) 55%, transparent);
+      background: var(--btn-regular-bg);
+      color: var(--deep-text);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: color 200ms ease, border-color 200ms ease;
+    }
+
+    .friend-feed-retry:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    .friend-feed-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+      padding: 0.25rem 0 0.5rem;
+    }
+
+    .friend-feed-grid .circle-card {
+      background: color-mix(in oklch, var(--card-bg) 72%, transparent);
+      border-color: color-mix(in oklch, var(--line-divider) 45%, transparent);
+    }
+
+    .friend-feed-more {
+      display: flex;
+      justify-content: center;
+      padding: 0.5rem 0 1rem;
+    }
+
+    .friend-feed-more-btn {
+      padding: 0.5rem 1.5rem;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--line-divider) 60%, transparent);
+      background: color-mix(in oklch, var(--btn-regular-bg) 70%, transparent);
+      color: var(--content-meta);
+      font-family: inherit;
+      font-size: 0.8125rem;
+      cursor: pointer;
+      transition: color 200ms ease, border-color 200ms ease;
+    }
+
+    .friend-feed-more-btn:hover {
+      color: var(--primary);
+      border-color: var(--primary);
+    }
+
+    /* ============ 单友链动态弹层 ============ */
+    .friend-modal {
+      position: fixed;
+      inset: 0;
+      z-index: 80;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 1rem;
+    }
+
+    .friend-modal[hidden] {
+      display: none !important;
+    }
+
+    .friend-modal-mask {
+      position: absolute;
+      inset: 0;
+      background: rgb(0 0 0 / 0.55);
+      backdrop-filter: blur(6px);
+    }
+
+    .friend-modal-panel {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      flex-direction: column;
+      width: min(60rem, 100%);
+      max-height: min(82vh, 46rem);
+      overflow: hidden;
+      border-radius: 1rem;
+      border: 1px solid color-mix(in oklch, var(--line-divider) 50%, transparent);
+      background: var(--card-bg);
+      box-shadow: 0 24px 60px rgb(0 0 0 / 0.28);
+      animation: friendModalIn 250ms ease-out;
+    }
+
+    @keyframes friendModalIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px) scale(0.98);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
+    }
+
+    .friend-modal-head {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      flex-shrink: 0;
+      padding: 0.85rem 1rem;
+      border-bottom: 1px solid color-mix(in oklch, var(--line-divider) 40%, transparent);
+    }
+
+    .friend-modal-avatar {
+      width: 2.5rem;
+      height: 2.5rem;
+      flex-shrink: 0;
+      border-radius: 50%;
+      object-fit: cover;
+      background: var(--btn-regular-bg);
+    }
+
+    .friend-modal-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0.1rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .friend-modal-name {
+      margin: 0;
+      font-size: 1rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--deep-text);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .friend-modal-site {
+      font-size: 0.75rem;
+      color: var(--content-meta);
+      text-decoration: none;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .friend-modal-site:hover {
+      color: var(--primary);
+    }
+
+    .friend-modal-close {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 2rem;
+      height: 2rem;
+      flex-shrink: 0;
+      border: none;
+      border-radius: 50%;
+      background: transparent;
+      color: var(--content-meta);
+      cursor: pointer;
+      transition: background 200ms ease, color 200ms ease;
+    }
+
+    .friend-modal-close:hover {
+      background: var(--btn-regular-bg);
+      color: var(--deep-text);
+    }
+
+    .friend-modal-loading,
+    .friend-modal-state {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 3rem 1rem;
+      font-size: 0.875rem;
+      color: var(--content-meta);
+      text-align: center;
+    }
+
+    .friend-modal-grid {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      overflow-y: auto;
+      padding: 1rem;
+    }
+
+    /* ============ 响应式 ============ */
+    @media (max-width: 1024px) {
+      .friend-feed-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .friend-modal-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+    }
+
+    @media (max-width: 768px) {
+      .friend-feed-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 0.65rem;
+      }
+
+      .friend-feed-bar {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .friend-modal {
+        padding: 0.5rem;
+      }
+
+      .friend-modal-panel {
+        max-height: 90vh;
+      }
+
+      .friend-modal-grid {
+        grid-template-columns: 1fr;
+        padding: 0.75rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .friend-feed-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .friend-modal-panel {
+        animation: none;
+      }
+
+      .friend-tab,
+      .friend-feed-btn,
+      .friend-feed-sort {
+        transition: none;
+      }
+    }
+  </style>
 
 </MainGridLayout>
