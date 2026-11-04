@@ -88,7 +88,7 @@ flowchart LR
 
 - **双层响应式侧边栏**：左右栏组件化，可配置归属、排序、粘性定位与文章页显隐。
 - **侧栏小组件**：天气（三列整组轮换 · AQI 分色 · 气压）、恋爱计时器、音乐播放器、日历、公告。
-- **构建期自动化**：图标按需内联、LQIP 占位图、字体子集化、Pagefind 全文搜索索引。
+- **构建期自动化**：图标按需内联、LQIP 占位图、Pagefind 全文搜索索引。
 - **全站访问口令**：受保护页面共用一套口令，由环境变量注入。
 - **内容 schema 校验**：`src/content.config.ts` 统一约束所有集合字段。
 
@@ -202,7 +202,7 @@ pnpm dev                 # 后台 → http://localhost:8899/admin
 | 命令                          | 说明                                    |
 |-----------------------------|---------------------------------------|
 | `pnpm dev` / `pnpm start`   | 启动开发服务器                               |
-| `pnpm build`                | 生产构建（图标 + LQIP + Astro + 字体子集 + 搜索索引） |
+| `pnpm build`                | 生产构建（图标 + LQIP + Astro + 搜索索引） |
 | `pnpm preview`              | 预览构建产物                                |
 | `pnpm check`                | Astro 类型与诊断检查                         |
 | `pnpm type-check`           | 仅 TypeScript 检查                       |
@@ -217,8 +217,7 @@ flowchart TD
     A["pnpm build"] --> B["1 · generate-icons.js<br/>扫描图标 → icons.ts"]
     B --> C["2 · generate-lqips.ts<br/>生成 LQIP 占位图"]
     C --> D["3 · astro build<br/>输出 dist/"]
-    D --> E["4 · subset-fonts.ts<br/>字体子集化 woff2"]
-    E --> F["5 · pagefind<br/>生成全文搜索索引"]
+    D --> E["4 · pagefind<br/>生成全文搜索索引"]
 ```
 
 > [!IMPORTANT]
@@ -270,8 +269,9 @@ Blog/
 | `accessConfig.ts`                       | 全站访问口令与受保护路由                                     |
 | `analyticsConfig.ts`                    | 统计服务（Google Analytics / Clarity / Umami / 51la）  |
 | `coverImageConfig.ts`                   | 封面图与随机封面 API                                     |
+| `cursorConfig.ts`                       | 鼠标光标（七种状态、尺寸缩放与热区）                                  |
 | `effectsConfig.ts`                      | 动画特效（樱花等）                                        |
-| `fontConfig.ts`                         | 字体与子集化配置                                         |
+| `fontConfig.ts`                         | 全局本地字体配置（留空使用系统默认字体）                            |
 | `pioConfig.ts`                          | 看板娘（Spine / Live2D）                              |
 
 </details>
