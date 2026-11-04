@@ -45,7 +45,7 @@ let fontCache: Buffer | null = null;
 
 function loadDengFont(): Buffer {
     if (fontCache) return fontCache;
-    const fontPath = "./public/fonts/Deng.ttf";
+    const fontPath = "./public/assets/fonts/等线字体.woff";
     if (!fs.existsSync(fontPath)) {
         throw new Error(`OG 字体缺失：${fontPath}`);
     }
@@ -58,7 +58,7 @@ export async function GET({
                           }: APIContext<{ post: CollectionEntry<"posts"> }>) {
     const {post} = props;
 
-    // 本地等线字体（Deng.ttf，单一 Regular 字重，同时注册 400/700 供 satori 加粗）
+    // 本地等线字体（等线字体.woff，单一 Regular 字重，同时注册 400/700 供 satori 加粗）
     const dengFont = loadDengFont();
 
     // Avatar + icon: still read from disk (small assets)
