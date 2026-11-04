@@ -2,32 +2,52 @@
 /**
  * 博客自定义鼠标光标
  * - 使用 cursorConfig 中配置的图片（png / gif / svg / cur / ico）
- * - 未配置图片时不做任何替换，保持系统默认箭头
- * - 触屏设备不受影响；输入框仍保留系统文本光标
+ * - 未配置图片时不做任何替换，保持系统默认光标
+ * - 覆盖静止、悬停、文本选取、禁止、拖拽、帮助等多种状态
+ * - 触屏设备不受影响
  */
-import { cursorConfig } from "@/config/cursorConfig";
+import { cursorConfig, type CursorItem } from "@/config/cursorConfig";
+import { resolveCursorImage } from "@/utils/cursor-image";
 
-const { enable, default: defaultImage, pointer, hotspotX, hotspotY } = cursorConfig;
+const {
+	enable,
+	hotspotX,
+	hotspotY,
+	size,
+	default: defaultItem,
+	pointer,
+	text,
+	notAllowed,
+	grab,
+	grabbing,
+	help,
+} = cursorConfig;
 
-// 兼容外部链接与本地相对路径，空值视为未配置
-function toCursor(src: string): string {
-	const trimmed = String(src || "").trim();
-	if (!trimmed) return "";
-	return `url("${trimmed}") ${hotspotX} ${hotspotY}, auto`;
+// 兼容字符串与 { image, size, x, y } 两种写法；空值视为未配置
+async function toCursor(item: CursorItem | undefined): Promise<string> {
+	if (!item) return "";
+	const image = (typeof item === "string" ? item : item.image || "").trim();
+	if (!image) return "";
+	const targetSize = typeof item === "object" && item.size != null ? item.size : size;
+	const x = typeof item === "object" && item.x != null ? item.x : hotspotX;
+	const y = typeof item === "object" && item.y != null ? item.y : hotspotY;
+	const resolved = await resolveCursorImage(image, targetSize);
+	if (!resolved) return "";
+	return `url("${resolved}") ${x} ${y}, auto`;
 }
 
-const defaultCursor = enable ? toCursor(defaultImage) : "";
-const pointerCursor = enable ? toCursor(pointer) || defaultCursor : "";
+const defaultCursor = enable ? await toCursor(defaultItem) : "";
+// pointer 留空时沿用 default（沿用旧行为）
+const pointerCursor = enable ? (await toCursor(pointer)) || defaultCursor : "";
 
-const rules: string[] = [];
-if (defaultCursor) {
-	rules.push(`html,
-html body {
-	cursor: ${defaultCursor};
-}`);
-}
-if (pointerCursor) {
-	rules.push(`a,
+// 其余状态留空时：配置了 default 就退回对应的系统光标，避免继承成箭头
+const fallback = (value: string) => (defaultCursor ? value : "");
+
+const DEFAULT_SELECTOR = `html,
+html body,
+.cursor-default`;
+
+const POINTER_SELECTOR = `a,
 button,
 [role="button"],
 [role="link"],
@@ -39,10 +59,52 @@ summary,
 .btn-plain,
 .navbar-seg,
 .dropdown-item,
-.nav-expand-item {
-	cursor: ${pointerCursor};
-}`);
-}
+.nav-expand-item,
+.cursor-pointer`;
+
+const TEXT_SELECTOR = `input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="file"]):not([type="submit"]):not([type="button"]):not([type="reset"]),
+textarea,
+[contenteditable]:not([contenteditable="false"]),
+.cursor-text`;
+
+const NOT_ALLOWED_SELECTOR = `[disabled],
+[aria-disabled="true"],
+.cursor-not-allowed`;
+
+const GRAB_SELECTOR = `[draggable="true"],
+.cursor-grab`;
+
+const GRABBING_SELECTOR = `.cursor-grabbing,
+.is-grabbing,
+.is-dragging,
+[draggable="true"]:active`;
+
+const HELP_SELECTOR = `.cursor-help`;
+
+const textCursor = (await toCursor(text)) || fallback("text");
+const notAllowedCursor = (await toCursor(notAllowed)) || fallback("not-allowed");
+const grabCursor = (await toCursor(grab)) || fallback("grab");
+const grabbingCursor = (await toCursor(grabbing)) || fallback("grabbing");
+const helpCursor = (await toCursor(help)) || fallback("help");
+
+const states: Array<{ selector: string; cursor: string }> = [
+	{ selector: DEFAULT_SELECTOR, cursor: defaultCursor },
+	{ selector: POINTER_SELECTOR, cursor: pointerCursor },
+	{ selector: TEXT_SELECTOR, cursor: textCursor },
+	{ selector: NOT_ALLOWED_SELECTOR, cursor: notAllowedCursor },
+	{ selector: GRAB_SELECTOR, cursor: grabCursor },
+	{ selector: GRABBING_SELECTOR, cursor: grabbingCursor },
+	{ selector: HELP_SELECTOR, cursor: helpCursor },
+];
+
+const rules = states
+	.filter((state) => state.cursor)
+	.map(
+		(state) => `${state.selector} {
+	cursor: ${state.cursor} !important;
+}`,
+	);
+
 const css = rules.join("\n");
 ---
 
