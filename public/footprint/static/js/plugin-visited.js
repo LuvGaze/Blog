@@ -14,6 +14,10 @@
 
             // 存放所有独立解析出的多边形（大陆及岛屿）
             this.regionPolygons = [];
+            // 地名图层：像真实地图一样显示全部省/市名，由 LabelsLayer 做碰撞避让
+            this.labelLayer = null;
+            this.labelsEnabled = true;
+            this._visitedGeometries = new Set();
             this.isEnabled = true;
             // url -> 解析后的 Feature[]（缓存，缩放切换时不再重新请求）
             this._featuresByUrl = {};
@@ -57,7 +61,8 @@
                         this._featuresByUrl[url] = g.features || (g.type === 'Feature' ? [g] : []);
                     }
                 });
-                this.rebuild();
+                // 数据加载完成前 zoomend 可能已把 _detail 置位，这里强制重绘一次
+                this.rebuild(true);
                 // 缩放级别变化时，在省界/市界之间动态切换，避免线条过多
                 this.map.on('zoomend', () => this.rebuild());
             } catch (e) {
@@ -71,10 +76,11 @@
             return this.map.getZoom() >= threshold;
         }
 
-        rebuild() {
+        rebuild(force) {
             const useDetail = this._resolveDetail();
-            // 仅当概览/明细层级真正切换时才重建，避免每次缩放都重建大量多边形
-            if (this._detail === useDetail) return;
+            // 仅当概览/明细层级真正切换时才重建，避免每次缩放都重建大量多边形；
+            // force 用于首次数据加载完成后强制重绘，避免与 zoomend 抢跑导致边界不显示
+            if (!force && this._detail === useDetail) return;
             this._detail = useDetail;
             const urls = [...(useDetail ? (this.config.detailUrls || []) : (this.config.coarseUrls || []))];
             this._currentUrls = urls;
@@ -138,6 +144,8 @@
             // 批量将所有独立区块挂载到地图，性能极高
             this.map.add(this.regionPolygons);
             if (!this.isEnabled) this.regionPolygons.forEach(p => p.hide());
+
+            this.drawLabels(urls);
         }
 
         updateData() {
@@ -165,14 +173,91 @@
                 const isVisited = visitedGeometry.has(poly._geoJsonGeometry);
                 poly.setOptions(isVisited ? safeActive : safeDefault);
             });
+
+            this._visitedGeometries = visitedGeometry;
         }
 
-        toggle(enabled) {
+        ensureLabelLayer() {
+            if (!this.labelLayer) {
+                this.labelLayer = new AMap.LabelsLayer({
+                    zooms: [3, 20],
+                    collision: true,
+                    zIndex: 150
+                });
+                this.map.add(this.labelLayer);
+            }
+            return this.labelLayer;
+        }
+
+        // 显示当前层级（省界/市界）的全部地名；LabelsLayer 会自动做碰撞避让
+        drawLabels(urls) {
+            const layer = this.ensureLabelLayer();
+            layer.clear();
+            if (!this.labelsEnabled) return;
+
+            const seen = new Set();
+            (urls || []).forEach(url => {
+                // 只标注国内的省/市，不标世界国界
+                if (/world\.geojson/i.test(url)) return;
+                const features = this._featuresByUrl[url] || [];
+                features.forEach(feature => {
+                    const props = feature.properties || {};
+                    const name = String(props.name || props.ADMIN || props.name_zh || '').trim();
+                    if (!name) return;
+                    if (this._labelSet && this._labelSet.indexOf(name.toLowerCase()) !== -1) return;
+
+                    const center = props.center || props.centroid;
+                    if (!Array.isArray(center) || center.length < 2) return;
+                    const lng = parseFloat(center[0]);
+                    const lat = parseFloat(center[1]);
+                    if (Number.isNaN(lng) || Number.isNaN(lat)) return;
+
+                    const key = `${name}@${lng.toFixed(3)},${lat.toFixed(3)}`;
+                    if (seen.has(key)) return;
+                    seen.add(key);
+
+                    const marker = new AMap.LabelMarker({
+                        position: [lng, lat],
+                        zooms: [3, 20],
+                        text: {
+                            content: name,
+                            style: {
+                                fontSize: 11,
+                                fontWeight: '500',
+                                fontFamily: 'sans-serif',
+                                fillColor: '#334155',
+                                strokeColor: '#ffffff',
+                                strokeWidth: 2,
+                                strokeOpacity: 0.9
+                            }
+                        }
+                    });
+                    layer.add(marker);
+                });
+            });
+        }
+
+        toggleBoundaries(enabled) {
             this.isEnabled = enabled;
             this.regionPolygons.forEach(poly => {
                 if (enabled) poly.show();
                 else poly.hide();
             });
+        }
+
+        toggleLabels(enabled) {
+            this.labelsEnabled = enabled;
+            if (enabled) {
+                // 重新开图时补画地名（关闭期间数据可能已经更新过）
+                this.drawLabels(this._currentUrls);
+            } else if (this.labelLayer) {
+                this.labelLayer.hide();
+            }
+        }
+
+        toggle(enabled) {
+            this.toggleBoundaries(enabled);
+            this.toggleLabels(enabled);
         }
 
         onMarkerHover() {
