@@ -34,7 +34,7 @@ export const navMenuConfig = {
         },
         {
             name: "文章",
-            url: "/posts/",
+            url: "/archive/",
             icon: "material-symbols:article",
             enabled: true,
             children: [
@@ -42,7 +42,8 @@ export const navMenuConfig = {
                     name: "文章列表",
                     url: "/posts/",
                     icon: "material-symbols:view-list",
-                    enabled: true,
+                    enabled: false,
+                    pageKey: "postList",
                 },
                 {
                     name: "推文",
@@ -55,7 +56,7 @@ export const navMenuConfig = {
                     name: "归档",
                     url: "/archive/",
                     icon: "material-symbols:archive",
-                    enabled: true,
+                    enabled: false,
                 },
                 {
                     name: "分类",
@@ -78,6 +79,12 @@ export const navMenuConfig = {
             enabled: true,
             children: [
                 {
+                    name: "归档",
+                    url: "/archive/",
+                    icon: "material-symbols:archive",
+                    enabled: true,
+                },
+                {
                     name: "相册",
                     url: "/gallery/",
                     icon: "material-symbols:photo-library",
@@ -92,18 +99,25 @@ export const navMenuConfig = {
                     pageKey: "bangumi",
                 },
                 {
-                    name: "追番",
-                    url: "/anime/",
-                    icon: "material-symbols:live-tv",
-                    enabled: true,
-                    pageKey: "anime",
-                },
-                {
                     name: "书架",
                     url: "/books/",
                     icon: "material-symbols:book-5",
                     enabled: true,
                     pageKey: "books",
+                },
+                {
+                    name: "笔记本",
+                    url: "/notebooks/",
+                    icon: "material-symbols:menu-book-outline",
+                    enabled: true,
+                    pageKey: "notebooks",
+                },
+                {
+                    name: "足迹",
+                    url: "/travel/",
+                    icon: "material-symbols:location-on",
+                    enabled: true,
+                    pageKey: "places",
                 },
             ],
         },
@@ -113,6 +127,13 @@ export const navMenuConfig = {
             icon: "material-symbols:sports-esports",
             enabled: true,
             children: [
+                {
+                    name: "追番",
+                    url: "/anime/",
+                    icon: "material-symbols:live-tv",
+                    enabled: true,
+                    pageKey: "anime",
+                },
                 {
                     name: "影视",
                     url: "/movies/",
@@ -133,13 +154,6 @@ export const navMenuConfig = {
                     icon: "material-symbols:list-alt",
                     enabled: true,
                     pageKey: "routines",
-                },
-                {
-                    name: "足迹",
-                    url: "/travel/",
-                    icon: "material-symbols:location-on",
-                    enabled: true,
-                    pageKey: "places",
                 },
             ],
         },
@@ -164,19 +178,19 @@ export const navMenuConfig = {
                     pageKey: "guestbook",
                 },
                 {
-                    name: "笔记本",
-                    url: "/notebooks/",
-                    icon: "material-symbols:menu-book-outline",
-                    enabled: true,
-                    pageKey: "notebooks",
-                },
-                {
                     name: "网站导航",
                     url: "/website/",
                     icon: "material-symbols:public",
                     enabled: true,
                 },
             ],
+        },
+        {
+            name: "友链",
+            url: "/friends/",
+            icon: "material-symbols:group",
+            enabled: true,
+            pageKey: "friends",
         },
         {
             name: "关于",
@@ -196,13 +210,6 @@ export const navMenuConfig = {
                     icon: "material-symbols:history",
                     enabled: true,
                     pageKey: "changelog",
-                },
-                {
-                    name: "友链",
-                    url: "/friends/",
-                    icon: "material-symbols:group",
-                    enabled: true,
-                    pageKey: "friends",
                 },
                 {
                     name: "打赏",
