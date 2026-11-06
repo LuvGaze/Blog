@@ -57,8 +57,9 @@
     }
 }
 
-/* 确保平滑滚动 */
+/* 全局视觉缩放：根字号降到 90%（1rem = 14.4px），所有 rem 尺寸同步缩小 */
 html {
+    font-size: 90%;
     scroll-behavior: smooth;
 }
 
