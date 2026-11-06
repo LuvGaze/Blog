@@ -98,6 +98,7 @@ export type SiteConfig = {
         routines: boolean; // 规划页面开关
         places: boolean; // 足迹页面开关
         notebooks: boolean; // 笔记本页面开关
+        postList: boolean; // 文章列表页面（/posts/）开关
     };
 
     // 分类导航栏开关
