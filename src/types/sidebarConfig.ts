@@ -1,6 +1,7 @@
 // 组件配置类型定义
 export type WidgetComponentType =
     | "profile"
+    | "postDirectory"
     | "announcement"
     | "categories"
     | "tags"
