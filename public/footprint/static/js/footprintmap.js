@@ -313,8 +313,10 @@
             this.map = new AMap.Map(div, {
                 zoom: 4, center: [locations[0].lng, locations[0].lat],
                 mapStyle: Utils.isDarkMode() ? CONFIG.MAP_STYLES.amap.dark : CONFIG.MAP_STYLES.amap.light,
-                viewMode: '3D', pitch: 0, rotateEnable: false, pitchEnable: false
+                // 关闭内置滚轮缩放，改由下方接管：滚轮只缩放地图，不滚动网页
+                viewMode: '3D', pitch: 0, rotateEnable: false, pitchEnable: false, scrollWheel: false
             });
+            this.bindWheelZoom(div);
 
             AMap.plugin(['AMap.Scale', 'AMap.MoveAnimation'], () => {
                 this.map.addControl(new AMap.Scale({position: {bottom: '25px', left: '20px'}}));
@@ -371,6 +373,29 @@
                     if (this.highlightPlugin && this.highlightPlugin.updateData) this.highlightPlugin.updateData();
                 }
             };
+        }
+
+        // 接管滚轮：阻止页面跟着滚动，再按滚动方向缩放地图
+        bindWheelZoom(el) {
+            let acc = 0;
+            let timer = null;
+            el.addEventListener('wheel', (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const unit = e.deltaMode === 1 ? 16 : (e.deltaMode === 2 ? 100 : 1);
+                acc += e.deltaY * unit;
+                if (timer) clearTimeout(timer);
+                timer = setTimeout(() => {
+                    acc = 0;
+                    timer = null;
+                }, 260);
+                if (Math.abs(acc) < 40) return;
+                const dir = acc > 0 ? -1 : 1;
+                acc = 0;
+                const zoom = this.map.getZoom();
+                const next = Math.max(2, Math.min(18, zoom + dir));
+                if (next !== zoom) this.map.setZoom(next, false);
+            }, {passive: false});
         }
 
         updateClusters() {
@@ -551,7 +576,6 @@
         addBtn(icons.plus, () => controls.zoomIn());
         addBtn(icons.minus, () => controls.zoomOut());
         container.appendChild(ctrlWrap);
-        // 集群显示与区域高亮均常开，无需开关按钮
     }
 
     document.addEventListener('DOMContentLoaded', () => document.querySelectorAll('.footprint-map').forEach(initMap));
