@@ -17,6 +17,11 @@ import {
 } from "@/utils/url-utils";
 import { getCategoryColorHue } from "@/utils/color";
 
+// 检查页面是否启用
+if (!siteConfig.pages.postList) {
+	return Astro.redirect("/404/");
+}
+
 export const getStaticPaths = (async () => {
 	return [{ params: { page: undefined } }];
 }) satisfies GetStaticPaths;
