@@ -232,6 +232,7 @@ const description = i18n(I18nKey.friendsDescription);
             <button class="friend-feed-sort" type="button" data-feed-sort="updated">最近更新</button>
           </div>
         </div>
+        <p class="friend-feed-note">友链动态项目暂未本地部署 · 以下内容并非博客实际友链文章</p>
 
         <div class="friend-feed-loading" data-feed-loading>
           <div class="loading-spinner"></div>
@@ -453,8 +454,69 @@ const description = i18n(I18nKey.friendsDescription);
         }
       }
 
+      /* ---------- 日期解析 / 时间分组 ---------- */
+      var ICON_CALENDAR =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11z"/></svg>';
+      var ICON_CHEVRON =
+        '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/></svg>';
+
+      function pad2(n) {
+        return n < 10 ? "0" + n : String(n);
+      }
+
+      /* 兼容 "YYYY-MM-DD HH:mm:ss" 与 ISO 字符串；无法解析时返回 null */
+      function parseDate(v) {
+        if (!v) return null;
+        var raw = String(v).trim().replace(/^(\d{4}-\d{2}-\d{2}) /, "$1T");
+        var d = new Date(raw);
+        return isNaN(d.getTime()) ? null : d;
+      }
+
       function formatDate(v) {
-        return v ? String(v).split(" ")[0] : "";
+        var d = parseDate(v);
+        if (!d) return v ? String(v).split(/[ T]/)[0] : "";
+        return d.getFullYear() + "-" + pad2(d.getMonth() + 1) + "-" + pad2(d.getDate());
+      }
+
+      /* 当前排序维度对应的日期字段（最近更新视图按 updated 分组） */
+      function sortValue(item) {
+        var key = currentSort === "updated" ? "updated" : "created";
+        return item[key] || item.created || "";
+      }
+
+      function timeBucket(d, now) {
+        var day = new Date(d.getFullYear(), d.getMonth(), d.getDate());
+        var today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+        var diff = Math.round((today - day) / 86400000);
+        if (diff <= 0) return { key: "today", label: "今天" };
+        if (diff === 1) return { key: "yesterday", label: "昨天" };
+        /* 周一为一周起点 */
+        var weekStart = new Date(today.getTime() - ((today.getDay() + 6) % 7) * 86400000);
+        if (day >= weekStart) return { key: "week", label: "本周" };
+        if (day.getFullYear() === now.getFullYear() && day.getMonth() === now.getMonth()) {
+          return { key: "month", label: now.getMonth() + 1 + " 月" };
+        }
+        return {
+          key: "ym-" + day.getFullYear() + "-" + pad2(day.getMonth() + 1),
+          label: day.getFullYear() + " 年 " + (day.getMonth() + 1) + " 月",
+        };
+      }
+
+      /* 同 key 合并，避免混合日期格式把同一时间段拆成多个分组 */
+      function groupArticles(list) {
+        var now = new Date();
+        var groups = [];
+        var byKey = {};
+        list.forEach(function(item) {
+          var d = parseDate(sortValue(item));
+          var bucket = d ? timeBucket(d, now) : { key: "unknown", label: "更早" };
+          if (!byKey[bucket.key]) {
+            byKey[bucket.key] = { key: bucket.key, label: bucket.label, items: [] };
+            groups.push(byKey[bucket.key]);
+          }
+          byKey[bucket.key].items.push(item);
+        });
+        return groups;
       }
 
       function cardHtml(item) {
@@ -462,26 +524,38 @@ const description = i18n(I18nKey.friendsDescription);
         var author = esc(item.author || "未知");
         var link = esc(item.link || "#");
         var avatar = esc(item.avatar || "");
-        var initial = esc((item.author || "?").slice(0, 1));
-        var date = esc(formatDate(item.created));
+        var initial = esc((item.author || "?").trim().slice(0, 1) || "?");
+        var host = esc(hostKey(item.link) || "");
+        var created = formatDate(item.created);
+        var updated = formatDate(item.updated);
+        var showUpdated = updated && updated !== created;
+        var avatarImg = avatar
+          ? '<img src="' + avatar + '" alt="" loading="lazy" onerror="this.parentNode.classList.add(\'is-error\')" />'
+          : '';
 
-        return '<a href="' + link + '" target="_blank" rel="noopener noreferrer" class="circle-card">' +
-          '<div class="card-avatar-watermark" data-initial="' + initial + '">' +
-            '<img src="' + avatar + '" alt="" loading="lazy" onerror="this.style.display=\'none\'" />' +
+        return '<a href="' + link + '" target="_blank" rel="noopener noreferrer" class="friend-feed-card">' +
+          '<div class="ffc-head">' +
+            '<span class="ffc-avatar" data-initial="' + initial + '">' + avatarImg + '</span>' +
+            '<span class="ffc-id">' +
+              '<span class="ffc-author">' + author + '</span>' +
+              (host ? '<span class="ffc-host">' + host + '</span>' : '') +
+            '</span>' +
+            '<span class="ffc-arrow" aria-hidden="true">' + ICON_CHEVRON + '</span>' +
           '</div>' +
-          '<span class="card-date-overlay">' + date + '</span>' +
-          '<h3 class="card-title">' + title + '</h3>' +
-          '<span class="card-author-tag">' + author + '</span>' +
+          '<h3 class="ffc-title">' + title + '</h3>' +
+          '<div class="ffc-foot">' +
+            '<span class="ffc-date"><span class="ffc-icon">' + ICON_CALENDAR + '</span>' + esc(created) + '</span>' +
+            (showUpdated ? '<span class="ffc-updated">更新 ' + esc(updated) + '</span>' : '') +
+          '</div>' +
         '</a>';
       }
 
       function sortedArticles() {
         var list = (feedData && feedData.article_data ? feedData.article_data : []).slice();
-        var key = currentSort === "updated" ? "updated" : "created";
         list.sort(function(a, b) {
-          var av = a[key] || a.created || "";
-          var bv = b[key] || b.created || "";
-          return bv.localeCompare(av);
+          var av = parseDate(sortValue(a));
+          var bv = parseDate(sortValue(b));
+          return (bv ? bv.getTime() : 0) - (av ? av.getTime() : 0);
         });
         return list;
       }
@@ -504,7 +578,16 @@ const description = i18n(I18nKey.friendsDescription);
         if (!grid) return;
         var sorted = sortedArticles();
         if (!displayed) displayed = pageSize;
-        grid.innerHTML = sorted.slice(0, displayed).map(cardHtml).join("");
+        var groups = groupArticles(sorted.slice(0, displayed));
+        grid.innerHTML = groups.map(function(group) {
+          return '<section class="friend-feed-group">' +
+            '<div class="friend-feed-group-head">' +
+              '<span class="friend-feed-group-label">' + esc(group.label) + '</span>' +
+              '<span class="friend-feed-group-count">' + group.items.length + ' 篇</span>' +
+            '</div>' +
+            '<div class="friend-feed-group-grid">' + group.items.map(cardHtml).join('') + '</div>' +
+          '</section>';
+        }).join("");
         setFeedState("grid");
       }
 
@@ -639,7 +722,9 @@ const description = i18n(I18nKey.friendsDescription);
         if (!grid) return;
         var matched = (data && data.article_data ? data.article_data : []).filter(matchArticle);
         matched.sort(function(a, b) {
-          return (b.created || "").localeCompare(a.created || "");
+          var av = parseDate(a.created);
+          var bv = parseDate(b.created);
+          return (bv ? bv.getTime() : 0) - (av ? av.getTime() : 0);
         });
         if (!matched.length) {
           grid.innerHTML = "";
@@ -954,16 +1039,250 @@ const description = i18n(I18nKey.friendsDescription);
       border-color: var(--primary);
     }
 
+    .friend-feed-note {
+      margin: -0.35rem 0 0.9rem;
+      font-size: 0.75rem;
+      line-height: 1.6;
+      color: var(--content-meta);
+    }
+
+    /* 动态流：按时间分组，组内为卡片网格 */
     .friend-feed-grid {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 0.85rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.4rem;
       padding: 0.25rem 0 0.5rem;
     }
 
-    .friend-feed-grid .circle-card {
-      background: color-mix(in oklch, var(--card-bg) 72%, transparent);
-      border-color: color-mix(in oklch, var(--line-divider) 45%, transparent);
+    .friend-feed-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.7rem;
+    }
+
+    .friend-feed-group-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.6rem;
+      padding-bottom: 0.45rem;
+      border-bottom: 1px solid color-mix(in oklch, var(--line-divider) 45%, transparent);
+    }
+
+    .friend-feed-group-label {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.45rem;
+      font-size: 0.875rem;
+      font-weight: 800;
+      letter-spacing: -0.01em;
+      color: var(--deep-text);
+    }
+
+    /* 与文章卡片标题同一套主题色竖条 */
+    .friend-feed-group-label::before {
+      content: "";
+      width: 0.22rem;
+      height: 0.9rem;
+      border-radius: 999px;
+      background: var(--primary);
+    }
+
+    .friend-feed-group-count {
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--content-meta);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .friend-feed-group-grid {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(0, 1fr));
+      gap: 0.85rem;
+    }
+
+    /* ============ 动态文章卡片（对齐博客文章卡片视觉） ============ */
+    .friend-feed-card {
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+      min-height: 7rem;
+      padding: 0.85rem 0.9rem;
+      border-radius: var(--radius-large);
+      border: 1px solid color-mix(in oklch, var(--line-divider) 45%, transparent);
+      background: color-mix(in oklch, var(--card-bg) 88%, transparent);
+      color: var(--deep-text);
+      text-decoration: none;
+      overflow: hidden;
+      transition: transform 240ms ease, border-color 240ms ease, box-shadow 240ms ease;
+    }
+
+    .friend-feed-card:hover {
+      transform: translateY(-3px);
+      border-color: color-mix(in oklch, var(--primary) 38%, transparent);
+      box-shadow: 0 10px 24px color-mix(in oklch, var(--primary) 10%, transparent);
+    }
+
+    .friend-feed-card:focus-visible {
+      outline: 2px dashed var(--primary);
+      outline-offset: 2px;
+    }
+
+    /* 头部：头像 + 作者/域名 + 进入箭头 */
+    .ffc-head {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      min-width: 0;
+    }
+
+    .ffc-avatar {
+      position: relative;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.6rem;
+      height: 1.6rem;
+      border-radius: 999px;
+      overflow: hidden;
+      background: var(--btn-regular-bg);
+      border: 1px solid color-mix(in oklch, var(--line-divider) 45%, transparent);
+    }
+
+    .ffc-avatar::after {
+      content: attr(data-initial);
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1;
+      color: color-mix(in oklch, var(--deep-text) 55%, transparent);
+    }
+
+    .ffc-avatar img {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      background: var(--btn-regular-bg);
+    }
+
+    .ffc-avatar.is-error img {
+      display: none;
+    }
+
+    .ffc-id {
+      display: flex;
+      flex-direction: column;
+      gap: 0.05rem;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .ffc-author {
+      font-size: 0.75rem;
+      font-weight: 700;
+      line-height: 1.35;
+      color: var(--deep-text);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ffc-host {
+      font-size: 0.625rem;
+      line-height: 1.3;
+      color: var(--content-meta);
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .ffc-arrow {
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.4rem;
+      height: 1.4rem;
+      border-radius: 999px;
+      background: var(--btn-regular-bg);
+      color: var(--content-meta);
+      transition: background 200ms ease, color 200ms ease, transform 200ms ease;
+    }
+
+    .ffc-arrow svg {
+      width: 0.9rem;
+      height: 0.9rem;
+      fill: currentcolor;
+    }
+
+    .friend-feed-card:hover .ffc-arrow {
+      background: var(--primary);
+      color: #fff;
+      transform: translateX(2px);
+    }
+
+    .ffc-title {
+      margin: 0;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      line-height: 1.5;
+      color: var(--deep-text);
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+      transition: color 200ms ease;
+    }
+
+    .friend-feed-card:hover .ffc-title {
+      color: var(--primary);
+    }
+
+    .ffc-foot {
+      margin-top: auto;
+      display: flex;
+      align-items: center;
+      gap: 0.45rem;
+      flex-wrap: wrap;
+    }
+
+    .ffc-date,
+    .ffc-updated {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      font-size: 0.6875rem;
+      font-weight: 500;
+      color: var(--content-meta);
+      font-variant-numeric: tabular-nums;
+    }
+
+    /* 与博客 PostMeta 的 meta-icon 同款小图标底 */
+    .ffc-icon {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 1.15rem;
+      height: 1.15rem;
+      border-radius: 0.35rem;
+      background: var(--btn-regular-bg);
+      color: var(--btn-content);
+    }
+
+    .ffc-icon svg {
+      width: 0.75rem;
+      height: 0.75rem;
+      fill: currentcolor;
+    }
+
+    .ffc-updated {
+      padding: 0.1rem 0.4rem;
+      border-radius: 999px;
+      border: 1px solid color-mix(in oklch, var(--line-divider) 45%, transparent);
+      background: color-mix(in oklch, var(--btn-regular-bg) 55%, transparent);
     }
 
     .friend-feed-more {
@@ -1119,14 +1438,16 @@ const description = i18n(I18nKey.friendsDescription);
     }
 
     .friend-modal-grid {
+      display: grid;
       grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.85rem;
       overflow-y: auto;
       padding: 1rem;
     }
 
     /* ============ 响应式 ============ */
     @media (max-width: 1024px) {
-      .friend-feed-grid {
+      .friend-feed-group-grid {
         grid-template-columns: repeat(3, minmax(0, 1fr));
       }
 
@@ -1136,7 +1457,7 @@ const description = i18n(I18nKey.friendsDescription);
     }
 
     @media (max-width: 768px) {
-      .friend-feed-grid {
+      .friend-feed-group-grid {
         grid-template-columns: repeat(2, minmax(0, 1fr));
         gap: 0.65rem;
       }
@@ -1161,7 +1482,7 @@ const description = i18n(I18nKey.friendsDescription);
     }
 
     @media (max-width: 480px) {
-      .friend-feed-grid {
+      .friend-feed-group-grid {
         grid-template-columns: 1fr;
       }
     }
@@ -1173,7 +1494,10 @@ const description = i18n(I18nKey.friendsDescription);
 
       .friend-tab,
       .friend-feed-btn,
-      .friend-feed-sort {
+      .friend-feed-sort,
+      .friend-feed-card,
+      .ffc-arrow,
+      .ffc-title {
         transition: none;
       }
     }
