@@ -94,9 +94,10 @@ export const siteConfig: SiteConfig = {
         movies: true,       // 影视页面
         games: true,        // 游戏页面
         changelog: true,    // 更新日志页面
-        routines: true,     // 规划页面
+        routines: false,    // 规划页面（暂时关闭）
         places: true,       // 足迹页面
         notebooks: true,    // 笔记本页面
+        postList: false,    // 文章列表页面（暂时关闭）
     },
 
     // 是否显示分类栏（正文上方的「归档 + 各分类」标签条）
@@ -126,8 +127,8 @@ export const siteConfig: SiteConfig = {
         grid: {
             // 是否启用瀑布流布局
             masonry: true,
-            // 列宽度（像素）
-            columnWidth: 320,
+            // 列最小宽度（像素）：桌面端据此计算为 3 列，中等屏幕 2 列
+            columnWidth: 240,
         },
     },
 
