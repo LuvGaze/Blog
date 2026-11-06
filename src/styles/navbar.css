@@ -42,10 +42,10 @@
     0 8px 24px -8px rgba(0, 0, 0, 0.35);
 }
 
-/* 左段：贴最左 */
+/* 左段：贴最左（负值让左侧胶囊再向左一点，可继续调大绝对值） */
 .navbar-seg--left {
     position: absolute;
-    left: 0;
+    left: -8rem;
     top: 50%;
     transform: translateY(-50%);
     justify-content: flex-start;
