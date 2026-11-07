@@ -261,13 +261,16 @@ const edgeY = sidebarLayoutConfig.gridEdgeY ?? "1rem";
 const edgeXNeg = typeof edgeX === "string" && edgeX.trim().startsWith("-");
 const edgeXAbs = edgeXNeg ? edgeX.trim().replace(/^-+/, "") : String(edgeX);
 let gridOffsetStyle: string;
+let gridOffsetClass = "";
 if (!fullWidthLayout && edgeXNeg) {
-	gridOffsetStyle = `width: calc(100% + 2 * ${edgeXAbs}); margin-left: -${edgeXAbs}; margin-right: -${edgeXAbs}; padding: ${edgeY} 0;`;
+	// 负向外扩改由 CSS 按视口宽度控制：窄屏取消外扩，避免左右内容被裁掉
+	gridOffsetClass = "grid-edge-expand";
+	gridOffsetStyle = `--grid-edge-x: ${edgeXAbs}; --grid-edge-y: ${edgeY};`;
 } else {
 	gridOffsetStyle = `padding: ${edgeY} ${edgeX};`;
 }
 
-const footerClass = ["footer", "col-span-1", "onload-animation"];
+const footerClass = ["footer", "col-span-1", "onload-animation", "order-4", "md:order-none"];
 
 if (
 	updatedGridConfig.isBothSidebars &&
@@ -946,7 +949,7 @@ const hasMultipleImages =
             </div>
         )}
         <div id="main-grid"
-          class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
+          class={`transition duration-700 w-full left-0 right-0 grid ${gridCols} grid-rows-[auto_1fr_auto] lg:grid-rows-[auto] mx-auto ${gridOffsetClass} ${!sidebarConfig.mobileShowSidebar ? 'mobile-no-sidebar' : ''}`}
           style={`position: relative; z-index: 1; gap: ${sidebarLayoutConfig.gridGap ?? "1rem"}; ${gridOffsetStyle}`}
           data-sidebar-enable={sidebarLayoutConfig.enable ? "true" : "false"}
           data-grid-hide-sidebar-on-post={hideSidebarOnPostPage ? "true" : "false"}
@@ -1058,12 +1061,7 @@ const hasMultipleImages =
                 </div>
             )}
 
-            {/* 移动端底部组件 - 768px及以下显示 */}
-            {sidebarLayoutConfig.mobileBottomComponents && sidebarLayoutConfig.mobileBottomComponents.length > 0 && (
-                <div id="mobile-bottom-sidebar" class="col-span-1 block md:hidden mt-4">
-					<SideBar side="bottom" headings={headings}></SideBar>
-                </div>
-            )}
+            {/* 移动端不再使用独立的底部组件：与桌面端共用同一套左右侧栏组件 */}
 
             <div class={footerClassName}>
                 <Footer></Footer>
@@ -1080,6 +1078,23 @@ const hasMultipleImages =
 </Layout>
 
 <style is:global>
+  /* 负 gridEdgeX 外扩：仅在 xl 及以上（内容区 92vw 居中、两侧有余量）向外扩展；
+     1280px 以下取消外扩，避免左/右内容被屏幕边缘裁掉 */
+  #main-grid.grid-edge-expand {
+    width: calc(100% + 2 * var(--grid-edge-x, 0rem));
+    margin-left: calc(-1 * var(--grid-edge-x, 0rem));
+    margin-right: calc(-1 * var(--grid-edge-x, 0rem));
+    padding: var(--grid-edge-y, 1rem) 0;
+  }
+
+  @media (max-width: 1279px) {
+    #main-grid.grid-edge-expand {
+      width: 100%;
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
   /* 右侧栏平滑过渡 */
   #right-sidebar {
     transition: opacity 0.35s ease-in-out,
