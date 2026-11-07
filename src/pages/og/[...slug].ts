@@ -77,7 +77,7 @@ export async function GET({
         avatarBase64 = `data:image/png;base64,${avatarBuffer.toString("base64")}`;
     }
 
-    let iconPath = "./public/favicon/favicon-dark-192.png";
+    let iconPath = "./public/favicon.ico";
     if (siteConfig.favicon.length > 0) {
         iconPath = `./public${siteConfig.favicon[0].src}`;
     }
