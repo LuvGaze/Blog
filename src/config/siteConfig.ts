@@ -86,7 +86,7 @@ export const siteConfig: SiteConfig = {
         moments: false,      // 朋友圈页面
         circle: false,       // 推文页面
         sponsor: true,      // 打赏页面
-        guestbook: false,    // 留言板页面
+        guestbook: true,    // 留言板页面
         bangumi: false,     // 番组计划页面
         gallery: true,      // 相册页面
         anime: true,       // 追番页面
@@ -94,10 +94,10 @@ export const siteConfig: SiteConfig = {
         movies: true,       // 影视页面
         games: true,        // 游戏页面
         changelog: true,    // 更新日志页面
-        routines: false,    // 规划页面（暂时关闭）
+        routines: false,    // 规划页面
         places: true,       // 足迹页面
         notebooks: true,    // 笔记本页面
-        postList: false,    // 文章列表页面（暂时关闭）
+        postList: false,    // 文章列表页面
     },
 
     // 是否显示分类栏（正文上方的「归档 + 各分类」标签条）
