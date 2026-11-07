@@ -14,8 +14,8 @@ export interface ResponsiveSidebarConfig {
 /**
  * 获取响应式侧边栏配置
  *
- * 响应式布局（硬编码）：
- * - 768px及以下: 隐藏侧栏，显示底部mobileBottomComponents
+ * 统一响应式布局：
+ * - 768px及以下: 单列布局，左右侧栏组件堆叠在正文下方（与桌面端同一套组件）
  * - 769px-1279px: 根据position和tabletSidebar配置显示侧栏
  * - 1280px及以上: 根据position配置显示侧栏
  */
@@ -38,7 +38,7 @@ export function getResponsiveSidebarConfig(): ResponsiveSidebarConfig {
         sidebarLayoutConfig.rightComponents.some((comp) => comp.enable);
 
     // 响应式布局由 CSS 处理，这里仅用于判断是否有组件
-    const mobileShowSidebar = false; // 768px及以下不显示侧边栏
+    const mobileShowSidebar = true; // 768px及以下同样显示侧栏（单列堆叠）
     const tabletShowSidebar = sidebarLayoutConfig.enable; // 769px及以上显示
     const desktopShowSidebar = sidebarLayoutConfig.enable; // 1280px及以上显示
 
@@ -57,8 +57,8 @@ export function getResponsiveSidebarConfig(): ResponsiveSidebarConfig {
 /**
  * 生成网格列数CSS类
  *
- * 响应式设计：
- * - 768px及以下: 单列布局（grid-cols-1），隐藏侧栏，显示底部组件
+ * 统一响应式设计：
+ * - 768px及以下: 单列布局（grid-cols-1），正文在上、侧栏组件堆叠在下
  * - 769px-1279px: 根据position和tabletSidebar配置决定2列布局方向
  * - 1280px及以上: 根据position配置决定2列或3列布局
  */
@@ -101,7 +101,10 @@ export function generateSidebarClasses(
 ): string {
     const classes = [
         "mb-4",
-        "hidden",
+        // 移动端：与桌面端共用同一套组件，单列堆叠在正文下方
+        "block",
+        "order-2",
+        "md:order-none",
         "md:col-span-1",
         "md:max-w-70",
         "md:row-start-1",
@@ -111,10 +114,10 @@ export function generateSidebarClasses(
     ];
 
     if (config.isBothSidebars && config.tabletSidebar === "right") {
-        // 双侧栏+平板端显示右侧栏：左侧栏仅在1280px+显示
-        classes.push("xl:block");
+        // 双侧栏+平板端显示右侧栏：左侧栏在平板隐藏，移动端与桌面端显示
+        classes.push("md:hidden", "xl:block");
     } else {
-        // 默认：左侧栏769px+显示
+        // 默认：移动端与平板、桌面都显示
         classes.push("md:block");
     }
 
@@ -127,7 +130,14 @@ export function generateSidebarClasses(
 export function generateRightSidebarClasses(
     config: ResponsiveSidebarConfig,
 ): string {
-    const classes = ["mb-4", "hidden", "onload-animation"];
+    const classes = [
+        "mb-4",
+        // 移动端：与桌面端共用同一套组件，单列堆叠在正文下方
+        "block",
+        "order-3",
+        "md:order-none",
+        "onload-animation",
+    ];
 
     if (config.isBothSidebars && config.tabletSidebar === "right") {
         // 双侧栏+平板端显示右侧栏：769px+显示右侧栏
@@ -141,8 +151,9 @@ export function generateRightSidebarClasses(
             "xl:col-start-3", // 桌面端在第3列
         );
     } else if (config.isBothSidebars) {
-        // 双侧栏+平板端显示左侧栏（默认）：仅1280px+显示
+        // 双侧栏+平板端显示左侧栏（默认）：平板隐藏，移动端与1280px+显示
         classes.push(
+            "md:hidden",
             "xl:block",
             "xl:row-start-1",
             "xl:row-end-3",
@@ -161,8 +172,9 @@ export function generateRightSidebarClasses(
             "md:col-start-2",
         );
     } else {
-        // 其他情况：仅1280px+显示
+        // 其他情况：平板隐藏，移动端与1280px+显示
         classes.push(
+            "md:hidden",
             "xl:block",
             "xl:row-start-1",
             "xl:row-end-3",
@@ -183,6 +195,9 @@ export function generateMainContentClasses(
 ): string {
     const classes = [
         "transition-main",
+        // 移动端：正文排在第一，侧栏组件堆叠在下方
+        "order-1",
+        "md:order-none",
         // 768px及以下: 单列布局
         "col-span-1",
     ];
