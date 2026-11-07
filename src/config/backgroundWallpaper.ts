@@ -46,14 +46,15 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
         // 桌面背景图片（支持单张或多张随机）
         // desktop: "assets/images/DesktopWallpaper/d1.avif",
         desktop: [
-            "assets/images/DesktopWallpaper/d1.avif",
-            "assets/images/DesktopWallpaper/d2.avif",
-            "assets/images/DesktopWallpaper/d3.avif",
-            "assets/images/DesktopWallpaper/d4.avif",
-            "assets/images/DesktopWallpaper/d5.avif",
-            "assets/images/DesktopWallpaper/d6.avif",
-            "assets/images/DesktopWallpaper/d7.avif",
-            "https://t.alcy.cc/pc",
+            "assets/images/DesktopWallpaper/d0.avif",
+            // "assets/images/DesktopWallpaper/d1.avif",
+            // "assets/images/DesktopWallpaper/d2.avif",
+            // "assets/images/DesktopWallpaper/d3.avif",
+            // "assets/images/DesktopWallpaper/d4.avif",
+            // "assets/images/DesktopWallpaper/d5.avif",
+            // "assets/images/DesktopWallpaper/d6.avif",
+            // "assets/images/DesktopWallpaper/d7.avif",
+            // "https://t.alcy.cc/pc",
         ],
         // 移动背景图片（支持单张或多张随机）
         // mobile: "assets/images/MobileWallpaper/m1.avif",
@@ -77,7 +78,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
     // 横幅壁纸和全屏壁纸共享配置
     common: {
         // 壁纸遮罩暗度，让横幅文字显示更清晰，0-1之间，值越大越暗
-        dimOpacity: 0.2,
+        dimOpacity: 0,
         // 多视频播放模式："order" 顺序循环，"random" 随机切换（仅当 playerUrl 为数组时生效）
         playerMode: "random",
         // 主页横幅文字
@@ -292,7 +293,7 @@ export const backgroundWallpaper: BackgroundWallpaperConfig = {
         // 是否启用封面底部内容区背景图
         enable: false,
         // 底图地址
-        src: "https://image.luvgaze.com/d/%E6%A2%85%E8%8A%B1%E8%90%BD/010.jpg?sign=HqZ0XHJi3Dgx7i9Ch3LnkYCUYK086VItKU_LoxpTTMs=:0",
+        src: "https://t.alcy.cc/pc",
         // 底图不透明度，0-1之间，值越大越清晰，默认0.5以保证内容可读性
         opacity: 0.5,
     },
