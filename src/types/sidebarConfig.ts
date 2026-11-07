@@ -31,17 +31,6 @@ export type WidgetComponentConfig = {
     customProps?: Record<string, unknown>; // 自定义属性，用于扩展组件功能
 };
 
-export type MobileBottomComponentConfig = {
-    type: WidgetComponentType; // 组件类型
-    enable: boolean; // 是否启用该组件
-    showTitle?: boolean; // 是否显示该组件标题，默认true
-    order?: number; // 可选：移动端底部组件的上下排序权重，数字越小越靠前；不填则按数组出现顺序
-    showOnPostPage?: boolean; // 是否在文章详情页显示
-    hideOnNonPostPage?: boolean; // 是否在非文章详情页隐藏
-    specificConfig?: WidgetSpecificConfig;
-    customProps?: Record<string, unknown>; // 自定义属性，用于扩展组件功能
-};
-
 // 组件通用专属配置
 export type WidgetSpecificConfig = {
     hidden?: ("mobile" | "tablet" | "desktop")[]; // 在指定设备上隐藏
@@ -112,5 +101,4 @@ export type SidebarLayoutConfig = {
     showBothSidebarsOnPostPage?: boolean; // 当position为left或right时，是否在文章详情页显示双侧边栏
     leftComponents: WidgetComponentConfig[]; // 左侧边栏组件配置列表
     rightComponents: WidgetComponentConfig[]; // 右侧边栏组件配置列表
-    mobileBottomComponents: MobileBottomComponentConfig[]; // 移动端底部组件配置列表（<768px显示）
 };
