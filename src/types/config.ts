@@ -30,7 +30,6 @@ export type {WeatherConfig} from "./weatherConfig";
 export type {
     AdConfig,
     CalendarConfig,
-    MobileBottomComponentConfig,
     SidebarLayoutConfig,
     SiteInfoConfig,
     StatsWidgetConfig,
