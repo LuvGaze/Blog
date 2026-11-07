@@ -17,22 +17,18 @@ import Tags from "@/components/widget/Tags.astro";
 import TimeGreeting from "@/components/widget/TimeGreeting.astro";
 import Weather from "@/components/widget/Weather.astro";
 import { sidebarLayoutConfig } from "@/config";
-import type {
-	MobileBottomComponentConfig,
-	WidgetComponentConfig,
-} from "@/types/config";
+import type {WidgetComponentConfig} from "@/types/config";
 
 interface Props {
 	class?: string;
 	headings?: MarkdownHeading[];
-	side?: "left" | "right" | "bottom";
+	side?: "left" | "right";
 }
 
 // 侧边栏位置常量
 const SIDEBAR_SIDE = {
 	LEFT: "left",
 	RIGHT: "right",
-	BOTTOM: "bottom",
 } as const;
 
 // 组件位置常量
@@ -70,17 +66,8 @@ const side = (Astro.props.side ||
 const className = Astro.props.class;
 
 // 根据 side 属性获取对应的组件列表
-// left/right：遍历左右组件并收集所有组件，再按组件的 side 覆盖字段（缺省取所在数组）筛选出属于本侧的部分，最后按 order 排序实现上下调整
-// bottom：直接返回移动端底部组件，并按 order 排序
-const getComponents = (): (
-	| WidgetComponentConfig
-	| MobileBottomComponentConfig
-)[] => {
-	if (side === SIDEBAR_SIDE.BOTTOM) {
-		return [...sidebarLayoutConfig.mobileBottomComponents].sort(
-			(a, b) => (a.order ?? 0) - (b.order ?? 0),
-		);
-	}
+// 遍历左右组件并收集所有组件，再按组件的 side 覆盖字段（缺省取所在数组）筛选出属于本侧的部分，最后按 order 排序实现上下调整
+const getComponents = (): WidgetComponentConfig[] => {
 	const targetSide =
 		side === SIDEBAR_SIDE.RIGHT ? SIDEBAR_SIDE.RIGHT : SIDEBAR_SIDE.LEFT;
 	const candidates: (WidgetComponentConfig & { __defaultSide: "left" | "right" })[] = [
@@ -100,14 +87,14 @@ const getComponents = (): (
 
 // 过滤并排序组件（不再进行 showOnPostPage 过滤，交由客户端处理）
 const filterAndSortComponents = (
-	components: (WidgetComponentConfig | MobileBottomComponentConfig)[],
+	components: WidgetComponentConfig[],
 ) => {
 	return components.filter((comp) => comp.enable);
 };
 
 // 分离 top 和 sticky 位置的组件（保持原始数组顺序）
 const getComponentsByPosition = (
-	components: (WidgetComponentConfig | MobileBottomComponentConfig)[],
+	components: WidgetComponentConfig[],
 ) => {
 	const topComponents = components.filter(
 		(c) => "position" in c && c.position === COMPONENT_POSITION.TOP,
@@ -132,7 +119,7 @@ const isPostListPage = /^\/posts\/?(\/\d+\/?)?$/.test(Astro.url.pathname);
 
 // 判断组件在当前页面首屏是否可见（用于计算布局间距，避免隐藏组件占位）
 const isComponentInitiallyVisible = (
-	config: WidgetComponentConfig | MobileBottomComponentConfig,
+	config: WidgetComponentConfig,
 ): boolean => {
 	if (
 		"showOnPostPage" in config &&
@@ -153,7 +140,7 @@ const isComponentInitiallyVisible = (
 
 // 动态构建组件 props
 const getComponentProps = (
-	config: WidgetComponentConfig | MobileBottomComponentConfig,
+	config: WidgetComponentConfig,
 	index: number,
 ): Record<string, unknown> => {
 	const baseProps: Record<string, unknown> = {
@@ -202,71 +189,54 @@ const getComponentProps = (
 const allComponents = getComponents();
 const filteredComponents = filterAndSortComponents(allComponents);
 
-// 对于移动端底部组件，直接使用所有组件，不进行position分组
-const isMobileBottom = side === SIDEBAR_SIDE.BOTTOM;
-const { topComponents, stickyComponents } = !isMobileBottom
-	? getComponentsByPosition(filteredComponents)
-	: { topComponents: [], stickyComponents: [] };
-const bottomComponents = isMobileBottom ? filteredComponents : [];
+const { topComponents, stickyComponents } = getComponentsByPosition(
+	filteredComponents,
+);
 const hasInitiallyVisibleTopComponents = topComponents.some(
 	isComponentInitiallyVisible,
 );
 ---
 
 {
-	(topComponents.length > 0 || stickyComponents.length > 0 || bottomComponents.length > 0) && (
+	(topComponents.length > 0 || stickyComponents.length > 0) && (
 		<div id={`${side}-sidebar`} class:list={[className, "flex flex-col w-full pt-0"]}>
-			{/* Mobile bottom components - 直接渲染所有组件，不分组 */}
-			{isMobileBottom ? (
-				<div class="flex flex-col w-full gap-4">
-					{bottomComponents.map((comp, index) => {
+			{/* Top components */}
+			{topComponents.length > 0 && (
+				<div
+					class:list={[
+						"flex flex-col w-full gap-4",
+						hasInitiallyVisibleTopComponents && "mb-4",
+					]}
+				>
+					{topComponents.map((comp, index) => {
 						const Component = componentMap[comp.type];
 						if (!Component) return null;
 						const props = getComponentProps(comp, index) as any;
 						return <Component {...props} />;
 					})}
 				</div>
-			) : (
-				<>
-					{/* Top components */}
-					{topComponents.length > 0 && (
-						<div
-							class:list={[
-								"flex flex-col w-full gap-4",
-								hasInitiallyVisibleTopComponents && "mb-4",
-							]}
-						>
-							{topComponents.map((comp, index) => {
-								const Component = componentMap[comp.type];
-								if (!Component) return null;
-								const props = getComponentProps(comp, index) as any;
-								return <Component {...props} />;
-							})}
-						</div>
-					)}
+			)}
 
-					{/* Sticky components */}
-					{stickyComponents.length > 0 && (
-						<div
-							id={`${side}-sidebar-sticky`}
-							class:list={[
-								"flex flex-col w-full mt-0 gap-4",
-								"sticky",
-								hasInitiallyVisibleTopComponents ? "top-4" : "top-0",
-							]}
-						>
-							{stickyComponents.map((comp, index) => {
-								const Component = componentMap[comp.type];
-								if (!Component) return null;
-								const props = getComponentProps(
-									comp,
-									topComponents.length + index
-								) as any;
-								return <Component {...props} />;
-							})}
-						</div>
-					)}
-				</>
+			{/* Sticky components */}
+			{stickyComponents.length > 0 && (
+				<div
+					id={`${side}-sidebar-sticky`}
+					class:list={[
+						"flex flex-col w-full mt-0 gap-4",
+						"sticky",
+						hasInitiallyVisibleTopComponents ? "top-4" : "top-0",
+					]}
+				>
+					{stickyComponents.map((comp, index) => {
+						const Component = componentMap[comp.type];
+						if (!Component) return null;
+						const props = getComponentProps(
+							comp,
+							topComponents.length + index
+						) as any;
+						return <Component {...props} />;
+					})}
+				</div>
 			)}
 		</div>
 	)
