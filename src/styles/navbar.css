@@ -51,6 +51,13 @@
     justify-content: flex-start;
 }
 
+/* 视口变窄时自动收左偏移：最多 -8rem，但至少保留 0.75rem 在屏幕内，避免胶囊被裁掉 */
+@media (min-width: 1024px) {
+    .navbar-seg--left {
+        left: clamp(-8rem, calc(0.75rem - (100vw - var(--navbar-max-width, 72rem)) / 2), 0rem);
+    }
+}
+
 /* 中段：绝对定位居中 */
 .navbar-seg--center {
     position: absolute;
