@@ -115,8 +115,8 @@ export const siteConfig: SiteConfig = {
     postListLayout: {
         // 默认布局模式："grid"网格，"list"列表
         defaultMode: "grid",
-        // 移动端默认布局模式
-        mobileDefaultMode: "list",
+        // 移动端默认布局模式：与桌面端统一为网格
+        mobileDefaultMode: "grid",
         // 是否显示文章标签
         showTags: true,
         // 文章描述显示行数（0表示不限制）
