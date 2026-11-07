@@ -46,7 +46,7 @@ export const siteConfig: SiteConfig = {
     favicon: [
         {
             // 图标路径（相对于public目录）
-            src: "/favicon/favicon.ico",
+            src: "/favicon.ico",
             // 图标尺寸
             sizes: "32x32",
         },
