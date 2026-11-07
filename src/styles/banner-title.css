@@ -1,6 +1,16 @@
-/* 横幅文字阴影 - 更柔和的扩散效果 */
+/* 横幅文字阴影 - 全部作用在字形本身，不加任何背景图层 */
 .banner-title {
-    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+    text-shadow:
+        /* 顶部微高光：给字形一点立体感，亮度很低，不干扰可读性 */
+        0 -1px 1px rgba(255, 255, 255, 0.22),
+        /* 近距硬阴影：压住高光边缘，保证字形轮廓清晰 */
+        0 1px 2px rgba(0, 0, 0, 0.65),
+        /* 中距阴影：过渡 */
+        0 2px 6px rgba(0, 0, 0, 0.55),
+        /* 远距柔光：在背景较亮处形成一圈暗晕 */
+        0 0 18px rgba(0, 0, 0, 0.5);
+    /* 细描边进一步锁定字形边缘，避免白字与亮背景融在一起 */
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
     /* 防止大字体标题溢出容器 */
     overflow-wrap: break-word;
     word-break: break-word;
@@ -10,19 +20,33 @@
 }
 
 .banner-subtitle {
-    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+    text-shadow:
+        0 -1px 1px rgba(255, 255, 255, 0.18),
+        0 1px 2px rgba(0, 0, 0, 0.6),
+        0 0 12px rgba(0, 0, 0, 0.55);
+    -webkit-text-stroke: 0.35px rgba(0, 0, 0, 0.28);
 }
 
 /* 横幅背景暗层透明度 - 通过配置文件 common.dimOpacity 控制，内联样式覆盖 */
 
 .banner-post-title {
     font-size: clamp(2rem, 4vw, 3rem);
-    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+    text-shadow:
+        0 -1px 1px rgba(255, 255, 255, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.65),
+        0 2px 6px rgba(0, 0, 0, 0.55),
+        0 0 18px rgba(0, 0, 0, 0.5);
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
 }
 
 .banner-page-title {
     font-size: clamp(2rem, 4vw, 3rem);
-    text-shadow: 0 4px 24px rgba(0, 0, 0, 0.65);
+    text-shadow:
+        0 -1px 1px rgba(255, 255, 255, 0.2),
+        0 1px 2px rgba(0, 0, 0, 0.65),
+        0 2px 6px rgba(0, 0, 0, 0.55),
+        0 0 18px rgba(0, 0, 0, 0.5);
+    -webkit-text-stroke: 0.5px rgba(0, 0, 0, 0.3);
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -43,5 +67,8 @@
 }
 
 .banner-post-meta-list {
-    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.6);
+    text-shadow:
+        0 -1px 1px rgba(255, 255, 255, 0.16),
+        0 1px 2px rgba(0, 0, 0, 0.6),
+        0 0 12px rgba(0, 0, 0, 0.55);
 }
