@@ -171,13 +171,6 @@ export const navMenuConfig = {
                     pageKey: "moments",
                 },
                 {
-                    name: "留言板",
-                    url: "/guestbook/",
-                    icon: "material-symbols:edit-outline",
-                    enabled: true,
-                    pageKey: "guestbook",
-                },
-                {
                     name: "网站导航",
                     url: "/website/",
                     icon: "material-symbols:public",
@@ -186,11 +179,26 @@ export const navMenuConfig = {
             ],
         },
         {
-            name: "友链",
-            url: "/friends/",
-            icon: "material-symbols:group",
+            name: "社交",
+            url: "#",
+            icon: "material-symbols:groups",
             enabled: true,
-            pageKey: "friends",
+            children: [
+                {
+                    name: "留言板",
+                    url: "/guestbook/",
+                    icon: "material-symbols:edit-outline",
+                    enabled: true,
+                    pageKey: "guestbook",
+                },
+                {
+                    name: "友链",
+                    url: "/friends/",
+                    icon: "material-symbols:group",
+                    enabled: true,
+                    pageKey: "friends",
+                },
+                ]
         },
         {
             name: "关于",
