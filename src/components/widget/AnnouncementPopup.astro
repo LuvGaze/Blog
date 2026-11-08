@@ -1,0 +1,290 @@
+---
+import { Icon } from "astro-icon/components";
+import { announcementPopupConfig } from "@/config/announcementConfig";
+
+const config = announcementPopupConfig;
+
+if (!config.enable) {
+	return;
+}
+
+const title = config.title ?? "公告";
+const autoCloseSeconds = Math.max(0, config.autoCloseSeconds ?? 0);
+const closable = config.closable !== false;
+const showLink = !!config.link && config.link.enable !== false;
+---
+
+<div
+	id="announcement-popup"
+	class="announcement-popup"
+	role="dialog"
+	aria-modal="false"
+	aria-labelledby="announcement-popup-title"
+	aria-hidden="true"
+	data-auto-close={autoCloseSeconds}
+	hidden
+>
+	<div class="announcement-popup__card">
+		<div class="announcement-popup__header">
+			{
+				config.icon && (
+					<span class="announcement-popup__icon">
+						<Icon is:inline name={config.icon} />
+					</span>
+				)
+			}
+			<h2 id="announcement-popup-title" class="announcement-popup__title">{title}</h2>
+			{
+				closable && (
+					<button
+						type="button"
+						class="announcement-popup__close btn-regular"
+						aria-label="关闭弹窗公告"
+						data-popup-close
+					>
+						<Icon is:inline name="fa7-solid:xmark" />
+					</button>
+				)
+			}
+		</div>
+
+		<div class="announcement-popup__content">{config.content}</div>
+
+		{
+			showLink && (
+				<div class="announcement-popup__actions">
+					<a
+						class="btn-regular announcement-popup__link"
+						href={config.link!.url}
+						target={config.link!.external ? "_blank" : "_self"}
+						rel={config.link!.external ? "noopener noreferrer" : undefined}
+					>
+						{config.link!.text}
+					</a>
+				</div>
+			)
+		}
+
+		{
+			autoCloseSeconds > 0 && (
+				<span
+					class="announcement-popup__progress"
+					style={`--popup-autoclose: ${autoCloseSeconds}s`}
+				/>
+			)
+		}
+	</div>
+</div>
+
+<script>
+	const STORAGE_KEY = "announcement-popup-seen";
+	const popup = document.getElementById("announcement-popup");
+
+	if (popup && !popup.dataset.bound) {
+		popup.dataset.bound = "true";
+
+		const autoCloseSeconds = Number(popup.dataset.autoClose ?? "0");
+		let closeTimer: number | undefined;
+
+		const closePopup = () => {
+			if (!popup.classList.contains("is-open")) return;
+			popup.classList.remove("is-open");
+			popup.setAttribute("aria-hidden", "true");
+			if (closeTimer) window.clearTimeout(closeTimer);
+			// 等过渡结束后彻底隐藏，避免残留节点拦截鼠标
+			window.setTimeout(() => {
+				popup.hidden = true;
+			}, 320);
+		};
+
+		const openPopup = () => {
+			popup.hidden = false;
+			requestAnimationFrame(() => {
+				popup.classList.add("is-open");
+				popup.setAttribute("aria-hidden", "false");
+			});
+			if (autoCloseSeconds > 0) {
+				closeTimer = window.setTimeout(closePopup, autoCloseSeconds * 1000);
+			}
+		};
+
+		let seen = false;
+		try {
+			seen = localStorage.getItem(STORAGE_KEY) === "1";
+		} catch {
+			// 隐私模式下 localStorage 不可用时，按未访问处理但不写入
+		}
+
+		if (!seen) {
+			try {
+				localStorage.setItem(STORAGE_KEY, "1");
+			} catch {
+				// 忽略写入失败
+			}
+			openPopup();
+		}
+
+		popup.querySelector("[data-popup-close]")?.addEventListener("click", closePopup);
+
+		document.addEventListener("keydown", (e) => {
+			if (e.key === "Escape") closePopup();
+		});
+	}
+</script>
+
+<style>
+	.announcement-popup {
+		position: fixed;
+		inset: 0;
+		z-index: 70;
+		display: flex;
+		align-items: center;
+		justify-content: center;
+		padding: 1rem;
+		/* 遮罩层不拦截点击，未关闭弹窗时页面依然可正常浏览 */
+		pointer-events: none;
+		opacity: 0;
+		transition: opacity 0.3s ease;
+	}
+
+	.announcement-popup[hidden] {
+		display: none;
+	}
+
+	.announcement-popup.is-open {
+		opacity: 1;
+	}
+
+	.announcement-popup__card {
+		position: relative;
+		pointer-events: auto;
+		width: min(24rem, calc(100vw - 2rem));
+		padding: 1.25rem 1.25rem 1.5rem;
+		background: var(--card-bg);
+		border: 1px solid var(--line-divider);
+		border-radius: var(--radius-large);
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.16);
+		transform: translateY(0.75rem) scale(0.97);
+		transition:
+			transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+			opacity 0.3s ease;
+		overflow: hidden;
+	}
+
+	.dark .announcement-popup__card {
+		box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
+	}
+
+	.announcement-popup.is-open .announcement-popup__card {
+		transform: translateY(0) scale(1);
+	}
+
+	.announcement-popup__header {
+		display: flex;
+		align-items: center;
+		gap: 0.6rem;
+		margin-bottom: 0.75rem;
+	}
+
+	.announcement-popup__icon {
+		display: inline-flex;
+		align-items: center;
+		justify-content: center;
+		width: 1.9rem;
+		height: 1.9rem;
+		flex-shrink: 0;
+		border-radius: 9999px;
+		color: var(--primary);
+		background: color-mix(in oklch, var(--primary) 14%, transparent);
+	}
+
+	.announcement-popup__icon :global(svg) {
+		width: 0.95rem;
+		height: 0.95rem;
+	}
+
+	.announcement-popup__title {
+		flex: 1;
+		min-width: 0;
+		font-weight: 600;
+		font-size: 1.05rem;
+		line-height: 1.4;
+		color: var(--deep-text);
+	}
+
+	.announcement-popup__close {
+		flex-shrink: 0;
+		width: 1.9rem;
+		height: 1.9rem;
+		border-radius: 9999px;
+	}
+
+	.announcement-popup__close :global(svg) {
+		width: 0.75rem;
+		height: 0.75rem;
+	}
+
+	.announcement-popup__content {
+		font-size: 0.875rem;
+		line-height: 1.7;
+		color: var(--content-meta);
+		white-space: pre-line;
+		overflow-wrap: break-word;
+		/* 内容过长时自身滚动，避免撑出屏幕 */
+		max-height: 50vh;
+		overflow-y: auto;
+	}
+
+	.announcement-popup__actions {
+		display: flex;
+		margin-top: 1rem;
+	}
+
+	.announcement-popup__link {
+		padding: 0.35rem 0.9rem;
+		border-radius: var(--radius-large);
+		font-size: 0.8125rem;
+		font-weight: 500;
+	}
+
+	.announcement-popup__progress {
+		position: absolute;
+		left: 0;
+		bottom: 0;
+		height: 2px;
+		width: 100%;
+		background: var(--primary);
+		transform-origin: left center;
+		transform: scaleX(0);
+	}
+
+	.announcement-popup.is-open .announcement-popup__progress {
+		animation: announcement-popup-progress var(--popup-autoclose, 0s) linear forwards;
+	}
+
+	@keyframes announcement-popup-progress {
+		from {
+			transform: scaleX(1);
+		}
+		to {
+			transform: scaleX(0);
+		}
+	}
+
+	@media (max-width: 640px) {
+		.announcement-popup {
+			align-items: flex-start;
+			padding-top: 5.5rem;
+		}
+	}
+
+	@media (prefers-reduced-motion: reduce) {
+		.announcement-popup,
+		.announcement-popup__card {
+			transition: none;
+		}
+		.announcement-popup.is-open .announcement-popup__progress {
+			animation: none;
+		}
+	}
+</style>
