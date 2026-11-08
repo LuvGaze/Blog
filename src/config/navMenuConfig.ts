@@ -29,226 +29,195 @@ export const navMenuConfig = {
         {
             name: "主页",
             url: "/",
-            icon: "material-symbols:home",
             enabled: true,
-        },
+            icon: "material-symbols:home"
+           },
         {
             name: "文章",
             url: "/archive/",
+            enabled: false,
             icon: "material-symbols:article",
-            enabled: true,
-            children: [
-                {
-                    name: "文章列表",
-                    url: "/posts/",
-                    icon: "material-symbols:view-list",
-                    enabled: false,
-                    pageKey: "postList",
-                },
-                {
-                    name: "推文",
-                    url: "/circle/",
-                    icon: "material-symbols:public",
-                    enabled: true,
-                    pageKey: "circle",
-                },
-                {
-                    name: "归档",
-                    url: "/archive/",
-                    icon: "material-symbols:archive",
-                    enabled: false,
-                },
-                {
-                    name: "分类",
-                    url: "/categories/",
-                    icon: "material-symbols:folder-open-rounded",
-                    enabled: false,
-                },
-                {
-                    name: "标签",
-                    url: "/tags/",
-                    icon: "material-symbols:tag-rounded",
-                    enabled: false,
-                },
-            ],
-        },
+            children: [{
+    name: "文章列表",
+    url: "/posts/",
+    enabled: false,
+    icon: "material-symbols:view-list",
+    pageKey: "postList"
+   }, {
+    name: "推文",
+    url: "/circle/",
+    enabled: false,
+    icon: "material-symbols:public",
+    pageKey: "circle"
+   }, {
+    name: "归档",
+    url: "/archive/",
+    enabled: false,
+    icon: "material-symbols:archive"
+   }, {
+    name: "分类",
+    url: "/categories/",
+    enabled: false,
+    icon: "material-symbols:folder-open-rounded"
+   }, {
+    name: "标签",
+    url: "/tags/",
+    enabled: false,
+    icon: "material-symbols:tag-rounded"
+   }]
+           },
         {
             name: "记录",
             url: "#",
-            icon: "material-symbols:camera-outdoor",
             enabled: true,
-            children: [
-                {
-                    name: "归档",
-                    url: "/archive/",
-                    icon: "material-symbols:archive",
-                    enabled: true,
-                },
-                {
-                    name: "相册",
-                    url: "/gallery/",
-                    icon: "material-symbols:photo-library",
-                    enabled: true,
-                    pageKey: "gallery",
-                },
-                {
-                    name: "番组计划",
-                    url: "/bangumi/",
-                    icon: "material-symbols:movie",
-                    enabled: true,
-                    pageKey: "bangumi",
-                },
-                {
-                    name: "书架",
-                    url: "/books/",
-                    icon: "material-symbols:book-5",
-                    enabled: true,
-                    pageKey: "books",
-                },
-                {
-                    name: "笔记本",
-                    url: "/notebooks/",
-                    icon: "material-symbols:menu-book-outline",
-                    enabled: true,
-                    pageKey: "notebooks",
-                },
-                {
-                    name: "足迹",
-                    url: "/travel/",
-                    icon: "material-symbols:location-on",
-                    enabled: true,
-                    pageKey: "places",
-                },
-            ],
-        },
+            icon: "material-symbols:camera-outdoor",
+            children: [{
+    name: "归档",
+    url: "/archive/",
+    enabled: true,
+    icon: "material-symbols:archive"
+   }, {
+    name: "相册",
+    url: "/gallery/",
+    enabled: true,
+    icon: "material-symbols:photo-library",
+    pageKey: "gallery"
+   }, {
+    name: "番组计划",
+    url: "/bangumi/",
+    enabled: false,
+    icon: "material-symbols:movie",
+    pageKey: "bangumi"
+   }, {
+    name: "书架",
+    url: "/books/",
+    enabled: true,
+    icon: "material-symbols:book-5",
+    pageKey: "books"
+   }, {
+    name: "笔记本",
+    url: "/notebooks/",
+    enabled: false,
+    icon: "material-symbols:menu-book-outline",
+    pageKey: "notebooks"
+   }, {
+    name: "足迹",
+    url: "/travel/",
+    enabled: true,
+    icon: "material-symbols:location-on",
+    pageKey: "places"
+   }]
+           },
         {
             name: "娱乐",
             url: "#",
-            icon: "material-symbols:sports-esports",
             enabled: true,
-            children: [
-                {
-                    name: "追番",
-                    url: "/anime/",
-                    icon: "material-symbols:live-tv",
-                    enabled: true,
-                    pageKey: "anime",
-                },
-                {
-                    name: "影视",
-                    url: "/movies/",
-                    icon: "material-symbols:movie-outline-rounded",
-                    enabled: true,
-                    pageKey: "movies",
-                },
-                {
-                    name: "游戏",
-                    url: "/games/",
-                    icon: "material-symbols:gamepad-rounded",
-                    enabled: true,
-                    pageKey: "games",
-                },
-                {
-                    name: "规划",
-                    url: "/plans/",
-                    icon: "material-symbols:list-alt",
-                    enabled: true,
-                    pageKey: "routines",
-                },
-            ],
-        },
+            icon: "material-symbols:sports-esports",
+            children: [{
+    name: "追番",
+    url: "/anime/",
+    enabled: true,
+    icon: "material-symbols:live-tv",
+    pageKey: "anime"
+   }, {
+    name: "影视",
+    url: "/movies/",
+    enabled: true,
+    icon: "material-symbols:movie-outline-rounded",
+    pageKey: "movies"
+   }, {
+    name: "游戏",
+    url: "/games/",
+    enabled: true,
+    icon: "material-symbols:gamepad-rounded",
+    pageKey: "games"
+   }, {
+    name: "规划",
+    url: "/plans/",
+    enabled: true,
+    icon: "material-symbols:list-alt",
+    pageKey: "routines"
+   }]
+           },
         {
             name: "生活",
             url: "#",
-            icon: "material-symbols:local-cafe",
             enabled: true,
-            children: [
-                {
-                    name: "朋友圈",
-                    url: "/moments/",
-                    icon: "material-symbols:chat-bubble-outline",
-                    enabled: true,
-                    pageKey: "moments",
-                },
-                {
-                    name: "网站导航",
-                    url: "/website/",
-                    icon: "material-symbols:public",
-                    enabled: true,
-                },
-            ],
-        },
+            icon: "material-symbols:local-cafe",
+            children: [{
+    name: "朋友圈",
+    url: "/moments/",
+    enabled: true,
+    icon: "material-symbols:chat-bubble-outline",
+    pageKey: "moments"
+   }, {
+    name: "网站导航",
+    url: "/website/",
+    enabled: true,
+    icon: "material-symbols:public"
+   }]
+           },
         {
             name: "社交",
             url: "#",
-            icon: "material-symbols:groups",
             enabled: true,
-            children: [
-                {
-                    name: "留言板",
-                    url: "/guestbook/",
-                    icon: "material-symbols:edit-outline",
-                    enabled: true,
-                    pageKey: "guestbook",
-                },
-                {
-                    name: "友链",
-                    url: "/friends/",
-                    icon: "material-symbols:group",
-                    enabled: true,
-                    pageKey: "friends",
-                },
-                ]
-        },
+            icon: "material-symbols:groups",
+            children: [{
+    name: "留言板",
+    url: "/guestbook/",
+    enabled: true,
+    icon: "material-symbols:edit-outline",
+    pageKey: "guestbook"
+   }, {
+    name: "友链",
+    url: "/friends/",
+    enabled: true,
+    icon: "material-symbols:group",
+    pageKey: "friends"
+   }]
+           },
         {
             name: "关于",
             url: "#",
-            icon: "material-symbols:info",
             enabled: true,
-            children: [
-                {
-                    name: "关于我",
-                    url: "/about/",
-                    icon: "material-symbols:person",
-                    enabled: true,
-                },
-                {
-                    name: "更新日志",
-                    url: "/changelog/",
-                    icon: "material-symbols:history",
-                    enabled: true,
-                    pageKey: "changelog",
-                },
-                {
-                    name: "打赏",
-                    url: "/sponsor/",
-                    icon: "material-symbols:favorite",
-                    enabled: true,
-                    pageKey: "sponsor",
-                },
-            ],
-        },
+            icon: "material-symbols:info",
+            children: [{
+    name: "关于我",
+    url: "/about/",
+    enabled: true,
+    icon: "material-symbols:person"
+   }, {
+    name: "更新日志",
+    url: "/changelog/",
+    enabled: true,
+    icon: "material-symbols:history",
+    pageKey: "changelog"
+   }, {
+    name: "打赏",
+    url: "/sponsor/",
+    enabled: false,
+    icon: "material-symbols:favorite",
+    pageKey: "sponsor"
+   }]
+           },
         {
             name: "链接",
             url: "#",
-            icon: "material-symbols:link",
             enabled: false,
-            children: [
-                {
-                    name: "GitHub",
-                    url: "https://github.com/LuvGaze/",
-                    icon: "fa7-brands:github",
-                    external: true,
-                    enabled: true,
-                },
-                {
-                    name: "Gitee",
-                    url: "https://gitee.com/LuvGaze/",
-                    icon: "fa7-brands:gitee",
-                    external: true,
-                    enabled: true,
-                },
-            ],
-        },
+            icon: "material-symbols:link",
+            children: [{
+    name: "GitHub",
+    url: "https://github.com/LuvGaze/",
+    enabled: true,
+    external: true,
+    icon: "fa7-brands:github"
+   }, {
+    name: "Gitee",
+    url: "https://gitee.com/LuvGaze/",
+    enabled: true,
+    external: true,
+    icon: "fa7-brands:gitee"
+   }]
+           }
     ],
 };
