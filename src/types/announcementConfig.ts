@@ -12,3 +12,18 @@ export type AnnouncementConfig = {
         external?: boolean; // 是否外部链接
     };
 };
+
+export type AnnouncementPopupConfig = {
+    enable: boolean; // 是否启用首次访问弹窗
+    title?: string; // 弹窗标题
+    content: string; // 弹窗内容
+    icon?: string; // 弹窗图标
+    closable?: boolean; // 是否显示关闭按钮
+    autoCloseSeconds?: number; // 自动关闭时间（秒），0 表示不自动关闭
+    link?: {
+        enable: boolean; // 是否启用链接
+        text: string; // 链接文字
+        url: string; // 链接地址
+        external?: boolean; // 是否外部链接
+    };
+};
