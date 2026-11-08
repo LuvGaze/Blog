@@ -10,6 +10,7 @@ import FontSetup from "@components/features/FontSetup.astro";
 import MusicManager from "@components/features/MusicManager.astro";
 import SakuraEffect from "@components/features/SakuraEffect.astro";
 import ConfigCarrier from "@components/layout/ConfigCarrier.astro";
+import AnnouncementPopup from "@components/widget/AnnouncementPopup.astro";
 
 import {
 	analyticsConfig,
@@ -699,6 +700,9 @@ const siteLang = lang.replace("_", "-");
 
     <!-- Sakura Effect -->
     <SakuraEffect />
+
+    <!-- 首次访问弹窗公告（仅首次访问出现，未关闭时也不拦截页面操作） -->
+    <AnnouncementPopup />
 
     <!-- Fancybox Manager -->
     <FancyboxManager />
