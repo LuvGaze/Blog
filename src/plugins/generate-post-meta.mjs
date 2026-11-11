@@ -57,13 +57,15 @@ function generatePostMeta() {
         const draft = cleanScalar(fm.draft) === true;
         // 草稿不在随机文章中出现（与列表隐藏行为一致）
         if (draft) continue;
+        // 加密文章：只保留 locked 标记，不写入明文密码与简介，避免公开 JSON 泄漏
+        const locked = String(fm.password ?? "").trim() !== "";
         items.push({
             id: f.replace(/\.(md|mdx)$/, ""),
             title: cleanScalar(fm.title) ?? f.replace(/\.(md|mdx)$/, ""),
             category: cleanScalar(fm.category),
-            description: cleanScalar(fm.description),
+            description: locked ? "" : cleanScalar(fm.description),
             published: cleanScalar(fm.published),
-            password: cleanScalar(fm.password),
+            password: locked,
         });
     }
     fs.mkdirSync(path.dirname(outFile), {recursive: true});
