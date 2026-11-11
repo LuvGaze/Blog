@@ -63,6 +63,20 @@ export async function getSortedPostsList(): Promise<PostForList[]> {
     return sortedPostsList;
 }
 
+/**
+ * 文章卡片描述：加密文章不展示自定义简介与正文摘要，统一显示密码保护提示，
+ * 避免在列表卡片、RSS、随机推荐等预览位置泄漏加密内容。
+ * @param entry 文章条目（只需 data）
+ * @param excerpt 正文首段摘要（remark-excerpt 生成）
+ */
+export function getPostCardDescription(
+    entry: Pick<CollectionEntry<"posts">, "data">,
+    excerpt = "",
+): string {
+    if (entry.data.password) return i18n(I18nKey.passwordProtectedDesc);
+    return entry.data.description || excerpt;
+}
+
 export type Tag = {
     name: string;
     count: number;
