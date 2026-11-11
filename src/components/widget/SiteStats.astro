@@ -34,7 +34,7 @@ const posts = await getSortedPosts();
 const categories = await getCategoryList();
 const tags = await getTagList();
 
-// 统计全站正文总字数：src/content 下所有集合的 md 正文（文章/笔记本/规划/足迹/关于/友链/相册等）
+// 全站内容集合（仅用于「最后活动」统计，字数只统计文章正文）
 const contentCollections = [
 	"posts",
 	"spec",
@@ -49,22 +49,25 @@ const contentCollections = [
 ] as const;
 const allContentEntries = (await Promise.all(contentCollections.map((c) => getCollection(c)))).flat();
 
-// 计算总字数
+// 计算总字数：仅统计文章（posts）正文，中文按字、英文按单词
+// 需先剔除代码、HTML 标签（含内联样式）与链接地址，否则 CSS/URL 中的字母会被误算成正文
+function countWords(text: string): number {
+	const chinese = text.match(/[\u4e00-\u9fa5]/g)?.length ?? 0;
+	const english = text.match(/[a-zA-Z]+/g)?.length ?? 0;
+	return chinese + english;
+}
+
 let totalWords = 0;
-for (const entry of allContentEntries) {
+for (const entry of posts) {
 	if (entry.body) {
-		// 移除代码块和内联代码后计算字数
-		let text = entry.body
+		const text = entry.body
 			.replace(/```[\s\S]*?```/g, "") // 移除代码块
 			.replace(/`[^`]*`/g, "") // 移除内联代码
-			.replace(/\s+/g, " ") // 合并空白
-			.trim();
+			.replace(/!?\[([^\]]*)\]\([^)]*\)/g, "$1") // 链接/图片只保留描述文字
+			.replace(/<[^>]*>/g, "") // 移除 HTML 标签与内联样式
+			.replace(/https?:\/\/\S+/g, ""); // 移除裸链接
 
-		// 分别计算中文字符和英文字符
-		const chineseChars = text.match(/[\u4e00-\u9fa5]/g) || [];
-		const englishChars = text.match(/[a-zA-Z]/g) || [];
-
-		totalWords += chineseChars.length + englishChars.length;
+		totalWords += countWords(text);
 	}
 }
 
