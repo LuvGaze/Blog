@@ -1,6 +1,6 @@
 ---
 import MainGridLayout from "@layouts/MainGridLayout.astro";
-import { getSortedPosts } from "@utils/content-utils";
+import { getPostCardDescription, getSortedPosts } from "@utils/content-utils";
 import { formatDateToYYYYMMDD } from "@utils/date-utils";
 import { Icon } from "astro-icon/components";
 import I18nKey from "@/i18n/i18nKey";
@@ -61,16 +61,18 @@ const recentPosts = posts.slice(0, 6);
                 {i18n(I18nKey.rssLatestPosts)}
             </h2>
             <div class="space-y-4">
-                {recentPosts.map((post) => (
+                {recentPosts.map((post) => {
+                    const cardDescription = getPostCardDescription(post);
+                    return (
                     <article class="bg-(--card-bg) rounded-xl p-4 border border-(--line-divider) hover:border-(--primary) transition-all duration-300">
                         <h3 class="text-lg font-semibold text-90 mb-2 hover:text-(--primary) transition-colors">
                             <a href={`/posts/${post.id}/`} class="hover:underline">
                                 {post.data.title}
                             </a>
                         </h3>
-                        {post.data.description && (
+                        {cardDescription && (
                             <p class="text-75 mb-3 line-clamp-2">
-                                {post.data.description}
+                                {cardDescription}
                             </p>
                         )}
                         <div class="flex items-center gap-4 text-sm text-60">
@@ -79,7 +81,8 @@ const recentPosts = posts.slice(0, 6);
                             </time>
                         </div>
                     </article>
-                ))}
+                    );
+                })}
             </div>
         </div>
 
