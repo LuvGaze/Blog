@@ -1,3 +1,5 @@
+import I18nKey from "@/i18n/i18nKey";
+import { i18n } from "@/i18n/translation";
 import {getSortedPosts} from "@/utils/content-utils";
 
 export async function GET() {
@@ -7,7 +9,9 @@ export async function GET() {
         .map((post) => ({
             id: post.id,
             title: post.data.title,
-            description: post.data.description,
+            description: post.data.password
+                ? i18n(I18nKey.passwordProtectedDesc)
+                : post.data.description,
             published: post.data.published.getTime(),
             category: post.data.category || "",
             password: !!post.data.password,
