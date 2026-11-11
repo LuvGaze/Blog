@@ -102,7 +102,7 @@ export async function GET({
         day: "numeric",
     });
 
-    const description = post.data.description;
+    const description = post.data.password ? "" : post.data.description;
 
     const template = {
         type: "div",
