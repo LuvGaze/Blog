@@ -31,7 +31,7 @@ export async function GET(context: APIContext) {
             feedItems.push({
                 title: post.data.title,
                 pubDate: post.data.published,
-                description: post.data.description || "",
+                description: i18n(I18nKey.passwordProtectedRss),
                 link: url(`/posts/${post.id}/`),
                 content: i18n(I18nKey.passwordProtectedRss),
             });
