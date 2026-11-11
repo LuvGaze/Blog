@@ -6,7 +6,7 @@ import ArticleVirtualList from "@/components/pages/ArticleVirtualList.svelte";
 import { siteConfig } from "@/config";
 import { coverImageConfig } from "@/config/coverImageConfig";
 import MainGridLayout from "@/layouts/MainGridLayout.astro";
-import { getSortedPosts } from "@/utils/content-utils";
+import { getPostCardDescription, getSortedPosts } from "@/utils/content-utils";
 import { processCoverImageSync, getApiUrlList } from "@/utils/image-utils";
 import {
 	getCategoryUrl,
@@ -135,8 +135,7 @@ const articleListPosts = await Promise.all(
 			categoryUrl: getCategoryUrl(rawCategory || null),
 			tags,
 			description:
-				entry.data.description ||
-				remarkPluginFrontmatter.excerpt ||
+				getPostCardDescription(entry, remarkPluginFrontmatter.excerpt) ||
 				"暂无文章简介，点击卡片查看完整内容。",
 			imageUrl: articleImage.imageUrl,
 			imageApiUrls: articleImage.imageApiUrls,
