@@ -62,7 +62,10 @@ const descriptionClampLines = String(descriptionLines);
 const shouldClampDescription = descriptionLines > 0;
 
 const { remarkPluginFrontmatter } = await render(entry);
-const descriptionText = description || remarkPluginFrontmatter.excerpt || "";
+// 加密文章不在卡片上展示简介或正文摘要，避免预览泄漏内容
+const descriptionText = password
+	? i18n(I18nKey.passwordProtectedDesc)
+	: description || remarkPluginFrontmatter.excerpt || "";
 ---
 
 <div
