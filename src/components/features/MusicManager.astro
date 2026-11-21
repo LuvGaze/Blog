@@ -235,6 +235,11 @@ const managerConfigStr = JSON.stringify({
         if (now - _lastPersist > 1000) { _lastPersist = now; persistState(); }
     }
 
+    // 记录「用户主动播放过」：仅当存在该标记时才允许刷新后续播，首次访问始终保持静音
+    function markUserPlayed() {
+        try { sessionStorage.setItem('music-user-played', '1'); } catch (e) {}
+    }
+
     // ── State ────────────────────────────────────────────────
     var loadVersion = 0; // incremented on each loadTrack to discard stale play() results
     var skipAttempts = 0; // 连续自动跳歌计数，防止全部音频损坏时死循环
@@ -434,6 +439,7 @@ const managerConfigStr = JSON.stringify({
     // ── Playback controls ────────────────────────────────────
     function togglePlay() {
         if (audio.paused) {
+            markUserPlayed();
             audio.play().then(function () {
                 state.isPlaying = true;
                 emit('fm:play-state', { isPlaying: true });
@@ -450,6 +456,7 @@ const managerConfigStr = JSON.stringify({
     }
 
     function playNext(auto) {
+        if (!auto) markUserPlayed();
         if (state.playMode === 1 && auto) {
             audio.currentTime = 0;
             audio.play();
@@ -466,6 +473,7 @@ const managerConfigStr = JSON.stringify({
     }
 
     function playPrev() {
+        markUserPlayed();
         var prevIndex;
         if (state.playMode === 2) {
             prevIndex = Math.floor(Math.random() * state.playlist.length);
@@ -516,6 +524,7 @@ const managerConfigStr = JSON.stringify({
     }
 
     function playTrackByIndex(index) {
+        markUserPlayed();
         if (index === state.currentIndex && !audio.paused) {
             togglePlay();
         } else {
@@ -651,57 +660,76 @@ const managerConfigStr = JSON.stringify({
 
                 loadTrack(startIndex, false, restoreTime);
 
-                // 自动播放/续播统一逻辑：开启自动播放时始终注册「首次交互兜底」，
-                // 解决刷新/首访后被浏览器拦截无感续播、导致还是要手动播放的问题。
-                var _intStarted = false;
-                var _intEvs = ['pointerdown', 'keydown', 'touchstart'];
-                function _startPlayback() {
-                    if (!audio.paused) {
-                        _intStarted = true;
-                        _removeIntListeners();
-                        return;
+                // 仅当本次会话中用户主动播放过，刷新后才续播；首次访问始终保持静音。
+                var userPlayed = false;
+                try { userPlayed = sessionStorage.getItem('music-user-played') === '1'; } catch(e) {}
+                if (userPlayed && saved && saved.wasPlaying) {
+                    var _resumeEvs = ['pointerdown', 'keydown', 'touchstart'];
+                    function _onUserResume() {
+                        audio.play().then(function () {
+                            _unbindResume();
+                            state.isPlaying = true;
+                            emit('fm:play-state', { isPlaying: true });
+                            updateFixedBar();
+                            persistState();
+                        }).catch(function () {});
                     }
-                    if (_intStarted) return;
-                    _intStarted = true;
-                    _removeIntListeners();
-                    audio.play().then(function () {
-                        state.isPlaying = true;
-                        emit('fm:play-state', { isPlaying: true });
-                        updateFixedBar();
-                        persistState();
-                    }).catch(function () {});
-                }
-                function _removeIntListeners() {
-                    for (var _x = 0; _x < _intEvs.length; _x++) {
-                        window.removeEventListener(_intEvs[_x], _startPlayback);
+                    function _unbindResume() {
+                        for (var _r = 0; _r < _resumeEvs.length; _r++) {
+                            window.removeEventListener(_resumeEvs[_r], _onUserResume);
+                        }
+                        document.removeEventListener('visibilitychange', _onVisResume);
                     }
-                    document.removeEventListener('visibilitychange', _onVisStart);
-                }
-                function _onVisStart() {
-                    if (!document.hidden) _startPlayback();
-                }
-
-                // 上一次会话在播放：立即尝试无感续播；若被拦截则交给首次交互兜底续播
-                if (saved && saved.wasPlaying) {
-                    function tryResume() {
+                    function _onVisResume() {
+                        if (!document.hidden) _onUserResume();
+                    }
+                    function _tryResume() {
                         audio.play().then(function () {
                             state.isPlaying = true;
-                            _intStarted = true;
                             emit('fm:play-state', { isPlaying: true });
                             updateFixedBar();
                             persistState();
                         }).catch(function () {
-                            // 被浏览器拦截：保留恢复的进度，等待首次交互时再续播
-                            _intStarted = false;
+                            // 浏览器拦截自动续播：保留进度，等用户首次交互后再继续
+                            for (var _r = 0; _r < _resumeEvs.length; _r++) {
+                                window.addEventListener(_resumeEvs[_r], _onUserResume);
+                            }
+                            document.addEventListener('visibilitychange', _onVisResume);
                         });
                     }
-                    if (audio.readyState >= 1) tryResume();
-                    else audio.addEventListener('loadedmetadata', tryResume, { once: true });
+                    if (audio.readyState >= 1) _tryResume();
+                    else audio.addEventListener('loadedmetadata', _tryResume, { once: true });
                 }
 
-                // 自动播放开关开启：始终挂首次交互续播，保证刷新/首访后也能自动开始。
-                // 但若用户上一次会话已暂停（saved.wasPlaying===0），则尊重暂停，不再强制续播。
-                if (config.autoplay && !(saved && saved.wasPlaying === 0)) {
+                // 后台显式开启 autoplay 时，仍等待用户首次交互后再开始播放。
+                if (config.autoplay) {
+                    var _intStarted = false;
+                    var _intEvs = ['pointerdown', 'keydown', 'touchstart'];
+                    function _startPlayback() {
+                        if (!audio.paused) {
+                            _intStarted = true;
+                            _removeIntListeners();
+                            return;
+                        }
+                        if (_intStarted) return;
+                        _intStarted = true;
+                        _removeIntListeners();
+                        audio.play().then(function () {
+                            state.isPlaying = true;
+                            emit('fm:play-state', { isPlaying: true });
+                            updateFixedBar();
+                            persistState();
+                        }).catch(function () {});
+                    }
+                    function _removeIntListeners() {
+                        for (var _x = 0; _x < _intEvs.length; _x++) {
+                            window.removeEventListener(_intEvs[_x], _startPlayback);
+                        }
+                        document.removeEventListener('visibilitychange', _onVisStart);
+                    }
+                    function _onVisStart() {
+                        if (!document.hidden) _startPlayback();
+                    }
                     for (var _y = 0; _y < _intEvs.length; _y++) {
                         window.addEventListener(_intEvs[_y], _startPlayback);
                     }
